@@ -78,3 +78,27 @@ public :
 		StateName = TEXT("JustAvoid");
 	}
 };
+
+UCLASS()
+class UYSSkillState : public UYSInputStates
+{
+	GENERATED_BODY()
+
+public :
+	UYSSkillState() : UYSInputStates()
+	{
+		StateName = TEXT("SpecialSkill");
+	}
+};
+
+UCLASS()
+class UYSFallingState : public UYSInputStates
+{
+	GENERATED_BODY()
+
+public :
+	UYSFallingState() : UYSInputStates()
+	{
+		StateName = TEXT("Falling");
+	}
+};
