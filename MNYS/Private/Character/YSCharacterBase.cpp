@@ -1,0 +1,43 @@
+﻿// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "MNYS/Public/Character/YSCharacterBase.h"
+#include "YSAbilitySystemComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "MotionWarp/UYSMotionWarpingComponent.h"
+
+
+// Sets default values
+AYSCharacterBase::AYSCharacterBase()
+{
+	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = true;
+
+	//SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComponent"));
+	AbilitySystemComponent = CreateDefaultSubobject<UYSAbilitySystemComponent>(TEXT("ASC"));
+	MotionWarpingComponent = CreateDefaultSubobject<UYSMotionWarpingComponent>(TEXT("MotionWarping"));
+}
+
+// Called when the game starts or when spawned
+void AYSCharacterBase::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
+// Called every frame
+void AYSCharacterBase::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+}
+
+// Called to bind functionality to input
+void AYSCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
+
+UAbilitySystemComponent* AYSCharacterBase::GetAbilitySystemComponent() const
+{
+	return AbilitySystemComponent;
+}
+
