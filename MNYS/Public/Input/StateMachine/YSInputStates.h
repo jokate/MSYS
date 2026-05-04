@@ -74,7 +74,6 @@ public :
 		StateName = TEXT("Attack");
 		State = EYSInputStatesType::Idle;
 		TransitionRule.Add(EYSInputStatesType::Idle);
-		TransitionRule.Add(EYSInputStatesType::Falling);
 		TransitionRule.Add(EYSInputStatesType::Dodge);
 	}
 };

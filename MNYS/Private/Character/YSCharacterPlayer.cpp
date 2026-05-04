@@ -3,12 +3,14 @@
 
 #include "Character/YSCharacterPlayer.h"
 
+#include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Input/YSEnhancedInputComponent.h"
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
 
 
+class UEnhancedInputLocalPlayerSubsystem;
 // Sets default values
 AYSCharacterPlayer::AYSCharacterPlayer()
 {
@@ -46,10 +48,25 @@ void AYSCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(PlayerInputMappingContext, 0);
+		}
+	}
+	
 	if (UYSEnhancedInputComponent* EnhancedInputComponent = CastChecked<UYSEnhancedInputComponent>(PlayerInputComponent))
 	{
-		
-		//EnhancedInputComponent->BindActionByTag
+		if (IsValid(InputConfig) == false )
+		{
+			return;
+		}
+
+		for (const FTaggedInputAction& InputAction : InputConfig->TaggedInputActions )
+		{
+			EnhancedInputComponent->BindActionByTag(InputConfig, InputAction.InputTag, ETriggerEvent::Triggered, this, &AYSCharacterPlayer::ProcessInput, InputAction.InputTag);
+		}
 	}
 }
 
@@ -77,7 +94,7 @@ void AYSCharacterPlayer::Look(const FInputActionValue& Value)
 	{
 		// add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
-		//AddControllerPitchInput(LookAxisVector.Y);
+		AddControllerPitchInput(LookAxisVector.Y);
 	}
 }
 

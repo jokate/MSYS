@@ -9,6 +9,8 @@
 #include "YSEnum.h"
 #include "YSCharacterPlayer.generated.h"
 
+class UInputMappingContext;
+class UYSInputConfig;
 class UYSInputStateMachineComponent;
 
 UCLASS()
@@ -48,4 +50,11 @@ protected :
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = InputControl)
 	TObjectPtr<UYSInputStateMachineComponent> InputStateMachineComponent;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = InputControl)
+	TObjectPtr<UYSInputConfig> InputConfig;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = InputControl)
+	TObjectPtr<UInputMappingContext> PlayerInputMappingContext;
 };
+
