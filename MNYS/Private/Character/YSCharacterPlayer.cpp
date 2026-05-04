@@ -70,7 +70,7 @@ void AYSCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	}
 }
 
-void AYSCharacterPlayer::ProcessInput(const FGameplayTag& InputTag) const
+void AYSCharacterPlayer::ProcessInput(FGameplayTag InputTag)
 {
 	if ( IsValid(InputStateMachineComponent))
 	{

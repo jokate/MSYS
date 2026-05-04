@@ -27,5 +27,4 @@ protected:
 public :
 	UPROPERTY()
 	TArray<FGameplayAbilitySpecHandle> AbilitySpecHandles;
-	
 };

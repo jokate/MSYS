@@ -4,11 +4,6 @@
 #include "Input/YSEnhancedInputComponent.h"
 
 
-// Sets default values for this component's properties
-UYSEnhancedInputComponent::UYSEnhancedInputComponent()
-{
-}
-
 const FGameplayTag& UYSEnhancedInputComponent::GetGameplayTagByInputAction(const UInputAction* InputAction)
 {
 	const FInputActionWrapper InputActionWrapper(InputAction);

@@ -23,6 +23,11 @@ struct FInputActionWrapper
 	}
 };
 
+FORCEINLINE uint32 GetTypeHash(const FInputActionWrapper& InInputActionWrapper)
+{
+	return FCrc::MemCrc32(&InInputActionWrapper, sizeof(FInputActionWrapper));
+}
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class MNYS_API UYSEnhancedInputComponent : public UEnhancedInputComponent
 {
@@ -42,12 +47,6 @@ protected :
 	UPROPERTY(VisibleAnywhere)
 	TMap<FInputActionWrapper, FGameplayTag> InputGameplayTagMap;
 };
-
-
-FORCEINLINE uint32 GetTypeHash(const FInputActionWrapper& InInputActionWrapper)
-{
-	return FCrc::MemCrc32(&InInputActionWrapper, sizeof(FInputActionWrapper));
-}
 
 
 template <class UserClass, typename FuncType, typename VarType>

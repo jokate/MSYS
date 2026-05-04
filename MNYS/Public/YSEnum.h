@@ -9,8 +9,8 @@
 /**
  * 
  */
-UENUM()
-enum EYSInputStatesType : uint8
+UENUM(BlueprintType)
+enum class EYSInputStatesType : uint8
 {
 	None = 0,
 	Idle,

@@ -34,7 +34,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UFUNCTION()
-	void ProcessInput(const FGameplayTag& InputTag) const;
+	void ProcessInput(FGameplayTag InputTag);
 
 	void TransitionStateMachine(EYSInputStatesType InputStateType) const;
 	
