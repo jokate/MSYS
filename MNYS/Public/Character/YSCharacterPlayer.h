@@ -3,8 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "YSCharacterBase.h"
 #include "YSCharacterPlayer.generated.h"
+
+class UYSInputStateMachineComponent;
 
 UCLASS()
 class MNYS_API AYSCharacterPlayer : public AYSCharacterBase
@@ -26,10 +29,16 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UFUNCTION()
+	void ProcessInput(const FGameplayTag& InputTag) const;
+
 protected : 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USpringArmComponent> CameraBoom;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCameraComponent> FollowCamera;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = InputControl)
+	TObjectPtr<UYSInputStateMachineComponent> InputStateMachineComponent;
 };

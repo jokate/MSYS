@@ -5,6 +5,8 @@
 
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Input/YSEnhancedInputComponent.h"
+#include "Input/StateMachine/YSInputStateMachineComponent.h"
 
 
 // Sets default values
@@ -22,6 +24,9 @@ AYSCharacterPlayer::AYSCharacterPlayer()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
+
+	InputStateMachineComponent = CreateDefaultSubobject<UYSInputStateMachineComponent>(TEXT("InputStateMachine"));
+	
 }
 
 // Called when the game starts or when spawned
@@ -40,5 +45,19 @@ void AYSCharacterPlayer::Tick(float DeltaTime)
 void AYSCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	if (UYSEnhancedInputComponent* EnhancedInputComponent = CastChecked<UYSEnhancedInputComponent>(PlayerInputComponent))
+	{
+		
+		//EnhancedInputComponent->BindActionByTag
+	}
+}
+
+void AYSCharacterPlayer::ProcessInput(const FGameplayTag& InputTag) const
+{
+	if ( IsValid(InputStateMachineComponent))
+	{
+		InputStateMachineComponent->AcceptInput(InputTag);
+	}
 }
 

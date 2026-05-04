@@ -9,17 +9,20 @@ UYSEnhancedInputComponent::UYSEnhancedInputComponent()
 {
 }
 
-void UYSEnhancedInputComponent::BeginPlay()
+const FGameplayTag& UYSEnhancedInputComponent::GetGameplayTagByInputAction(const UInputAction* InputAction)
 {
-	Super::BeginPlay();
+	const FInputActionWrapper InputActionWrapper(InputAction);
+
+	if (!InputGameplayTagMap.Contains(InputActionWrapper))
+	{
+		return FGameplayTag::EmptyTag;
+	}
+
+	return InputGameplayTagMap[InputActionWrapper]; 
 }
 
-
-// Called every frame
-void UYSEnhancedInputComponent::TickComponent(float DeltaTime, ELevelTick TickType,
-                                              FActorComponentTickFunction* ThisTickFunction)
+void UYSEnhancedInputComponent::ClearActionBindings()
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
+	Super::ClearActionBindings();
+	InputGameplayTagMap.Empty();
 }
-

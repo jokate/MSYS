@@ -3,6 +3,7 @@
 
 #include "Input/StateMachine/YSInputStates.h"
 
+#include "AbilitySystemInterface.h"
 #include "YSAbilitySystemComponent.h"
 
 void UYSInputStates::ProcessInput(const FGameplayTag& InputGameplayTag)
@@ -22,4 +23,13 @@ void UYSInputStates::ProcessInput(const FGameplayTag& InputGameplayTag)
 	// GameplayTag로 변환
 	FGameplayTag FinalizedTag =  FGameplayTag::RequestGameplayTag(FName(*StateTagStr));
 	ASC->ProcessAbilityByInputPass(FinalizedTag);
+}
+
+void UYSInputStates::InitState(AActor* Owner)
+{
+	OwnerActor = Owner;
+	if ( IAbilitySystemInterface* ASI = Cast<IAbilitySystemInterface>(Owner) )
+	{
+		OwnerASC = Cast<UYSAbilitySystemComponent>(ASI->GetAbilitySystemComponent());
+	}
 }
