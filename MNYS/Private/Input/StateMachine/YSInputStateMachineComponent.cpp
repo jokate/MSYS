@@ -3,6 +3,7 @@
 
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
 
+#include "Input/Combo/YSComboData.h"
 #include "Input/StateMachine/YSInputStates.h"
 
 
@@ -31,14 +32,42 @@ void UYSInputStateMachineComponent::BeginPlay()
 	AddState<UYSReadyState>();
 	AddState<UYSJustAvoidState>();
 	AddState<UYSSkillState>();
+
+	
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &UYSInputStateMachineComponent::ResetInputTags, InputProcessingTime, true);
+}
+
+void UYSInputStateMachineComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
+	
+	Super::EndPlay(EndPlayReason);
+}
+
+FGameplayTag UYSInputStateMachineComponent::FindBestCombo(const FGameplayTag& Tag)
+{
+	FGameplayTag BestTag = Tag;
+	InputTags.Add(Tag);
+	for ( const FYSComboSequence* ComboSequence : AllComboSequence )
+	{
+		if ( ComboSequence->IsSatisfiedCombo(InputTags) == true )
+		{
+			BestTag = ComboSequence->Combo;
+			break;
+		}
+	}
+
+	return BestTag;
 }
 
 void UYSInputStateMachineComponent::AcceptInput(const FGameplayTag& Tag)
 {
+	FGameplayTag RetTag = FindBestCombo(Tag);
+	
 	if ( IsValid(CurrentInputState))
-	{
-		CurrentInputState->ProcessInput(Tag);
-	}
+    {
+        CurrentInputState->ProcessInput(RetTag);
+    }
 }
 
 void UYSInputStateMachineComponent::TransitionState(EYSInputStatesType NewInputState)

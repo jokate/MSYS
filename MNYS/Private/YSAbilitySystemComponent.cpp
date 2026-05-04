@@ -3,27 +3,13 @@
 
 #include "YSAbilitySystemComponent.h"
 
+#include "Ability/YSGameplayAbility.h"
+
 
 // Sets default values for this component's properties
 UYSAbilitySystemComponent::UYSAbilitySystemComponent()
 {
 
-}
-
-
-// Called when the game starts
-void UYSAbilitySystemComponent::BeginPlay()
-{
-	Super::BeginPlay();
-
-	// ...
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &UYSAbilitySystemComponent::ResetInputTags, InputProcessingTime, false);
-}
-
-void UYSAbilitySystemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
-	Super::EndPlay(EndPlayReason);
 }
 
 void UYSAbilitySystemComponent::OnGiveAbility(FGameplayAbilitySpec& AbilitySpec)
@@ -40,18 +26,16 @@ void UYSAbilitySystemComponent::OnRemoveAbility(FGameplayAbilitySpec& AbilitySpe
 	Super::OnRemoveAbility(AbilitySpec);
 }
 
-
-bool UYSAbilitySystemComponent::ProcessSkill(const FGameplayTag& InputTag)
+bool UYSAbilitySystemComponent::ProcessSkillActive(const FGameplayTag& InputTag)
 {
-	for ( FGameplayAbilitySpecHandle& AbilitySpecHandle : AbilitySpecHandles)
+	for ( FGameplayAbilitySpecHandle& AbilitySpecHandle : AbilitySpecHandles )
 	{
 		FGameplayAbilitySpec* AbilitySpec = FindAbilitySpecFromHandle(AbilitySpecHandle);
 
 		if ( AbilitySpec == nullptr )
 			continue;
 
-		// 만약 타겟으로 하는 어빌리티 태그가 있는 경우 스킬 즉시 발동.
-		if ( AbilitySpec->GetDynamicSpecSourceTags().HasTagExact(InputTag) )
+		if ( AbilitySpec->GetDynamicSpecSourceTags().HasTagExact(InputTag))
 		{
 			TryActivateAbility(AbilitySpecHandle);
 			return true;
@@ -61,9 +45,8 @@ bool UYSAbilitySystemComponent::ProcessSkill(const FGameplayTag& InputTag)
 	return false;
 }
 
-void UYSAbilitySystemComponent::ProcessCombo(const FGameplayTag& InputTag)
+bool UYSAbilitySystemComponent::ProcessAlreadyActiveAbility(const FGameplayTag& InputTag)
 {
-	InputTags.Emplace(InputTag);
 	for ( FGameplayAbilitySpecHandle& AbilitySpecHandle : AbilitySpecHandles )
 	{
 		FGameplayAbilitySpec* AbilitySpec = FindAbilitySpecFromHandle(AbilitySpecHandle);
@@ -79,16 +62,25 @@ void UYSAbilitySystemComponent::ProcessCombo(const FGameplayTag& InputTag)
 
 		// 여기서 이제 추가 처리
 		// -> 여기서 알아 처리. -> 여기서 추가 처리는 필요할 듯.
+		UYSGameplayAbility* TargetAbil = Cast<UYSGameplayAbility>(AbilitySpec->Ability);
+
+		if ( IsValid(TargetAbil) == false )
+			continue;
+
+		if (TargetAbil->TryTransition(InputTag))
+			return true;
 	}
+
+	return false;
 }
+
 
 void UYSAbilitySystemComponent::ProcessAbilityByInputPass(const FGameplayTag& InputTag)
 {
-	// 초기 InputTag로 즉발될 스킬이 존재하다면 스킬 공격을 처리하자.
-	if ( ProcessSkill(InputTag) )
+	if ( ProcessAlreadyActiveAbility(InputTag))
 		return;
 
-	ProcessCombo(InputTag);
+	ProcessSkillActive(InputTag);
 }
 
 

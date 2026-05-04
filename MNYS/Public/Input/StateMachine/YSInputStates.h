@@ -22,7 +22,7 @@ public :
 	virtual void ProcessInput(const FGameplayTag& InputGameplayTag);
 	void InitState(AActor* Owner);
 	bool IsEnableTransition(EYSInputStatesType NextState) const { return TransitionRule.Contains(NextState); }
-	EYSInputStatesType GetStateType() const { return State;}
+	EYSInputStatesType GetStateType() const { return State; }
 	
 public :
 	UPROPERTY()

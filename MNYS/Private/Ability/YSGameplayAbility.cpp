@@ -3,6 +3,7 @@
 
 #include "Ability/YSGameplayAbility.h"
 
+#include "AbilitySystemComponent.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 
 void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
@@ -12,6 +13,27 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
 	PlayMontage();
+}
+
+bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag) const
+{
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
+	if ( IsValid(ASC) == false)
+	{
+		return false;
+	}
+	
+	for ( const FYSComboTransition& Transition : TransitionsByInput )
+	{
+		if ( Transition.IsTransitionable(InputGameplayTag))
+		{
+			// 어빌리티 연쇄 트리거.
+			ASC->TryActivateAbilityByClass(Transition.AbilityClass);
+			return true;	
+		}
+	}
+
+	return false;
 }
 
 void UYSGameplayAbility::PlayMontage()

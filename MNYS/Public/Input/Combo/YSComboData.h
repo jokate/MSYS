@@ -16,26 +16,29 @@ struct FYSComboTransition
 {
 	GENERATED_BODY()
 
+	bool IsTransitionable(const FGameplayTag& InputGameplayTag) const
+	{
+		return TransitionTags.HasTagExact(InputGameplayTag);
+	}
+	
 	UPROPERTY(EditDefaultsOnly)
-	FGameplayTag InputTag;
-
-	UPROPERTY(EditDefaultsOnly)
-	FGameplayTag NextComboTag;
-
+	FGameplayTagContainer TransitionTags;
+	
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UGameplayAbility> AbilityClass;
 };
 
+// Purpose : 콤보를 위한 인풋 태그.
 USTRUCT(BlueprintType)
-struct FYSComboData : public FTableRowBase
+struct FYSComboSequence : public FTableRowBase
 {
 	GENERATED_BODY()
 
-public :
 	UPROPERTY(EditDefaultsOnly)
-	FGameplayTag ComboTag;
+	FGameplayTag Combo;
 
-	// 
 	UPROPERTY(EditDefaultsOnly)
-	TArray<FYSComboTransition> Transitions;
+	TArray<FGameplayTag> ComboSequence;
+
+	bool IsSatisfiedCombo(const TArray<FGameplayTag>& InputGameplayTags) const;
 };

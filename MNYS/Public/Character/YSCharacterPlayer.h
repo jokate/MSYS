@@ -4,7 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "InputActionValue.h"
 #include "YSCharacterBase.h"
+#include "YSEnum.h"
 #include "YSCharacterPlayer.generated.h"
 
 class UYSInputStateMachineComponent;
@@ -31,6 +33,11 @@ public:
 
 	UFUNCTION()
 	void ProcessInput(const FGameplayTag& InputTag) const;
+
+	void TransitionStateMachine(EYSInputStatesType InputStateType) const;
+	
+	void Look(const FInputActionValue& Value);
+	void Move(const FInputActionValue& Value);
 
 protected : 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
