@@ -21,3 +21,16 @@ enum class EYSInputStatesType : uint8
 	Ready,
 	End,
 };
+
+UENUM(BlueprintType)
+enum class EVelocityDirection : uint8
+{
+	Frontward,
+	Backward,
+	Left,
+	Right,
+	FrontwardLeft,
+	BackwardLeft,
+	FrontwardRight,
+	BackwardRight
+};
