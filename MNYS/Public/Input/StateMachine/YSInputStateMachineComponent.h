@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
-#include "YSEnum.h"
 #include "Components/ActorComponent.h"
+#include "General/YSEnum.h"
 #include "YSInputStateMachineComponent.generated.h"
 
 

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "YSEnum.h"
+#include "General/YSEnum.h"
 #include "UObject/Object.h"
 #include "YSInputStates.generated.h"
 

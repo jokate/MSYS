@@ -6,7 +6,7 @@
 #include "GameplayTagContainer.h"
 #include "InputActionValue.h"
 #include "YSCharacterBase.h"
-#include "YSEnum.h"
+#include "General/YSEnum.h"
 #include "YSCharacterPlayer.generated.h"
 
 class UInputMappingContext;
