@@ -22,8 +22,10 @@ public :
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 	
 public :
+	UPROPERTY(BlueprintReadOnly)
 	TWeakObjectPtr<AYSCharacterBase> CharacterPtr;
 
+	UPROPERTY(BlueprintReadOnly)
 	TWeakObjectPtr<UCharacterMovementComponent> CharMovement;
 	
 	UPROPERTY(BLueprintReadOnly)
@@ -31,6 +33,9 @@ public :
 
 	UPROPERTY(BlueprintReadOnly)
 	FVector Velocity2D;
+
+	UPROPERTY(BlueprintReadOnly)
+	FVector Velocity;
 
 	UPROPERTY(BlueprintReadOnly)
 	FVector CurrentWorldLocation;
@@ -55,4 +60,7 @@ public :
 	
 	UPROPERTY(BlueprintReadOnly)
 	EVelocityDirection VelocityDirection;
+
+	UPROPERTY(BlueprintReadWrite)
+	float DistanceToTarget = 0.f;
 };
