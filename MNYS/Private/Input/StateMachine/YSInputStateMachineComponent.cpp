@@ -33,7 +33,7 @@ void UYSInputStateMachineComponent::BeginPlay()
 	AddState<UYSJustAvoidState>();
 	AddState<UYSSkillState>();
 
-	
+	TransitionState(EYSInputStatesType::Idle);
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &UYSInputStateMachineComponent::ResetInputTags, InputProcessingTime, true);
 }
 
@@ -82,6 +82,10 @@ void UYSInputStateMachineComponent::TransitionState(EYSInputStatesType NewInputS
 		}
 
 		CurrentInputState = *NextState;
+	}
+	else
+	{
+		CurrentInputState = *InputStates.Find(NewInputState);
 	}
 }
 

@@ -4,8 +4,10 @@
 #include "Character/YSCharacterPlayer.h"
 
 #include "EnhancedInputSubsystems.h"
+#include "YSAbilitySystemComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "General/YSGameplayTags.h"
 #include "Input/YSEnhancedInputComponent.h"
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
 
@@ -14,6 +16,10 @@ class UEnhancedInputLocalPlayerSubsystem;
 // Sets default values
 AYSCharacterPlayer::AYSCharacterPlayer()
 {
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationYaw = true;
+	bUseControllerRotationRoll = false;
+	
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	
@@ -62,10 +68,21 @@ void AYSCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		{
 			return;
 		}
-
+		
 		for (const FTaggedInputAction& InputAction : InputConfig->TaggedInputActions )
 		{
-			EnhancedInputComponent->BindActionByTag(InputConfig, InputAction.InputTag, ETriggerEvent::Triggered, this, &AYSCharacterPlayer::ProcessInput, InputAction.InputTag);
+			if ( InputAction.InputTag == YSTags::InputMove )
+			{
+				EnhancedInputComponent->BindActionByTag(InputConfig, InputAction.InputTag, ETriggerEvent::Triggered, this, &AYSCharacterPlayer::Move);
+			}
+			else if ( InputAction.InputTag == YSTags::InputLook )
+			{
+				EnhancedInputComponent->BindActionByTag(InputConfig, InputAction.InputTag, ETriggerEvent::Triggered, this, &AYSCharacterPlayer::Look);
+			}
+			else
+			{
+				EnhancedInputComponent->BindActionByTag(InputConfig, InputAction.InputTag, ETriggerEvent::Triggered, this, &AYSCharacterPlayer::ProcessInput, InputAction.InputTag);	
+			}
 		}
 	}
 }
@@ -119,5 +136,13 @@ void AYSCharacterPlayer::Move(const FInputActionValue& Value)
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
 	}
+}
+
+void AYSCharacterPlayer::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	AbilitySystemComponent->GiveAbilities();
 }
 

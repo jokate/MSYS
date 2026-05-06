@@ -40,6 +40,7 @@ public:
 	
 	void Look(const FInputActionValue& Value);
 	void Move(const FInputActionValue& Value);
+	virtual void PossessedBy(AController* NewController) override;
 
 protected : 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))

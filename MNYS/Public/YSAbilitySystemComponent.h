@@ -7,6 +7,7 @@
 #include "YSAbilitySystemComponent.generated.h"
 
 
+class UYSGameplayAbility;
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class MNYS_API UYSAbilitySystemComponent : public UAbilitySystemComponent
@@ -16,7 +17,9 @@ class MNYS_API UYSAbilitySystemComponent : public UAbilitySystemComponent
 public:
 	// Sets default values for this component's properties
 	UYSAbilitySystemComponent();
+	virtual void BeginPlay() override;
 	void ProcessAbilityByInputPass(const FGameplayTag& InputTag);
+	void GiveAbilities();
 protected:
 	virtual void OnGiveAbility(FGameplayAbilitySpec& AbilitySpec) override;
 	virtual void OnRemoveAbility(FGameplayAbilitySpec& AbilitySpec) override;
@@ -27,4 +30,7 @@ protected:
 public :
 	UPROPERTY()
 	TArray<FGameplayAbilitySpecHandle> AbilitySpecHandles;
+
+	UPROPERTY(EditDefaultsOnly)
+	TArray<TSubclassOf<UYSGameplayAbility>> AbilityClasses;
 };

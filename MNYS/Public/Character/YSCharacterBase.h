@@ -38,6 +38,9 @@ public :
 	UPROPERTY(BlueprintReadWrite, Category = "MotionWarping", EditDefaultsOnly )
 	TObjectPtr<UYSMotionWarpingComponent> MotionWarpingComponent;
 
-	UPROPERTY(BlueprintReadOnly, Category = "AbilitySystemComponent")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "AbilitySystemComponent")
 	TObjectPtr<UYSAbilitySystemComponent> AbilitySystemComponent;
+	
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Weapon")
+	TObjectPtr<USkeletalMeshComponent> WeaponMeshComponent;
 };

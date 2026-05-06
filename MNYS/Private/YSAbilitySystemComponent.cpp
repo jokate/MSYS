@@ -4,6 +4,7 @@
 #include "YSAbilitySystemComponent.h"
 
 #include "Ability/YSGameplayAbility.h"
+#include "General/YSGeneratedGameplayTags.h"
 
 
 // Sets default values for this component's properties
@@ -12,12 +13,33 @@ UYSAbilitySystemComponent::UYSAbilitySystemComponent()
 
 }
 
+void UYSAbilitySystemComponent::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
 void UYSAbilitySystemComponent::OnGiveAbility(FGameplayAbilitySpec& AbilitySpec)
 {
 	Super::OnGiveAbility(AbilitySpec);
 
 	// 어빌리티에 대한 등록이 이루어진 경우. 더해주고 빼준다. 차후 해당 데이터를 기반으로 해서 어빌리티를 추적하자.
 	AbilitySpecHandles.Emplace(AbilitySpec.Handle);
+}
+
+void UYSAbilitySystemComponent::GiveAbilities()
+{
+	for ( int32 i = 0; i < AbilityClasses.Num(); ++i )
+	{
+		TSubclassOf<UYSGameplayAbility> AbilityClass = AbilityClasses[i];
+		FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(AbilityClass);
+		
+		if ( i == 0 )
+		{
+			AbilitySpec.GetDynamicSpecSourceTags().AddTag(YSTags::IdleInputAttack);	
+		}
+		
+		GiveAbility(AbilitySpec);
+	}
 }
 
 void UYSAbilitySystemComponent::OnRemoveAbility(FGameplayAbilitySpec& AbilitySpec)
@@ -35,6 +57,9 @@ bool UYSAbilitySystemComponent::ProcessSkillActive(const FGameplayTag& InputTag)
 		if ( AbilitySpec == nullptr )
 			continue;
 
+        if ( AbilitySpec->IsActive() )
+        	continue;
+        
 		if ( AbilitySpec->GetDynamicSpecSourceTags().HasTagExact(InputTag))
 		{
 			TryActivateAbility(AbilitySpecHandle);
@@ -62,9 +87,9 @@ bool UYSAbilitySystemComponent::ProcessAlreadyActiveAbility(const FGameplayTag& 
 
 		// 여기서 이제 추가 처리
 		// -> 여기서 알아 처리. -> 여기서 추가 처리는 필요할 듯.
-		UYSGameplayAbility* TargetAbil = Cast<UYSGameplayAbility>(AbilitySpec->Ability);
+		UYSGameplayAbility* TargetAbil = Cast<UYSGameplayAbility>(AbilitySpec->GetPrimaryInstance());
 
-		if ( IsValid(TargetAbil) == false )
+		if ( IsValid(TargetAbil) == false || TargetAbil->IsActive() == false )
 			continue;
 
 		if (TargetAbil->TryTransition(InputTag))

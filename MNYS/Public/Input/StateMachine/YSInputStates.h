@@ -72,7 +72,7 @@ public :
 	UYSAttackState() : UYSInputStates()
 	{
 		StateName = TEXT("Attack");
-		State = EYSInputStatesType::Idle;
+		State = EYSInputStatesType::Attack;
 		TransitionRule.Add(EYSInputStatesType::Idle);
 		TransitionRule.Add(EYSInputStatesType::Dodge);
 	}

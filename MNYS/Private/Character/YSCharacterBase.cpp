@@ -16,6 +16,12 @@ AYSCharacterBase::AYSCharacterBase()
 	//SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComponent"));
 	AbilitySystemComponent = CreateDefaultSubobject<UYSAbilitySystemComponent>(TEXT("ASC"));
 	MotionWarpingComponent = CreateDefaultSubobject<UYSMotionWarpingComponent>(TEXT("MotionWarping"));
+	WeaponMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
+	if ( IsValid(WeaponMeshComponent) )
+	{
+		WeaponMeshComponent->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("Weapon"));
+	}
+	
 }
 
 // Called when the game starts or when spawned
