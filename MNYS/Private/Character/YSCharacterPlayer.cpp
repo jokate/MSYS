@@ -6,6 +6,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "YSAbilitySystemComponent.h"
 #include "Camera/CameraComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "General/YSGameplayTags.h"
 #include "Input/YSEnhancedInputComponent.h"
@@ -34,6 +35,9 @@ AYSCharacterPlayer::AYSCharacterPlayer()
 	FollowCamera->bUsePawnControlRotation = false;
 
 	InputStateMachineComponent = CreateDefaultSubobject<UYSInputStateMachineComponent>(TEXT("InputStateMachine"));
+
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
 	
 }
 

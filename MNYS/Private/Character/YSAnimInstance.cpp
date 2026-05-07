@@ -45,6 +45,8 @@ void UYSAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	bHasAcceleration = !Acceleration2D.IsNearlyZero();
 
 	Velocity = TempCharMove->Velocity;
+	LocalVelocity = Character->GetActorTransform().InverseTransformVectorNoScale(Velocity);
+ 
 	Velocity2D = Velocity * Multiplicative;
 	bHasVelocity = !Velocity.IsNearlyZero();
 	bIsFalling = TempCharMove->IsFalling();

@@ -36,6 +36,9 @@ public :
 
 	UPROPERTY(BlueprintReadOnly)
 	FVector Velocity;
+	
+	UPROPERTY(BlueprintReadOnly)
+	FVector LocalVelocity;
 
 	UPROPERTY(BlueprintReadOnly)
 	FVector CurrentWorldLocation;
