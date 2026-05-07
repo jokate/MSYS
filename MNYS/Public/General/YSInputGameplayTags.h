@@ -8,7 +8,7 @@
 /**
  * 
  */
-namespace YSTags
+namespace YSInputTags
 {
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputMove);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputLook);

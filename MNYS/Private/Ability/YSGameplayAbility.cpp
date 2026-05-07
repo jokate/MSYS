@@ -4,12 +4,34 @@
 #include "Ability/YSGameplayAbility.h"
 
 #include "AbilitySystemComponent.h"
+#include "YSAbilitySystemComponent.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Character/YSCharacterPlayer.h"
+#include "General/YSGameplayTag.h"
 
 UYSGameplayAbility::UYSGameplayAbility()
 {
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
+}
+
+void UYSGameplayAbility::OnGameplayTagChanged(const FGameplayTag& Tag, bool bInIsActive)
+{
+	if ( Tag == YSTags::AcceptAbilityInput )
+	{
+		bIsInputAcceptable = bInIsActive;
+
+		// 끝났다면?
+		if ( bIsInputAcceptable == false && PendingTransition != nullptr ) 
+		{
+			UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
+
+			if ( IsValid( ASC ) == false )
+				return;
+			// 어빌리티 연쇄 트리거.
+			bIsChainedAbility = true;
+			ASC->TryActivateAbilityByClass(PendingTransition->AbilityClass);	
+		}
+	}
 }
 
 void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
@@ -17,6 +39,13 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
                                          const FGameplayEventData* TriggerEventData)
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+	
+	UYSAbilitySystemComponent* YSASC = Cast<UYSAbilitySystemComponent>(GetAbilitySystemComponentFromActorInfo());
+
+	if ( IsValid(YSASC) )
+	{
+		YSASC->OnGameplayTagStateChanged.AddDynamic(this, &UYSGameplayAbility::OnGameplayTagChanged);
+	}
 	
 	PlayMontage();
 
@@ -44,23 +73,50 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 	{
 		AYSCharacterPlayer* Character = Cast<AYSCharacterPlayer>(OwnerActor);
 
-		if ( IsValid(Character) )
+		if ( IsValid(Character) && bIsChainedAbility == false  )
 		{
 			Character->TransitionStateMachine(EYSInputStatesType::Idle);
 		}
 	}
+
+	UYSAbilitySystemComponent* YSASC = Cast<UYSAbilitySystemComponent>(GetAbilitySystemComponentFromActorInfo());
+
+	if ( IsValid(YSASC) )
+	{
+		YSASC->OnGameplayTagStateChanged.RemoveDynamic(this, &UYSGameplayAbility::OnGameplayTagChanged);
+	}
+
+	PendingTransition = nullptr;
+	bIsInputAcceptable = false;
 }
 
-bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag) const
+bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag) 
 {
+	if ( PendingTransition != nullptr )
+	{
+		return false;
+	}
+
+	if (bIsInputAcceptable == false)
+		return false;
+	
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 
 	for ( const FYSComboTransition& Transition : TransitionsByInput )
 	{
 		if ( Transition.IsTransitionable(InputGameplayTag))
 		{
-			// 어빌리티 연쇄 트리거.
-			ASC->TryActivateAbilityByClass(Transition.AbilityClass);
+			if ( Transition.bNeedPending )
+			{
+				PendingTransition = &Transition;
+			}
+			else
+			{
+				// 어빌리티 연쇄 트리거.
+				bIsChainedAbility = true;
+				ASC->TryActivateAbilityByClass(Transition.AbilityClass);
+			}
+			
 			return true;	
 		}
 	}

@@ -9,6 +9,7 @@
 #include "YSInputStateMachineComponent.generated.h"
 
 
+class UYSAbilitySystemComponent;
 struct FYSComboSequence;
 class UYSInputStates;
 
@@ -28,6 +29,7 @@ protected:
 	{
 		InputTags.Empty();
 	}
+	
 	// Called when the game starts
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -36,6 +38,9 @@ protected:
 	void AddState();
 
 	FGameplayTag FindBestCombo(const FGameplayTag& Tag);
+
+	UFUNCTION()
+	void OnTagUpdated(const FGameplayTag& Tag, bool bActive);
 
 public :
 	
@@ -58,4 +63,7 @@ protected:
 
 private :
 	TArray<const FYSComboSequence*> AllComboSequence;
+
+	bool bIsInputBlocked;
+	TWeakObjectPtr<UYSAbilitySystemComponent> AbilitySystemComponent;
 };

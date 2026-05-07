@@ -19,9 +19,11 @@ class MNYS_API UYSGameplayAbility : public UGameplayAbility
 
 public :
 	UYSGameplayAbility();
+	UFUNCTION()
+	void OnGameplayTagChanged(const FGameplayTag& Tag, bool bInIsActive);
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
-	bool TryTransition(const FGameplayTag& InputGameplayTag) const;
+	bool TryTransition(const FGameplayTag& InputGameplayTag);
 	
 protected :
 	UFUNCTION()
@@ -41,4 +43,9 @@ public :
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input Related", meta = (DisplayName = "바뀔 State"))
 	EYSInputStatesType ChangeInputStateType;
+
+private :
+	const FYSComboTransition* PendingTransition;
+	bool bIsInputAcceptable = false;
+	bool bIsChainedAbility = false;
 };

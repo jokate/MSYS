@@ -9,6 +9,8 @@
 
 class UYSGameplayAbility;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnGameplayTagStateChanged, const FGameplayTag&, Tag, bool, IsActive);
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class MNYS_API UYSAbilitySystemComponent : public UAbilitySystemComponent
 {
@@ -17,9 +19,13 @@ class MNYS_API UYSAbilitySystemComponent : public UAbilitySystemComponent
 public:
 	// Sets default values for this component's properties
 	UYSAbilitySystemComponent();
+	static UYSAbilitySystemComponent* Get(AActor* Owner);
 	virtual void BeginPlay() override;
 	void ProcessAbilityByInputPass(const FGameplayTag& InputTag);
 	void GiveAbilities();
+
+	virtual void OnTagUpdated(const FGameplayTag& Tag, bool TagExists) override;
+	
 protected:
 	virtual void OnGiveAbility(FGameplayAbilitySpec& AbilitySpec) override;
 	virtual void OnRemoveAbility(FGameplayAbilitySpec& AbilitySpec) override;
@@ -33,4 +39,6 @@ public :
 
 	UPROPERTY(EditDefaultsOnly)
 	TArray<TSubclassOf<UYSGameplayAbility>> AbilityClasses;
+
+	FOnGameplayTagStateChanged OnGameplayTagStateChanged;
 };

@@ -3,6 +3,9 @@
 
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
+#include "YSAbilitySystemComponent.h"
+#include "General/YSGameplayTag.h"
 #include "Input/Combo/YSComboData.h"
 #include "Input/StateMachine/YSInputStates.h"
 
@@ -35,6 +38,12 @@ void UYSInputStateMachineComponent::BeginPlay()
 
 	TransitionState(EYSInputStatesType::Idle);
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &UYSInputStateMachineComponent::ResetInputTags, InputProcessingTime, true);
+	
+	AbilitySystemComponent = UYSAbilitySystemComponent::Get(GetOwner());
+	if (AbilitySystemComponent.IsValid() )
+	{
+		AbilitySystemComponent->OnGameplayTagStateChanged.AddUniqueDynamic(this, &UYSInputStateMachineComponent::OnTagUpdated);
+	}
 }
 
 void UYSInputStateMachineComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -60,8 +69,19 @@ FGameplayTag UYSInputStateMachineComponent::FindBestCombo(const FGameplayTag& Ta
 	return BestTag;
 }
 
+void UYSInputStateMachineComponent::OnTagUpdated(const FGameplayTag& Tag, bool bActive)
+{
+	if ( Tag == YSTags::BlockInput )
+	{
+		bIsInputBlocked = bActive;
+	}
+}
+
 void UYSInputStateMachineComponent::AcceptInput(const FGameplayTag& Tag)
 {
+	if ( bIsInputBlocked )
+		return;
+	
 	FGameplayTag RetTag = FindBestCombo(Tag);
 	
 	if ( IsValid(CurrentInputState))

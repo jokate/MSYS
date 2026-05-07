@@ -3,6 +3,7 @@
 
 #include "YSAbilitySystemComponent.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
 #include "Ability/YSGameplayAbility.h"
 #include "General/YSGeneratedGameplayTags.h"
 
@@ -11,6 +12,16 @@
 UYSAbilitySystemComponent::UYSAbilitySystemComponent()
 {
 
+}
+
+UYSAbilitySystemComponent* UYSAbilitySystemComponent::Get(AActor* Owner)
+{
+	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Owner);
+
+	if ( IsValid(ASC) == false )
+		return nullptr;
+
+	return Cast<UYSAbilitySystemComponent>(ASC);
 }
 
 void UYSAbilitySystemComponent::BeginPlay()
@@ -41,6 +52,17 @@ void UYSAbilitySystemComponent::GiveAbilities()
 		GiveAbility(AbilitySpec);
 	}
 }
+
+void UYSAbilitySystemComponent::OnTagUpdated(const FGameplayTag& Tag, bool TagExists)
+{
+	Super::OnTagUpdated(Tag, TagExists);
+
+	if ( OnGameplayTagStateChanged.IsBound() )
+	{
+		OnGameplayTagStateChanged.Broadcast(Tag, TagExists);
+	}
+}
+
 
 void UYSAbilitySystemComponent::OnRemoveAbility(FGameplayAbilitySpec& AbilitySpec)
 {

@@ -8,7 +8,8 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "General/YSGameplayTags.h"
+#include "General/YSGameplayTag.h"
+#include "General/YSInputGameplayTags.h"
 #include "Input/YSEnhancedInputComponent.h"
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
 
@@ -40,6 +41,7 @@ AYSCharacterPlayer::AYSCharacterPlayer()
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
 	
 }
+
 
 // Called when the game starts or when spawned
 void AYSCharacterPlayer::BeginPlay()
@@ -75,11 +77,11 @@ void AYSCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		
 		for (const FTaggedInputAction& InputAction : InputConfig->TaggedInputActions )
 		{
-			if ( InputAction.InputTag == YSTags::InputMove )
+			if ( InputAction.InputTag == YSInputTags::InputMove )
 			{
 				EnhancedInputComponent->BindActionByTag(InputConfig, InputAction.InputTag, ETriggerEvent::Triggered, this, &AYSCharacterPlayer::Move);
 			}
-			else if ( InputAction.InputTag == YSTags::InputLook )
+			else if ( InputAction.InputTag == YSInputTags::InputLook )
 			{
 				EnhancedInputComponent->BindActionByTag(InputConfig, InputAction.InputTag, ETriggerEvent::Triggered, this, &AYSCharacterPlayer::Look);
 			}

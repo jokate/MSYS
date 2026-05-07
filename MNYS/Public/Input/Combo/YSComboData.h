@@ -23,6 +23,10 @@ struct FYSComboTransition
 	
 	UPROPERTY(EditDefaultsOnly)
 	FGameplayTagContainer TransitionTags;
+
+	// 즉시 반응할거냐 아니면 윈도우에 의한 펜딩 처리 ( 콤보죠? )
+	UPROPERTY(EditDefaultsOnly)
+	bool bNeedPending = false;
 	
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UGameplayAbility> AbilityClass;

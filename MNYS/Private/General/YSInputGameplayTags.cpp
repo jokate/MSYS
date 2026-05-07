@@ -1,9 +1,9 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
-#include "General/YSGameplayTags.h"
+#include "General/YSInputGameplayTags.h"
 
 
-namespace YSTags
+namespace YSInputTags
 {
 	UE_DEFINE_GAMEPLAY_TAG(InputMove, "Input.Move");
 	UE_DEFINE_GAMEPLAY_TAG(InputLook, "Input.Look");
