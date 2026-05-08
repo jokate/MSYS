@@ -12,12 +12,14 @@ class MNYS_API UYSMotionWarpingComponent : public UMotionWarpingComponent
 {
 	GENERATED_BODY()
 
+public :
+	static UYSMotionWarpingComponent* GetMotionWarpingComponent(AActor* InActor);
+	
 protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
 
-public:
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
-	                           FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void SetMotionWarp(const FName InName, EMotionWarpType InMotionWarpType, const float MotionWarpValue = 0.0f);
+
+	virtual void ReleaseMotionWarp(const FName InName);
+
+	virtual void SetMotionWarpToCursorDirection( const FName TargetName, EMotionWarpType InMotionWarpType, const FVector& TargetLocation, const FRotator& TargetRotation );
 };

@@ -34,3 +34,12 @@ enum class EVelocityDirection : uint8
 	FrontwardRight,
 	BackwardRight
 };
+
+UENUM(BlueprintType)
+enum class EMotionWarpType : uint8
+{
+	TranslationAndRotation,
+	TranslationOnly,
+	RotationOnly,
+	NoneMotionWarp,
+};

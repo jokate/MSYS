@@ -3,23 +3,43 @@
 
 #include "MotionWarp/UYSMotionWarpingComponent.h"
 
+#include "General/YSEnum.h"
 
-// Called when the game starts
-void UYSMotionWarpingComponent::BeginPlay()
+
+
+UYSMotionWarpingComponent* UYSMotionWarpingComponent::GetMotionWarpingComponent(AActor* InActor)
 {
-	Super::BeginPlay();
+	UYSMotionWarpingComponent* Component = InActor->FindComponentByClass<UYSMotionWarpingComponent>();
+	return Component;
+}
 
-	// ...
+void UYSMotionWarpingComponent::SetMotionWarp(const FName InName, EMotionWarpType InMotionWarpType,
+                                              const float MotionWarpValue)
+{
+	// 정책 결정후에 정하기로..
 	
 }
 
-
-// Called every frame
-void UYSMotionWarpingComponent::TickComponent(float DeltaTime, ELevelTick TickType,
-                                               FActorComponentTickFunction* ThisTickFunction)
+void UYSMotionWarpingComponent::ReleaseMotionWarp(const FName InName)
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	RemoveWarpTarget(InName);
+}
 
-	// ...
+void UYSMotionWarpingComponent::SetMotionWarpToCursorDirection(const FName TargetName, EMotionWarpType InMotionWarpType,
+	const FVector& TargetLocation, const FRotator& TargetRotation)
+{
+	switch (InMotionWarpType)
+    {
+    case EMotionWarpType::TranslationAndRotation:
+    	AddOrUpdateWarpTargetFromLocationAndRotation(TargetName,  TargetLocation, TargetRotation);
+    	break;
+    case EMotionWarpType::RotationOnly:
+    	AddOrUpdateWarpTargetFromLocationAndRotation(TargetName,FVector::ZeroVector,TargetRotation);
+    	break;
+    case EMotionWarpType::TranslationOnly:
+    	AddOrUpdateWarpTargetFromLocationAndRotation(TargetName,  TargetLocation,FRotator::ZeroRotator);
+    	break;
+	default :
+    }
 }
 
