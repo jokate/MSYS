@@ -19,7 +19,7 @@ class MNYS_API AYSCharacterBase : public ACharacter, public IAbilitySystemInterf
 
 public:
 	// Sets default values for this character's properties
-	AYSCharacterBase();
+	AYSCharacterBase(const FObjectInitializer& ObjectInitializer);
 
 protected:
 	// Called when the game starts or when spawned

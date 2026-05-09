@@ -44,6 +44,9 @@ public :
 	UPROPERTY(EditDefaultsOnly, Category = "Input Related", meta = (DisplayName = "바뀔 State"))
 	EYSInputStatesType ChangeInputStateType;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Movement", meta = (DisplayName = "어빌리티 중 이동 차단"))
+	bool bBlockMovementDuringAbility = false;
+
 private :
 	const FYSComboTransition* PendingTransition;
 	bool bIsInputAcceptable = false;

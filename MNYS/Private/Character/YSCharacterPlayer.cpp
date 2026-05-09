@@ -6,7 +6,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "YSAbilitySystemComponent.h"
 #include "Camera/CameraComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
+#include "Character/Components/YSCharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "General/YSGameplayTag.h"
 #include "General/YSInputGameplayTags.h"
@@ -16,7 +16,8 @@
 
 class UEnhancedInputLocalPlayerSubsystem;
 // Sets default values
-AYSCharacterPlayer::AYSCharacterPlayer()
+AYSCharacterPlayer::AYSCharacterPlayer(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UYSCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = true;
@@ -80,6 +81,7 @@ void AYSCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 			if ( InputAction.InputTag == YSInputTags::InputMove )
 			{
 				EnhancedInputComponent->BindActionByTag(InputConfig, InputAction.InputTag, ETriggerEvent::Triggered, this, &AYSCharacterPlayer::Move);
+				EnhancedInputComponent->BindActionByTag(InputConfig, InputAction.InputTag, ETriggerEvent::Completed, this, &AYSCharacterPlayer::OnMovementComplete);
 			}
 			else if ( InputAction.InputTag == YSInputTags::InputLook )
 			{
@@ -126,6 +128,8 @@ void AYSCharacterPlayer::Move(const FInputActionValue& Value)
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
+	ProcessMovementInput(MovementVector.GetSafeNormal());
+	
 	if (Controller != nullptr)
 	{
 		// find out which way is forward
@@ -137,10 +141,23 @@ void AYSCharacterPlayer::Move(const FInputActionValue& Value)
 	
 		// get right vector 
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
+			
 		// add movement 
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
+	}
+}
+
+void AYSCharacterPlayer::OnMovementComplete()
+{
+	LastDirectionTags.Empty();
+}
+
+void AYSCharacterPlayer::SetMovementBlocked(bool bBlocked)
+{
+	if (UYSCharacterMovementComponent* YSMovement = Cast<UYSCharacterMovementComponent>(GetCharacterMovement()))
+	{
+		YSMovement->SetMovementBlocked(bBlocked);
 	}
 }
 
@@ -152,3 +169,21 @@ void AYSCharacterPlayer::PossessedBy(AController* NewController)
 	AbilitySystemComponent->GiveAbilities();
 }
 
+void AYSCharacterPlayer::ProcessMovementInput(const FVector2D& InputDir)
+{
+	TSet<FGameplayTag> NewTags;
+	
+	if (InputDir.Y > 0.f)  NewTags.Add(YSInputTags::InputUp);
+	if (InputDir.Y < 0.f)  NewTags.Add(YSInputTags::InputDown);
+	if (InputDir.X > 0.f)  NewTags.Add(YSInputTags::InputRight);
+	if (InputDir.X < 0.f)  NewTags.Add(YSInputTags::InputLeft);
+	
+	// 새로 들어온 태그만 AcceptInput 호출
+	for (const FGameplayTag& Tag : NewTags)
+	{
+		if (!LastDirectionTags.Contains(Tag))
+			InputStateMachineComponent->AcceptInput(Tag);
+	}
+	
+	LastDirectionTags = NewTags;
+}

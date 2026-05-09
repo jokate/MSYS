@@ -88,6 +88,7 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 
 	PendingTransition = nullptr;
 	bIsInputAcceptable = false;
+	bIsChainedAbility = false;
 }
 
 bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag) 

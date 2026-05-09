@@ -7,6 +7,8 @@
 #include "UYSMotionWarpingComponent.generated.h"
 
 
+enum class EMotionWarpType : uint8;
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class MNYS_API UYSMotionWarpingComponent : public UMotionWarpingComponent
 {

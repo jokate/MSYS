@@ -24,10 +24,7 @@ void UYSInputStates::ProcessInput(const FGameplayTag& InputGameplayTag)
 	// GameplayTag로 변환
 	FGameplayTag FinalizedTag =  FGameplayTag::RequestGameplayTag(FName(*StateTagStr));
 
-	if ( FinalizedTag == YSTags::IdleInputAttack )
-	{
-		UE_LOG(LogTemp, Log, TEXT("FinalizedInput : %s"), *StateTagStr);
-	}
+	UE_LOG(LogTemp, Log, TEXT("FinalizedInput : %s"), *StateTagStr);
 	
 	ASC->ProcessAbilityByInputPass(FinalizedTag);
 }

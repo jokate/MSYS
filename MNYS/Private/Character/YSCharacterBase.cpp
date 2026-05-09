@@ -3,12 +3,14 @@
 
 #include "MNYS/Public/Character/YSCharacterBase.h"
 #include "YSAbilitySystemComponent.h"
+#include "Character/Components/YSCharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "MotionWarp/UYSMotionWarpingComponent.h"
 
 
 // Sets default values
-AYSCharacterBase::AYSCharacterBase()
+AYSCharacterBase::AYSCharacterBase(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UYSCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;

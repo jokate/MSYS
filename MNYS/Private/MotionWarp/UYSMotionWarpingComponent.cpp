@@ -40,6 +40,7 @@ void UYSMotionWarpingComponent::SetMotionWarpToCursorDirection(const FName Targe
     	AddOrUpdateWarpTargetFromLocationAndRotation(TargetName,  TargetLocation,FRotator::ZeroRotator);
     	break;
 	default :
+		break;
     }
 }
 

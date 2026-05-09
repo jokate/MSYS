@@ -20,7 +20,7 @@ class MNYS_API AYSCharacterPlayer : public AYSCharacterBase
 
 public:
 	// Sets default values for this character's properties
-	AYSCharacterPlayer();
+	AYSCharacterPlayer(const FObjectInitializer& ObjectInitializer);
 
 protected:
 	// Called when the game starts or when spawned
@@ -40,7 +40,12 @@ public:
 	
 	void Look(const FInputActionValue& Value);
 	void Move(const FInputActionValue& Value);
+	void OnMovementComplete();
 	virtual void PossessedBy(AController* NewController) override;
+	void SetMovementBlocked(bool bBlocked);
+
+private : 
+	void ProcessMovementInput(const FVector2D& InputDir);
 
 protected : 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -57,5 +62,9 @@ protected :
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = InputControl)
 	TObjectPtr<UInputMappingContext> PlayerInputMappingContext;
+
+private :
+	UPROPERTY()
+	TSet<FGameplayTag> LastDirectionTags;
 };
 
