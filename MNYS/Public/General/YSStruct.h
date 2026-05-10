@@ -22,7 +22,7 @@ public :
 	TSubclassOf<UYSGameplayAbility> AbilityClass;
 	
 	UPROPERTY(EditDefaultsOnly)
-	FGameplayTag InputTag;        // 인풋 바인딩
+	FGameplayTagContainer InputTag;        // 인풋 바인딩
 
 	UPROPERTY(EditDefaultsOnly)
 	int32 Level = 1;

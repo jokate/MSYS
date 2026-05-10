@@ -42,7 +42,11 @@ void UYSCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Ti
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// ...
-	FTransform OriginalTransform = UpdatedComponent->GetComponentTransform();
-	LocalSpaceVelocity = OriginalTransform.InverseTransformPosition(Velocity);
+	LocalSpaceVelocity = FVector(0, 0, 0);
+	if ( Velocity.IsNearlyZero() == false )
+	{
+		FTransform OriginalTransform = UpdatedComponent->GetComponentTransform();
+		LocalSpaceVelocity = OriginalTransform.InverseTransformVectorNoScale(Velocity);	
+	}
 }
 

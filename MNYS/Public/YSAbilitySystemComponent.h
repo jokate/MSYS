@@ -41,8 +41,5 @@ public :
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Ability")
 	TArray<FYSGrantedAbilityData> GrantedAbilities;
 
-	UPROPERTY(EditDefaultsOnly)
-	TMap<TSubclassOf<UYSGameplayAbility>, FGameplayTag> AbilityTags;
-
 	FOnGameplayTagStateChanged OnGameplayTagStateChanged;
 };

@@ -44,9 +44,9 @@ void UYSAbilitySystemComponent::GiveInitAbility()
 	{
 		FGameplayAbilitySpec AbilitySpec(GrantedAbilityData.AbilityClass, GrantedAbilityData.Level);
 
-		if ( GrantedAbilityData.InputTag.IsValid())
+		if ( GrantedAbilityData.InputTag.IsEmpty() == false )
 		{
-			AbilitySpec.GetDynamicSpecSourceTags().AddTag(GrantedAbilityData.InputTag);
+			AbilitySpec.GetDynamicSpecSourceTags().AppendTags(GrantedAbilityData.InputTag);
 		}
 
 		GiveAbility(AbilitySpec);
