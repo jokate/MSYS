@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Ability/YSGameplayAbility.h"
+#include "General/YSEnum.h"
 #include "YSMontageSelector.generated.h"
 
 class UYSGameplayAbility;
@@ -41,11 +43,23 @@ struct MNYS_API FYSMontageSelector
 
 	virtual ~FYSMontageSelector() = default;
 	virtual UAnimMontage* SelectMontage(const UYSGameplayAbility* Ability) const { return nullptr; }
+
+	virtual void SetMotionWarp(const UYSGameplayAbility* Ability, bool bInSet) const;
+	
+public :
+	// 차후 모션워핑 정책이 달라질 수 있음, 달라지면 이것도 InstancedStruct로 개설하도록 합니다
+	UPROPERTY(EditAnywhere, meta = (DisplayName = "모션 워핑 사용"))
+	bool bUseMotionWarping = false;
+
+	UPROPERTY(EditAnywhere, meta = (DisplayName = "모션 워핑 타입", EditCondition = bUseMotionWarping, EditConditionHides))
+	EMotionWarpType MotionWarpType = EMotionWarpType::None;
+
+	UPROPERTY(EditAnywhere, meta = (DisplayName = "모션 워핑 타겟 ID", EditCondition = bUseMotionWarping, EditConditionHides))
+	FName MotionWarpName = NAME_None;
 };
 
 
 // ─── 단일 몽타주 ─────────────────────────────────────────────────────────────
-
 USTRUCT(BlueprintType, DisplayName = "단일 몽타주 선택")
 struct MNYS_API FYSMontageSelector_Default : public FYSMontageSelector
 {

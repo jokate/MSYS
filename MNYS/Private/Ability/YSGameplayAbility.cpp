@@ -50,7 +50,7 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 		YSASC->OnGameplayTagStateChanged.AddDynamic(this, &UYSGameplayAbility::OnGameplayTagChanged);
 	}
 	
-	PlayMontage();
+	_SetupPlayMontage();
 
 	AActor* OwnerActor = GetOwningActorFromActorInfo();
 
@@ -83,13 +83,15 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 			Character->TransitionStateMachine(EYSInputStatesType::Idle);
 		}
 	}
-
+	
 	UYSAbilitySystemComponent* YSASC = Cast<UYSAbilitySystemComponent>(GetAbilitySystemComponentFromActorInfo());
 
 	if ( IsValid(YSASC) )
 	{
 		YSASC->OnGameplayTagStateChanged.RemoveDynamic(this, &UYSGameplayAbility::OnGameplayTagChanged);
 	}
+
+	_ReleaseMotionWarp();
 
 	RuntimeData.ResetData();
 }
@@ -125,7 +127,7 @@ bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag)
 	return false;
 }
 
-void UYSGameplayAbility::PlayMontage()
+void UYSGameplayAbility::_SetupPlayMontage()
 {
 	const FYSMontageSelector* CurMontageSelector = MontageSelector.GetPtr<FYSMontageSelector>();
 
@@ -149,6 +151,20 @@ void UYSGameplayAbility::PlayMontage()
 			PlayMontageTask->ReadyForActivation();	
 		}
 	}
+
+	CurMontageSelector->SetMotionWarp(this, true);
+}
+
+void UYSGameplayAbility::_ReleaseMotionWarp() const
+{
+	const FYSMontageSelector* CurMontageSelector = MontageSelector.GetPtr<FYSMontageSelector>();
+
+	if ( CurMontageSelector == nullptr )
+	{
+		return;
+	};
+
+	CurMontageSelector->SetMotionWarp(this, false);
 }
 
 void UYSGameplayAbility::_ProcessEvent(FGameplayEventData Payload)

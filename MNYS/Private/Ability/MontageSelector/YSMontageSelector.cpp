@@ -3,6 +3,25 @@
 #include "Ability/MontageSelector/YSMontageSelector.h"
 #include "Ability/YSGameplayAbility.h"
 #include "Character/Components/YSCharacterMovementComponent.h"
+#include "MotionWarp/UYSMotionWarpingComponent.h"
+
+void FYSMontageSelector::SetMotionWarp(const UYSGameplayAbility* Ability, bool bInSet)
+{
+	if ( !IsValid(Ability) == false )
+		return;
+
+	AActor* AvatarActor = Ability->GetAvatarActorFromActorInfo();
+
+	if ( IsValid(AvatarActor) == false )
+		return;
+
+	UYSMotionWarpingComponent* MotionWarpingComponent = UYSMotionWarpingComponent::GetMotionWarpingComponent(AvatarActor);
+
+	if ( IsValid(MotionWarpingComponent) == false )
+		return;
+
+	bInSet ? MotionWarpingComponent->SetMotionWarp(MotionWarpName, MotionWarpType) : MotionWarpingComponent->ReleaseMotionWarp(MotionWarpName);
+}
 
 UAnimMontage* FYSMontageSelector_ByDirection::SelectMontage(const UYSGameplayAbility* Ability) const
 {
@@ -21,8 +40,8 @@ UAnimMontage* FYSMontageSelector_ByDirection::SelectMontage(const UYSGameplayAbi
 	if (!IsValid(Ability))
 		return GetMontage(EYSMoveDirection::Forward);
 
-	AActor* Avatar = Ability->GetAvatarActorFromActorInfo();
-	UYSCharacterMovementComponent* Movement = UYSCharacterMovementComponent::Get(Avatar);
+	AActor* AvatarActor = Ability->GetAvatarActorFromActorInfo();
+	UYSCharacterMovementComponent* Movement = UYSCharacterMovementComponent::Get(AvatarActor);
 
 	if (!IsValid(Movement))
 		return GetMontage(EYSMoveDirection::Forward);

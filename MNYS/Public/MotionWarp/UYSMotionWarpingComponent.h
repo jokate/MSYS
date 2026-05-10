@@ -17,8 +17,6 @@ class MNYS_API UYSMotionWarpingComponent : public UMotionWarpingComponent
 public :
 	static UYSMotionWarpingComponent* GetMotionWarpingComponent(AActor* InActor);
 	
-protected:
-
 	virtual void SetMotionWarp(const FName InName, EMotionWarpType InMotionWarpType, const float MotionWarpValue = 0.0f);
 
 	virtual void ReleaseMotionWarp(const FName InName);

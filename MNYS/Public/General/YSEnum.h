@@ -38,8 +38,8 @@ enum class EVelocityDirection : uint8
 UENUM(BlueprintType)
 enum class EMotionWarpType : uint8
 {
-	TranslationAndRotation,
-	TranslationOnly,
-	RotationOnly,
-	NoneMotionWarp,
+	None,
+	TranslationAndRotation UMETA(DisplayName = "이동 + 회전"),
+	TranslationOnly UMETA(DisplayName = "이동만"),
+	RotationOnly UMETA(DisplayName = "회전만"),
 };

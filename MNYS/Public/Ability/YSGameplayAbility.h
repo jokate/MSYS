@@ -72,36 +72,41 @@ public:
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 	bool TryTransition(const FGameplayTag& InputGameplayTag);
 
-
 protected:
 	UFUNCTION()
 	void OnMontagePlayed();
 
 	UFUNCTION()
 	void OnMontageInterrupted();
-
-	void PlayMontage();
+	
 private :
 	UFUNCTION()
 	void _ProcessEvent(FGameplayEventData Payload);
 	
 	void _PrepareForAbilityEvent();
+
+	void _SetupPlayMontage();
+
+	void _ReleaseMotionWarp() const;
 public:
-	UPROPERTY(EditDefaultsOnly, Category = "Montage To Play", meta = (DisplayName = "재생할 몽타주 정보", BaseStruct = "/Script/MNYS.YSMontageSelector", ExcludeBaseStruct))
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Montage To Play", meta = (DisplayName = "재생할 몽타주 정보", BaseStruct = "/Script/MNYS.YSMontageSelector", ExcludeBaseStruct))
 	FInstancedStruct MontageSelector;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Input Related", meta = (DisplayName = "인풋에 따른 반응"))
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Input Related", meta = (DisplayName = "인풋에 따른 반응"))
 	TArray<FYSComboTransition> TransitionsByInput;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Input Related", meta = (DisplayName = "바뀔 State"))
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Input Related", meta = (DisplayName = "바뀔 State"))
 	EYSInputStatesType ChangeInputStateType;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Movement", meta = (DisplayName = "어빌리티 중 이동 차단"))
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Movement", meta = (DisplayName = "어빌리티 중 이동 차단"))
 	bool bBlockMovementDuringAbility = false;
 
 	// 어빌리티 에디터 세팅
-	UPROPERTY(EditDefaultsOnly, Category = "Event Actions")
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Event Actions")
 	TMap<FGameplayTag, FYSEventPayload> EventActionMap;
+
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Motion Warping")
+	
 
 private:
 	FYSGameplayAbility_RuntimeData RuntimeData;
