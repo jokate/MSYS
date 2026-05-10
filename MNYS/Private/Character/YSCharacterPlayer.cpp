@@ -126,6 +126,15 @@ void AYSCharacterPlayer::Look(const FInputActionValue& Value)
 void AYSCharacterPlayer::Move(const FInputActionValue& Value)
 {
 	// input is a Vector2D
+	if ( IsValid( GetYSCharacterMovement() ) == false )
+	{
+		return;
+	}
+
+	// 입력에 의한 움직임은 제어
+	if ( GetYSCharacterMovement()->IsMovementBlocked() )
+		return;
+	
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
 	ProcessMovementInput(MovementVector.GetSafeNormal());

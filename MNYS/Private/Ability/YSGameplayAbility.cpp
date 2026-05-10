@@ -6,6 +6,8 @@
 #include "AbilitySystemComponent.h"
 #include "YSAbilitySystemComponent.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
+#include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
+#include "Ability/EventAction/YSAbilityEventAction.h"
 #include "Character/YSCharacterPlayer.h"
 #include "General/YSGameplayTag.h"
 
@@ -18,18 +20,19 @@ void UYSGameplayAbility::OnGameplayTagChanged(const FGameplayTag& Tag, bool bInI
 {
 	if ( Tag == YSTags::AcceptAbilityInput )
 	{
-		bIsInputAcceptable = bInIsActive;
+		RuntimeData.SetInputAcceptable(bInIsActive);
 
+		const FYSComboTransition* Transition = RuntimeData.GetPendingTransition();
 		// 끝났다면?
-		if ( bIsInputAcceptable == false && PendingTransition != nullptr ) 
+		if ( bInIsActive == false && Transition != nullptr ) 
 		{
 			UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 
 			if ( IsValid( ASC ) == false )
 				return;
 			// 어빌리티 연쇄 트리거.
-			bIsChainedAbility = true;
-			ASC->TryActivateAbilityByClass(PendingTransition->AbilityClass);	
+			RuntimeData.SetChainedAbility(true);
+			ASC->TryActivateAbilityByClass(Transition->AbilityClass);	
 		}
 	}
 }
@@ -60,6 +63,8 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 			Character->TransitionStateMachine(ChangeInputStateType);
 		}
 	}
+
+	_PrepareForAbilityEvent();
 }
 
 void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
@@ -73,7 +78,7 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 	{
 		AYSCharacterPlayer* Character = Cast<AYSCharacterPlayer>(OwnerActor);
 
-		if ( IsValid(Character) && bIsChainedAbility == false  )
+		if ( IsValid(Character) && RuntimeData.IsChainedAbility() == false  )
 		{
 			Character->TransitionStateMachine(EYSInputStatesType::Idle);
 		}
@@ -86,20 +91,15 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 		YSASC->OnGameplayTagStateChanged.RemoveDynamic(this, &UYSGameplayAbility::OnGameplayTagChanged);
 	}
 
-	PendingTransition = nullptr;
-	bIsInputAcceptable = false;
-	bIsChainedAbility = false;
+	RuntimeData.ResetData();
 }
 
 bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag) 
 {
-	if ( PendingTransition != nullptr )
+	if ( RuntimeData.IsPendingTransition() || RuntimeData.IsInputAcceptable() == false ) 
 	{
 		return false;
 	}
-
-	if (bIsInputAcceptable == false)
-		return false;
 	
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 
@@ -109,12 +109,12 @@ bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag)
 		{
 			if ( Transition.bNeedPending )
 			{
-				PendingTransition = &Transition;
+				RuntimeData.SetPendingTransition(&Transition);
 			}
 			else
 			{
 				// 어빌리티 연쇄 트리거.
-				bIsChainedAbility = true;
+				RuntimeData.SetChainedAbility(true);
 				ASC->TryActivateAbilityByClass(Transition.AbilityClass);
 			}
 			
@@ -126,7 +126,17 @@ bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag)
 }
 
 void UYSGameplayAbility::PlayMontage()
-{	
+{
+	const FYSMontageSelector* CurMontageSelector = MontageSelector.GetPtr<FYSMontageSelector>();
+
+	if ( CurMontageSelector == nullptr )
+	{
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+		return;
+	};
+
+	UAnimMontage* TargetToPlayMontage = CurMontageSelector->SelectMontage(this);
+	
 	if ( IsValid(TargetToPlayMontage) ) 
 	{
 		UAbilityTask_PlayMontageAndWait* PlayMontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, TEXT("PlayMontage"), TargetToPlayMontage);
@@ -138,9 +148,34 @@ void UYSGameplayAbility::PlayMontage()
 			PlayMontageTask->OnCancelled.AddDynamic(this, &UYSGameplayAbility::OnMontageInterrupted);
 			PlayMontageTask->ReadyForActivation();	
 		}
-		else
+	}
+}
+
+void UYSGameplayAbility::_ProcessEvent(FGameplayEventData Payload)
+{
+	if (EventActionMap.Contains(Payload.EventTag) == false )
+		return;
+	const TArray<UYSAbilityEventAction*>& EventActions = EventActionMap[Payload.EventTag].GetEventActions();
+
+	for ( UYSAbilityEventAction* Action : EventActions )
+	{
+		if ( IsValid(Action) )
 		{
-			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+			Action->Execute(this, Payload);;
+		}
+	}
+}
+
+void UYSGameplayAbility::_PrepareForAbilityEvent()
+{
+	for ( auto& EventAction : EventActionMap )
+	{
+		UAbilityTask_WaitGameplayEvent* Task = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, EventAction.Key, nullptr, false);
+
+		if ( IsValid(Task) )
+		{
+			Task->EventReceived.AddDynamic(this, &UYSGameplayAbility::_ProcessEvent);
+			Task->ReadyForActivation();
 		}
 	}
 }

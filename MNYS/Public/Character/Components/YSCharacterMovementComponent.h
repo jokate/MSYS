@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <General/YSMacros.h>
+
 #include "CoreMinimal.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "YSCharacterMovementComponent.generated.h"
@@ -15,6 +17,7 @@ class MNYS_API UYSCharacterMovementComponent : public UCharacterMovementComponen
 public:
 	// Sets default values for this component's properties
 	UYSCharacterMovementComponent();
+	static UYSCharacterMovementComponent* Get(AActor* InActor);
 
 protected:
 	// Called when the game starts
@@ -25,13 +28,16 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 
-public :
+	void SetMovementBlocked(bool bBlocked) { bIsMovementBlocked = bBlocked; }
+
+	bool IsMovementBlocked() const { return bIsMovementBlocked; }
+	
+	YS_ACCESSOR(FVector, LocalSpaceVelocity);
+	
+protected :
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FVector LocalSpaceVelocity = FVector::ZeroVector;
-
-	void SetMovementBlocked(bool bBlocked) { bIsMovementBlocked = bBlocked; }
-	virtual float GetMaxSpeed() const override;
-
+	
 private :
 	bool bIsMovementBlocked = false;
 };

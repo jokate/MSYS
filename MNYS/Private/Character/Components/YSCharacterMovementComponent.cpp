@@ -3,6 +3,8 @@
 
 #include "Character/Components/YSCharacterMovementComponent.h"
 
+#include "Character/YSCharacterBase.h"
+
 
 // Sets default values for this component's properties
 UYSCharacterMovementComponent::UYSCharacterMovementComponent()
@@ -14,6 +16,16 @@ UYSCharacterMovementComponent::UYSCharacterMovementComponent()
 	// ...
 }
 
+UYSCharacterMovementComponent* UYSCharacterMovementComponent::Get(AActor* InActor)
+{
+	AYSCharacterBase* CharBase = Cast<AYSCharacterBase>(InActor);
+
+	if ( IsValid(CharBase) == false )
+		return nullptr;
+
+	return CharBase->GetYSCharacterMovement();
+}
+
 
 // Called when the game starts
 void UYSCharacterMovementComponent::BeginPlay()
@@ -22,16 +34,6 @@ void UYSCharacterMovementComponent::BeginPlay()
 
 	// ...
 	
-}
-
-
-// Called every frame
-float UYSCharacterMovementComponent::GetMaxSpeed() const
-{
-	if (bIsMovementBlocked)
-		return 0.f;
-
-	return Super::GetMaxSpeed();
 }
 
 void UYSCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType,

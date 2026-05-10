@@ -38,6 +38,11 @@ void AYSCharacterBase::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
+UYSCharacterMovementComponent* AYSCharacterBase::GetYSCharacterMovement()
+{
+	return Cast<UYSCharacterMovementComponent>(GetCharacterMovement());
+}
+
 // Called to bind functionality to input
 void AYSCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {

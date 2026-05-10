@@ -7,6 +7,7 @@
 #include "GameFramework/Character.h"
 #include "YSCharacterBase.generated.h"
 
+class UYSCharacterMovementComponent;
 class UYSMotionWarpingComponent;
 class UYSAbilitySystemComponent;
 class UCameraComponent;
@@ -28,6 +29,8 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	virtual UYSCharacterMovementComponent* GetYSCharacterMovement();
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
