@@ -33,10 +33,14 @@ public:
 	bool IsMovementBlocked() const { return bIsMovementBlocked; }
 	
 	YS_ACCESSOR(FVector, LocalSpaceVelocity);
-	
+	YS_GETTER(FVector, LocalSpaceLastInputDirection);
+
 protected :
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	FVector LocalSpaceVelocity = FVector::ZeroVector;
+
+	// 마지막 비-Zero 입력 방향 (로컬 스페이스, 정규화). 입력이 없어도 직전 값 유지.
+	FVector LocalSpaceLastInputDirection = FVector::ForwardVector;
 	
 private :
 	bool bIsMovementBlocked = false;

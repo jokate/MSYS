@@ -43,7 +43,7 @@ public:
 	void OnMovementComplete();
 	virtual void PossessedBy(AController* NewController) override;
 	void SetMovementBlocked(bool bBlocked);
-
+	
 private : 
 	void ProcessMovementInput(const FVector2D& InputDir);
 
@@ -62,7 +62,7 @@ protected :
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = InputControl)
 	TObjectPtr<UInputMappingContext> PlayerInputMappingContext;
-
+	
 private :
 	UPROPERTY()
 	TSet<FGameplayTag> LastDirectionTags;

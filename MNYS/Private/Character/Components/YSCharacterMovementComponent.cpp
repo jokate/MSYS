@@ -42,11 +42,17 @@ void UYSCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Ti
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// ...
-	LocalSpaceVelocity = FVector(0, 0, 0);
-	if ( Velocity.IsNearlyZero() == false )
+	const FTransform& OwnerTransform = UpdatedComponent->GetComponentTransform();
+
+	LocalSpaceVelocity = Velocity.IsNearlyZero()
+		? FVector::ZeroVector
+		: OwnerTransform.InverseTransformVectorNoScale(Velocity);
+
+	// Super 이후 LastInputVector에 이번 프레임 소비된 입력이 보존됨
+	const FVector WorldInput = GetLastInputVector();
+	if (!WorldInput.IsNearlyZero())
 	{
-		FTransform OriginalTransform = UpdatedComponent->GetComponentTransform();
-		LocalSpaceVelocity = OriginalTransform.InverseTransformVectorNoScale(Velocity);	
+		LocalSpaceLastInputDirection = OwnerTransform.InverseTransformVectorNoScale(WorldInput).GetSafeNormal();
 	}
 }
 

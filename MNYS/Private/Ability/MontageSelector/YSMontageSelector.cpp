@@ -2,6 +2,7 @@
 
 #include "Ability/MontageSelector/YSMontageSelector.h"
 #include "Ability/YSGameplayAbility.h"
+#include "Character/YSCharacterBase.h"
 #include "Character/Components/YSCharacterMovementComponent.h"
 #include "MotionWarp/UYSMotionWarpingComponent.h"
 
@@ -23,6 +24,7 @@ void FYSMontageSelector::SetMotionWarp(const UYSGameplayAbility* Ability, bool b
 	bInSet ? MotionWarpingComponent->SetMotionWarp(MotionWarpName, MotionWarpType) : MotionWarpingComponent->ReleaseMotionWarp(MotionWarpName);
 }
 
+// 다 좋은데 입력 방
 UAnimMontage* FYSMontageSelector_ByDirection::SelectMontage(const UYSGameplayAbility* Ability) const
 {
 	auto GetMontage = [this](EYSMoveDirection Dir) -> UAnimMontage*
@@ -40,21 +42,18 @@ UAnimMontage* FYSMontageSelector_ByDirection::SelectMontage(const UYSGameplayAbi
 	if (!IsValid(Ability))
 		return GetMontage(EYSMoveDirection::Forward);
 
+	// 조작감 때문에 입력에 놓여진 값들을 기준으로 가져오도록 합시다
 	AActor* AvatarActor = Ability->GetAvatarActorFromActorInfo();
 	UYSCharacterMovementComponent* Movement = UYSCharacterMovementComponent::Get(AvatarActor);
-
+	
 	if (!IsValid(Movement))
 		return GetMontage(EYSMoveDirection::Forward);
 
-	FVector LocalVelocity = Movement->GetLocalSpaceVelocity();
-	LocalVelocity.Z = 0.f;
-
-	if (LocalVelocity.IsNearlyZero())
-		return GetMontage(EYSMoveDirection::Forward);
+	// 로컬 스페이스 정규화 벡터 (입력 없으면 ForwardVector 유지)
+	const FVector LocalInput = Movement->GetLocalSpaceLastInputDirection();
 
 	// atan2(Y, X): Y = 로컬 우측, X = 로컬 전방  →  [-180, 180]
-	// +22.5° 오프셋으로 섹터 경계를 각 방향 중심에 정렬한 뒤 [0, 360) 으로 정규화
-	const float Angle           = FMath::RadiansToDegrees(FMath::Atan2(LocalVelocity.Y, LocalVelocity.X));
+	const float Angle           = FMath::RadiansToDegrees(FMath::Atan2(LocalInput.Y, LocalInput.X));
 	const float NormalizedAngle = FMath::Fmod(Angle + 22.5f + 360.f, 360.f);
 	const int32 SectorIndex     = FMath::FloorToInt(NormalizedAngle / 45.f) % 8;
 
