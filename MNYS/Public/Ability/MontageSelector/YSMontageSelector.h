@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Ability/YSGameplayAbility.h"
 #include "General/YSEnum.h"
 #include "YSMontageSelector.generated.h"
 

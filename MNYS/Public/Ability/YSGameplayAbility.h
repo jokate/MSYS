@@ -105,9 +105,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Event Actions")
 	TMap<FGameplayTag, FYSEventPayload> EventActionMap;
 
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Motion Warping")
-	
-
 private:
 	FYSGameplayAbility_RuntimeData RuntimeData;
 };

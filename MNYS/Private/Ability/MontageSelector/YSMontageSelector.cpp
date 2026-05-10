@@ -5,7 +5,7 @@
 #include "Character/Components/YSCharacterMovementComponent.h"
 #include "MotionWarp/UYSMotionWarpingComponent.h"
 
-void FYSMontageSelector::SetMotionWarp(const UYSGameplayAbility* Ability, bool bInSet)
+void FYSMontageSelector::SetMotionWarp(const UYSGameplayAbility* Ability, bool bInSet) const
 {
 	if ( !IsValid(Ability) == false )
 		return;

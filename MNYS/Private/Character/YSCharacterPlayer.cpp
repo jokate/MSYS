@@ -175,7 +175,7 @@ void AYSCharacterPlayer::PossessedBy(AController* NewController)
 	Super::PossessedBy(NewController);
 
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
-	AbilitySystemComponent->GiveAbilities();
+	AbilitySystemComponent->GiveInitAbility();
 }
 
 void AYSCharacterPlayer::ProcessMovementInput(const FVector2D& InputDir)

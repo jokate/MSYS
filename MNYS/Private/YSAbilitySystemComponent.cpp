@@ -6,6 +6,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Ability/YSGameplayAbility.h"
 #include "General/YSGeneratedGameplayTags.h"
+#include "General/YSStruct.h"
 
 
 // Sets default values for this component's properties
@@ -37,18 +38,17 @@ void UYSAbilitySystemComponent::OnGiveAbility(FGameplayAbilitySpec& AbilitySpec)
 	AbilitySpecHandles.Emplace(AbilitySpec.Handle);
 }
 
-void UYSAbilitySystemComponent::GiveAbilities()
+void UYSAbilitySystemComponent::GiveInitAbility()
 {
-	for ( int32 i = 0; i < AbilityClasses.Num(); ++i )
+	for ( const FYSGrantedAbilityData& GrantedAbilityData : GrantedAbilities)
 	{
-		TSubclassOf<UYSGameplayAbility> AbilityClass = AbilityClasses[i];
-		FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(AbilityClass);
-		
-		if ( i == 0 )
+		FGameplayAbilitySpec AbilitySpec(GrantedAbilityData.AbilityClass, GrantedAbilityData.Level);
+
+		if ( GrantedAbilityData.InputTag.IsValid())
 		{
-			AbilitySpec.GetDynamicSpecSourceTags().AddTag(YSTags::IdleInputAttack);	
+			AbilitySpec.GetDynamicSpecSourceTags().AddTag(GrantedAbilityData.InputTag);
 		}
-		
+
 		GiveAbility(AbilitySpec);
 	}
 }

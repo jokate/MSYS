@@ -7,6 +7,7 @@
 #include "YSAbilitySystemComponent.generated.h"
 
 
+struct FYSGrantedAbilityData;
 class UYSGameplayAbility;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnGameplayTagStateChanged, const FGameplayTag&, Tag, bool, IsActive);
@@ -22,7 +23,7 @@ public:
 	static UYSAbilitySystemComponent* Get(AActor* Owner);
 	virtual void BeginPlay() override;
 	void ProcessAbilityByInputPass(const FGameplayTag& InputTag);
-	void GiveAbilities();
+	void GiveInitAbility();
 
 	virtual void OnTagUpdated(const FGameplayTag& Tag, bool TagExists) override;
 	
@@ -37,8 +38,11 @@ public :
 	UPROPERTY()
 	TArray<FGameplayAbilitySpecHandle> AbilitySpecHandles;
 
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Ability")
+	TArray<FYSGrantedAbilityData> GrantedAbilities;
+
 	UPROPERTY(EditDefaultsOnly)
-	TArray<TSubclassOf<UYSGameplayAbility>> AbilityClasses;
+	TMap<TSubclassOf<UYSGameplayAbility>, FGameplayTag> AbilityTags;
 
 	FOnGameplayTagStateChanged OnGameplayTagStateChanged;
 };
