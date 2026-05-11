@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "General/YSStruct.h"
 #include "Input/Combo/YSComboData.h"
 #include "UObject/Object.h"
 #include "YSAbilityEventAction.generated.h"
@@ -44,4 +45,13 @@ class MNYS_API UYSAbilityEventAction_StartTrace : public UYSAbilityEventAction
 
 public :
 	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
+};
+
+UCLASS(DisplayName = "트레이스 종료")
+class MNYS_API UYSAbilityEventAction_StopTrace : public UYSAbilityEventAction
+{
+	GENERATED_BODY()
+
+public :
+	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;	
 };

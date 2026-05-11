@@ -11,6 +11,7 @@
 #include "StructUtils/InstancedStruct.h"
 #include "YSGameplayAbility.generated.h"
 
+class UYSAT_Trace;
 struct FYSMontageSelector;
 class UYSAbilityEventAction;
 struct FYSComboTransition;
@@ -72,6 +73,11 @@ public:
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 	bool TryTransition(const FGameplayTag& InputGameplayTag);
 
+	UFUNCTION()
+	void OnTraceComplete(const TArray<FHitResult>& HitResults);
+	
+	YS_ACCESSOR(UYSAT_Trace*, TraceTask);
+	
 protected:
 	UFUNCTION()
 	void OnMontagePlayed();
@@ -88,6 +94,7 @@ private :
 	void _SetupPlayMontage();
 
 	void _ReleaseMotionWarp() const;
+	
 public:
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Montage To Play", meta = (DisplayName = "재생할 몽타주 정보", BaseStruct = "/Script/MNYS.YSMontageSelector", ExcludeBaseStruct))
 	FInstancedStruct MontageSelector;
@@ -104,7 +111,11 @@ public:
 	// 어빌리티 에디터 세팅
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Event Actions")
 	TMap<FGameplayTag, FYSEventPayload> EventActionMap;
+
 	
 private:
 	FYSGameplayAbility_RuntimeData RuntimeData;
+
+	UPROPERTY()
+	UYSAT_Trace* TraceTask = nullptr;
 };

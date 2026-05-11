@@ -127,6 +127,11 @@ bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag)
 	return false;
 }
 
+void UYSGameplayAbility::OnTraceComplete(const TArray<FHitResult>& HitResults)
+{
+	// 데미지 처리 로직을 여기에서 수행해야 한다.
+}
+
 void UYSGameplayAbility::_SetupPlayMontage()
 {
 	const FYSMontageSelector* CurMontageSelector = MontageSelector.GetPtr<FYSMontageSelector>();

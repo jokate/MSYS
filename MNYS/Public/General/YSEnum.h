@@ -43,3 +43,12 @@ enum class EMotionWarpType : uint8
 	TranslationOnly UMETA(DisplayName = "이동만"),
 	RotationOnly UMETA(DisplayName = "회전만"),
 };
+
+UENUM(BlueprintType)
+enum class EYSTraceShape : uint8
+{
+	Box,
+	Sphere,
+	Capsule,
+	Line
+};
