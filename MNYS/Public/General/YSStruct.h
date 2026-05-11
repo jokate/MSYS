@@ -10,6 +10,7 @@
  * 
  */
 
+class UYSAbilityTriggerPayload;
 class UYSGameplayAbility;
 
 USTRUCT(BlueprintType)
@@ -26,4 +27,26 @@ public :
 
 	UPROPERTY(EditDefaultsOnly)
 	int32 Level = 1;
+};
+
+USTRUCT(BlueprintType)
+struct FGameplayEventSendData
+{
+	GENERATED_BODY()
+
+public :
+	FGameplayEventSendData()
+	{
+		TriggerPayloads.SetNum(2);
+	}
+	
+public :
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FGameplayTag TargetToTrigger;
+
+	// 다음과 같이 선언된 사유는 간단, 다양한 페이로드 정보를 보낼 수 있다는 가정임.
+	// (단 현재 어빌리티 내부에서 거의 처리되나, 만약 필요하면 선언해서 갈기자)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Instanced)
+	TArray<UYSAbilityTriggerPayload*> TriggerPayloads;
+	
 };

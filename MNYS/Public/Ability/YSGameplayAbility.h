@@ -104,7 +104,7 @@ public:
 	// 어빌리티 에디터 세팅
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Event Actions")
 	TMap<FGameplayTag, FYSEventPayload> EventActionMap;
-
+	
 private:
 	FYSGameplayAbility_RuntimeData RuntimeData;
 };

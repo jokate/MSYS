@@ -35,3 +35,13 @@ class MNYS_API UYSAbilityEventAction_SpawnProjectile : public UYSAbilityEventAct
 public :
 	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override { return true; }
 };
+
+// 트레이스 시작.
+UCLASS(DisplayName = "트레이스 시작")
+class MNYS_API UYSAbilityEventAction_StartTrace : public UYSAbilityEventAction
+{
+	GENERATED_BODY()
+
+public :
+	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
+};
