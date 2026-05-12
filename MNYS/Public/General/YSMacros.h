@@ -85,3 +85,10 @@
  */
 #define YS_BOOL_SETTER(MemberName, PropertyName)                               \
 	FORCEINLINE void Set##PropertyName(bool bNewValue) { MemberName = bNewValue; }
+
+
+#define ATTRIBUTE_ACCESSORS(ClassName, PropertyName) \
+	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName) \
+	GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName) \
+	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName) \
+	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)
