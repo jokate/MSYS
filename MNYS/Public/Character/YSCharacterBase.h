@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
+#include "GenericTeamAgentInterface.h"
 #include "GameFramework/Character.h"
 #include "YSCharacterBase.generated.h"
 
@@ -14,7 +15,7 @@ class UCameraComponent;
 class USpringArmComponent;
 
 UCLASS()
-class MNYS_API AYSCharacterBase : public ACharacter, public IAbilitySystemInterface
+class MNYS_API AYSCharacterBase : public ACharacter, public IAbilitySystemInterface, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
 
@@ -25,7 +26,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
+	virtual void PostInitializeComponents() override;
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -36,7 +37,8 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
-
+	virtual void SetGenericTeamId(const FGenericTeamId& TeamID) override;
+	virtual FGenericTeamId GetGenericTeamId() const override { return GenericTeamId; }
 public :
 	UPROPERTY(BlueprintReadWrite, Category = "MotionWarping", EditDefaultsOnly )
 	TObjectPtr<UYSMotionWarpingComponent> MotionWarpingComponent;
@@ -46,4 +48,7 @@ public :
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Weapon")
 	TObjectPtr<USkeletalMeshComponent> WeaponMeshComponent;
+
+	UPROPERTY()
+	FGenericTeamId GenericTeamId;
 };

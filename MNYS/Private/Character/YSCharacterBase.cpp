@@ -3,8 +3,10 @@
 
 #include "MNYS/Public/Character/YSCharacterBase.h"
 #include "YSAbilitySystemComponent.h"
+#include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
 #include "Character/Components/YSCharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "General/YSDefine.h"
 #include "MotionWarp/UYSMotionWarpingComponent.h"
 
 
@@ -30,6 +32,13 @@ AYSCharacterBase::AYSCharacterBase(const FObjectInitializer& ObjectInitializer)
 void AYSCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
+	
+}
+
+void AYSCharacterBase::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	AbilitySystemComponent->AddSet<UYSCharacterAttributeSetBase>();
 }
 
 // Called every frame
@@ -52,5 +61,10 @@ void AYSCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 UAbilitySystemComponent* AYSCharacterBase::GetAbilitySystemComponent() const
 {
 	return AbilitySystemComponent;
+}
+
+void AYSCharacterBase::SetGenericTeamId(const FGenericTeamId& TeamID)
+{
+	TeamID.SetAttitudeSolver(YSTeamFunction::GeneralTeamSolver);
 }
 

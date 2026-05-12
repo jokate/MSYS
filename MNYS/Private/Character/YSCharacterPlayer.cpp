@@ -9,6 +9,7 @@
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
 #include "Character/Components/YSCharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "General/YSDefine.h"
 #include "General/YSGameplayTag.h"
 #include "General/YSInputGameplayTags.h"
 #include "Input/YSEnhancedInputComponent.h"
@@ -49,14 +50,9 @@ AYSCharacterPlayer::AYSCharacterPlayer(const FObjectInitializer& ObjectInitializ
 void AYSCharacterPlayer::BeginPlay()
 {
 	Super::BeginPlay();
-}
 
-void AYSCharacterPlayer::PostInitializeComponents()
-{
-	Super::PostInitializeComponents();
-
-	// 캐릭터 기본 형태의 AttributeSet 추가. (차후 다양한 AttributeSet이 필요한 경우에는 내부에 넣도록 하자.)
-	AbilitySystemComponent->AddSet<UYSCharacterAttributeSetBase>();
+	// 팀설정.
+	SetGenericTeamId(YS_PLAYER);
 }
 
 // Called every frame
