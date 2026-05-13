@@ -10,7 +10,7 @@
 /**
  * 
  */
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTraceHit, const TArray<FHitResult>&, HitResults);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnTraceHit, const TArray<FHitResult>&, HitResults, const FString&, DamageRow);
 
 UCLASS()
 class MNYS_API UYSAT_Trace : public UAbilityTask

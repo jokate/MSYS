@@ -135,6 +135,6 @@ void UYSAT_Trace::_TraceByConfig()
 
 	if (ValidHits.Num() > 0)
 	{
-		OnTraceHit.Broadcast(ValidHits);
+		OnTraceHit.Broadcast(ValidHits, TraceConfig.DamageRow);
 	}
 }

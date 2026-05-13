@@ -22,6 +22,9 @@ public :
 	virtual void PostInitProperties() override;
 	ATTRIBUTE_ACCESSORS(UYSCharacterAttributeSetBase, CurrentHp);
     ATTRIBUTE_ACCESSORS(UYSCharacterAttributeSetBase, MaxHp);
+	
+    ATTRIBUTE_ACCESSORS(UYSCharacterAttributeSetBase, AttackDmg);
+    ATTRIBUTE_ACCESSORS(UYSCharacterAttributeSetBase, DefenseRate);
 
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
 
@@ -34,6 +37,11 @@ protected :
 	FGameplayAttributeData CurrentHp;
 	UPROPERTY(BlueprintReadOnly, Category = "YS | Character", Meta = (AllowPrivateAccess = true))
 	FGameplayAttributeData MaxHp;
+
+	UPROPERTY(BlueprintReadOnly, Category = "YS | Character", Meta = (AllowPrivateAccess = true))
+	FGameplayAttributeData AttackDmg;
+	UPROPERTY(BlueprintReadOnly, Category = "YS | Character", Meta = (AllowPrivateAccess = true))
+	FGameplayAttributeData DefenseRate;
 
 private : 
 	using FClampHandler = TFunction<void(float&)>;
