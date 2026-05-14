@@ -12,6 +12,39 @@ public class MNYS : ModuleRules
 			"GameplayAbilities", "AIModule", "MotionWarping", "GameplayTags", "GameplayTasks", "DataRegistry", "DeveloperSettings", "UMG", "Kismet", "AnimGraphRuntime" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "AnimationLocomotionLibraryRuntime" });
+		
+		PublicDependencyModuleNames.AddRange(
+			new string[]
+			{
+				"Core",
+				"CoreUObject",
+				"Engine",
+				"InputCore",
+				"Networking",
+				"Sockets",
+				"HTTP",
+				"Json",
+				"JsonUtilities",
+				"DeveloperSettings",
+				"PhysicsCore",
+				"UnrealEd",           // For Blueprint editing
+				"BlueprintGraph",     // For K2Node classes (F15-F22)
+				"KismetCompiler"      // For Blueprint compilation (F15-F22)
+			}
+		);
+		
+		PrivateDependencyModuleNames.AddRange(
+			new string[]
+			{
+				"EditorScriptingUtilities",
+				"EditorSubsystem",
+				"Slate",
+				"SlateCore",
+				"Kismet",
+				"Projects",
+				"AssetRegistry"
+			}
+		);
 
 		PublicIncludePaths.AddRange(new string[] {"MNYS"});
 		// Uncomment if you are using Slate UI
