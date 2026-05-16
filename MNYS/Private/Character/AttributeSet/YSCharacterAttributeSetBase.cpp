@@ -7,6 +7,8 @@ UYSCharacterAttributeSetBase::UYSCharacterAttributeSetBase()
 {
 	CurrentHp = 100.f;
 	MaxHp = 100.f;
+	AttackDmg = 10.f;
+	DefenseRate = 0.1f;
 }
 
 void UYSCharacterAttributeSetBase::PostInitProperties()
