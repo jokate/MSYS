@@ -66,5 +66,6 @@ UAbilitySystemComponent* AYSCharacterBase::GetAbilitySystemComponent() const
 void AYSCharacterBase::SetGenericTeamId(const FGenericTeamId& TeamID)
 {
 	TeamID.SetAttitudeSolver(YSTeamFunction::GeneralTeamSolver);
+	GenericTeamId = TeamID;
 }
 
