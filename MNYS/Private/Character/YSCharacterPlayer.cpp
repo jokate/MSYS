@@ -53,6 +53,11 @@ void AYSCharacterPlayer::OnMovementModeChanged(EMovementMode PrevMovementMode, u
 	{
 		TransitionToDefaultState();
 	}
+	
+	if ( GetCharacterMovement()->IsFalling() )
+	{
+		TransitionStateMachine(EYSInputStatesType::Falling);
+	}
 }
 
 
@@ -135,7 +140,7 @@ void AYSCharacterPlayer::TransitionToDefaultState()
 	
 	if ( CharMove->IsFalling() )
 	{
-		TransitionStateMachine(EYSInputStatesType::Falling);
+ 		TransitionStateMachine(EYSInputStatesType::Falling);
 	}
 	else
 	{

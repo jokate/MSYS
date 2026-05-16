@@ -97,6 +97,7 @@ protected:
 	UFUNCTION()
 	void OnMontageInterrupted();
 	
+public :
 #if UE_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
@@ -115,7 +116,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Montage To Play", meta = (DisplayName = "몽타주 재생 여부"))
 	bool bShouldPlayMontage = true;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Montage To Play", meta = (DisplayName = "재생할 몽타주 정보", EditCondition = "bShouldPlayMontage", EditConditionHides, BaseStruct = "/Script/MNYS.YSMontageSelector", ExcludeBaseStruct))
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Montage To Play", meta = (DisplayName = "재생할 몽타주 정보", EditCondition = "bShouldPlayMontage", BaseStruct = "/Script/MNYS.YSMontageSelector", ExcludeBaseStruct))
 	FInstancedStruct MontageSelector;
 
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Input Related", meta = (DisplayName = "인풋에 따른 반응"))
