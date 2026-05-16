@@ -17,17 +17,23 @@ class MNYS_API UYSDeveloperSettings : public UDeveloperSettings
 	GENERATED_BODY()
 
 public :
-	static const FYSCommandSequence* GetComboData(const FName& RowName);
+	static const FYSCommandSequence* GetCommandSequence(const FName& RowName);
 	static const FYSDamageInfo* GetDamageInfo(const FName& RowName);
+	
+	static TArray<const FYSCommandSequence*> GetAllCommandSequences();
 		
 private : 
 	template <class T>
 	static const T* GetRegistryData(const FName& RegistryName, const FName& RowName);
+	
+	template <class T>
+	static TArray<const T*> GetAllRegistryData(const FName& RegistryName);
+	
 protected :
 	UPROPERTY(EditAnywhere, Config, Category = "Data Registry")
-	FName ComboRegistryName;
+	FName CommandRegistryName;
 
 	UPROPERTY(EditAnywhere, Config, Category = "Data Registry")
-	FName DamageRegsitryName;
+	FName DamageRegistryName;
 	
 };

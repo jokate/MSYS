@@ -5,6 +5,7 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "YSAbilitySystemComponent.h"
+#include "YSDeveloperSettings.h"
 #include "General/YSGameplayTag.h"
 #include "Input/Combo/YSComboData.h"
 #include "Input/StateMachine/YSInputStates.h"
@@ -44,6 +45,8 @@ void UYSInputStateMachineComponent::BeginPlay()
 	{
 		AbilitySystemComponent->OnGameplayTagStateChanged.AddUniqueDynamic(this, &UYSInputStateMachineComponent::OnTagUpdated);
 	}
+	
+	AllCommandSequence = UYSDeveloperSettings::GetAllCommandSequences();
 }
 
 void UYSInputStateMachineComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -57,7 +60,7 @@ FGameplayTag UYSInputStateMachineComponent::FindBestCombo(const FGameplayTag& Ta
 {
 	FGameplayTag BestTag = Tag;
 	InputTags.Add(Tag);
-	for ( const FYSCommandSequence* ComboSequence : AllComboSequence )
+	for ( const FYSCommandSequence* ComboSequence : AllCommandSequence )
 	{
 		if ( ComboSequence->IsSatisfiedCommand(InputTags) == true )
 		{

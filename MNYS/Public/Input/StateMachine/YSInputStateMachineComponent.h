@@ -62,7 +62,7 @@ protected:
 	float InputProcessingTime = 0.2f;
 
 private :
-	TArray<const FYSCommandSequence*> AllComboSequence;
+	TArray<const FYSCommandSequence*> AllCommandSequence;
 
 	bool bIsInputBlocked;
 	TWeakObjectPtr<UYSAbilitySystemComponent> AbilitySystemComponent;

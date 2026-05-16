@@ -23,24 +23,53 @@ const T* UYSDeveloperSettings::GetRegistryData(const FName& RegistryName, const 
 	return DataRegistrySubsystem->GetCachedItem<T>(RegistryId);
 }
 
-const FYSCommandSequence* UYSDeveloperSettings::GetComboData(const FName& RowName)
+template <class T>
+TArray<const T*> UYSDeveloperSettings::GetAllRegistryData(const FName& RegistryName)
+{
+	UDataRegistrySubsystem* DataRegistrySubsystem = UDataRegistrySubsystem::Get();
+	
+	if ( IsValid(DataRegistrySubsystem) == false )
+	{
+		return TArray<const T*>();
+	}
+	
+	UDataRegistry* Registry = DataRegistrySubsystem->GetRegistryForType(RegistryName);
+	
+	TArray<const T*> AllRegistry;
+	Registry->GetAllItems<T>(TEXT("Preload"), AllRegistry);
+
+	return AllRegistry;
+}
+
+const FYSCommandSequence* UYSDeveloperSettings::GetCommandSequence(const FName& RowName)
 {
 	const UYSDeveloperSettings* Settings = GetDefault<UYSDeveloperSettings>();
-	if (IsValid(Settings) == false || Settings->ComboRegistryName.IsNone())
+	if (IsValid(Settings) == false || Settings->CommandRegistryName.IsNone())
 	{
 		return nullptr;
 	}
 
-	return GetRegistryData<FYSCommandSequence>(Settings->ComboRegistryName, RowName);
+	return GetRegistryData<FYSCommandSequence>(Settings->CommandRegistryName, RowName);
 }
 
 const FYSDamageInfo* UYSDeveloperSettings::GetDamageInfo(const FName& RowName)
 {
 	const UYSDeveloperSettings* Settings = GetDefault<UYSDeveloperSettings>();
-	if (IsValid(Settings) == false || Settings->DamageRegsitryName.IsNone())
+	if (IsValid(Settings) == false || Settings->DamageRegistryName.IsNone())
 	{
 		return nullptr;
 	}
 
-	return GetRegistryData<FYSDamageInfo>(Settings->DamageRegsitryName, RowName);
+	return GetRegistryData<FYSDamageInfo>(Settings->DamageRegistryName, RowName);
+}
+
+TArray<const FYSCommandSequence*> UYSDeveloperSettings::GetAllCommandSequences()
+{
+	const UYSDeveloperSettings* Settings = GetDefault<UYSDeveloperSettings>();
+	if (IsValid(Settings) == false || Settings->CommandRegistryName.IsNone())
+	{
+		return TArray<const FYSCommandSequence*>();
+	}
+	
+	return GetAllRegistryData<FYSCommandSequence>(Settings->CommandRegistryName);
 }
