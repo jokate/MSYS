@@ -59,7 +59,7 @@ protected:
 
 	// 해당 값은 조작감에 따라서 처리되기로 합시다.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float InputProcessingTime = 0.2f;
+	float InputProcessingTime = 0.5f;
 
 private :
 	TArray<const FYSCommandSequence*> AllCommandSequence;

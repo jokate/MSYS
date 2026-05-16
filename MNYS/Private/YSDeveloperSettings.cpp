@@ -35,6 +35,9 @@ TArray<const T*> UYSDeveloperSettings::GetAllRegistryData(const FName& RegistryN
 	
 	UDataRegistry* Registry = DataRegistrySubsystem->GetRegistryForType(RegistryName);
 	
+	if ( IsValid(Registry) == false )
+		return TArray<const T*>();
+	
 	TArray<const T*> AllRegistry;
 	Registry->GetAllItems<T>(TEXT("Preload"), AllRegistry);
 
