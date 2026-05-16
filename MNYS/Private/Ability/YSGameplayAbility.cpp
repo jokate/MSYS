@@ -261,3 +261,38 @@ void UYSGameplayAbility::OnMontageInterrupted()
 	bool bWasCancelled = false;
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, bReplicatedEndAbility, bWasCancelled);
 }
+
+#if UE_EDITOR
+void UYSGameplayAbility::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+	
+	FName PropertyName = (PropertyChangedEvent.Property != NULL) ? PropertyChangedEvent.Property->GetFName() : NAME_None;
+	
+	if ( PropertyName == GET_MEMBER_NAME_CHECKED(UYSGameplayAbility, AbilityType) )
+	{
+		EventActionMap.Empty();
+		
+		switch (AbilityType )
+		{
+		case EYSAbilityType::None:
+			break;
+		case EYSAbilityType::MeleeAttack :
+			{
+				FYSEventPayload TraceStart;
+				TraceStart.EventActions.Add(NewObject<UYSAbilityEventAction_StartTrace>(this));
+				EventActionMap.Add(YSTags::Event_TraceStart, TraceStart);
+			
+				FYSEventPayload TraceEnd;
+				TraceEnd.EventActions.Add(NewObject<UYSAbilityEventAction_StopTrace>(this));
+				EventActionMap.Add(YSTags::Event_TraceEnd, TraceEnd);
+				break;
+			}
+		case EYSAbilityType::RangedAttack : 
+			break;
+		default: 
+			break;
+		}
+	}
+}
+#endif

@@ -16,6 +16,14 @@ struct FYSMontageSelector;
 class UYSAbilityEventAction;
 struct FYSComboTransition;
 
+UENUM(BlueprintType)
+enum class EYSAbilityType : uint8
+{
+	None,
+	MeleeAttack UMETA(DisplayName = "근접 공격"),
+	RangedAttack UMETA(DisplayName = "원거리 공격"),
+};
+
 USTRUCT()
 struct FYSGameplayAbility_RuntimeData
 {
@@ -67,23 +75,31 @@ class MNYS_API UYSGameplayAbility : public UGameplayAbility
 
 public:
 	UYSGameplayAbility();
+	
 	UFUNCTION()
 	void OnGameplayTagChanged(const FGameplayTag& Tag, bool bInIsActive);
-	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
-	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
+	
 	bool TryTransition(const FGameplayTag& InputGameplayTag);
 
 	UFUNCTION()
 	void OnTraceComplete(const TArray<FHitResult>& HitResults, const FName& DamageRow);
 	
 	YS_ACCESSOR(UYSAT_Trace*, TraceTask);
+	YS_ACCESSOR(EYSAbilityType, AbilityType);
 	
 protected:
+	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
+	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
+	
 	UFUNCTION()
 	void OnMontagePlayed();
 
 	UFUNCTION()
 	void OnMontageInterrupted();
+	
+#if UE_EDITOR
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
 	
 private :
 	UFUNCTION()
@@ -111,6 +127,10 @@ public:
 	// 어빌리티 에디터 세팅
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Event Actions")
 	TMap<FGameplayTag, FYSEventPayload> EventActionMap;
+	
+protected :
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Ability Type")
+	EYSAbilityType AbilityType = EYSAbilityType::None;
 	
 private:
 	FYSGameplayAbility_RuntimeData RuntimeData;

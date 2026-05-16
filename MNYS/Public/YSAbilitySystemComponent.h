@@ -10,6 +10,7 @@
 struct FYSGrantedAbilityData;
 class UYSGameplayAbility;
 
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnGameplayTagStateChanged, const FGameplayTag&, Tag, bool, IsActive);
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
