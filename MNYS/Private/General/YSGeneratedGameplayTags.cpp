@@ -93,4 +93,17 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(ReadyInputUpAttack, "Ready.Input.Command.UpAttack");
 	UE_DEFINE_GAMEPLAY_TAG(ReadyInputDownAttack, "Ready.Input.Command.DownAttack");
 	UE_DEFINE_GAMEPLAY_TAG(ReadyInputBackDodgeAttack, "Ready.Input.Command.BackDodgeAttack");
+	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputMove, "JumpAttack.Input.Move");
+	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputLook, "JumpAttack.Input.Look");
+	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputAttack, "JumpAttack.Input.Attack");
+	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputDodge, "JumpAttack.Input.Dodge");
+	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputJump, "JumpAttack.Input.Jump");
+	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputSprint, "JumpAttack.Input.Sprint");
+	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputUp, "JumpAttack.Input.Up");
+	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputDown, "JumpAttack.Input.Down");
+	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputLeft, "JumpAttack.Input.Left");
+	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputRight, "JumpAttack.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputUpAttack, "JumpAttack.Input.Command.UpAttack");
+	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputDownAttack, "JumpAttack.Input.Command.DownAttack");
+	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputBackDodgeAttack, "JumpAttack.Input.Command.BackDodgeAttack");
 }
