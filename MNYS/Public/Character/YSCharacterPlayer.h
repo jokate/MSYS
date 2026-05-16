@@ -21,6 +21,8 @@ class MNYS_API AYSCharacterPlayer : public AYSCharacterBase
 public:
 	// Sets default values for this character's properties
 	AYSCharacterPlayer(const FObjectInitializer& ObjectInitializer);
+	
+	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode = 0) override;
 
 protected:
 	// Called when the game starts or when spawned
@@ -37,6 +39,7 @@ public:
 	void ProcessInput(FGameplayTag InputTag);
 
 	void TransitionStateMachine(EYSInputStatesType InputStateType) const;
+	void TransitionToDefaultState();
 	
 	void Look(const FInputActionValue& Value);
 	void Move(const FInputActionValue& Value);

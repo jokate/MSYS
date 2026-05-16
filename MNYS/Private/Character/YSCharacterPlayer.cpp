@@ -45,6 +45,16 @@ AYSCharacterPlayer::AYSCharacterPlayer(const FObjectInitializer& ObjectInitializ
 	
 }
 
+void AYSCharacterPlayer::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)
+{
+	Super::OnMovementModeChanged(PrevMovementMode, PreviousCustomMode);
+	
+	if (PrevMovementMode == EMovementMode::MOVE_Falling && GetCharacterMovement()->IsFalling() == false)
+	{
+		TransitionToDefaultState();
+	}
+}
+
 
 // Called when the game starts or when spawned
 void AYSCharacterPlayer::BeginPlay()
@@ -113,6 +123,23 @@ void AYSCharacterPlayer::TransitionStateMachine(EYSInputStatesType InputStateTyp
 	if ( IsValid(InputStateMachineComponent) )
 	{
 		InputStateMachineComponent->TransitionState(InputStateType);
+	}
+}
+
+void AYSCharacterPlayer::TransitionToDefaultState()
+{
+	UYSCharacterMovementComponent* CharMove = GetYSCharacterMovement();
+	
+	if ( IsValid(CharMove) == false )
+		return;
+	
+	if ( CharMove->IsFalling() )
+	{
+		TransitionStateMachine(EYSInputStatesType::Falling);
+	}
+	else
+	{
+		TransitionStateMachine(EYSInputStatesType::Idle);
 	}
 }
 

@@ -52,7 +52,8 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 		YSASC->OnGameplayTagStateChanged.AddDynamic(this, &UYSGameplayAbility::OnGameplayTagChanged);
 	}
 	
-	_SetupPlayMontage();
+	if ( bShouldPlayMontage )
+		_SetupPlayMontage();
 
 	AActor* OwnerActor = GetOwningActorFromActorInfo();
 
@@ -80,9 +81,9 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 	{
 		AYSCharacterPlayer* Character = Cast<AYSCharacterPlayer>(OwnerActor);
 
-		if ( IsValid(Character) && RuntimeData.IsChainedAbility() == false  )
+		if ( IsValid(Character) && RuntimeData.IsChainedAbility() == false )
 		{
-			Character->TransitionStateMachine(EYSInputStatesType::Idle);
+			Character->TransitionToDefaultState();
 		}
 	}
 	
