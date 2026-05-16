@@ -5,6 +5,7 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Ability/YSGameplayAbility.h"
+#include "Data/YSAbilityDataAsset.h"
 #include "General/YSGeneratedGameplayTags.h"
 #include "General/YSStruct.h"
 
@@ -40,7 +41,10 @@ void UYSAbilitySystemComponent::OnGiveAbility(FGameplayAbilitySpec& AbilitySpec)
 
 void UYSAbilitySystemComponent::GiveInitAbility()
 {
-	for ( const FYSGrantedAbilityData& GrantedAbilityData : GrantedAbilities)
+	if ( IsValid(GrantAbilityData) == false )
+		return;
+	
+	for ( const FYSGrantedAbilityData& GrantedAbilityData : GrantAbilityData->GetAllAbilities())
 	{
 		FGameplayAbilitySpec AbilitySpec(GrantedAbilityData.AbilityClass, GrantedAbilityData.Level);
 

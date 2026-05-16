@@ -159,12 +159,13 @@ public :
 UCLASS()
 class UYSJumpAttackState : public UYSInputStates
 {
+	GENERATED_BODY()
+
 	UYSJumpAttackState() : UYSInputStates()
 	{
 		StateName = TEXT("JumpAttack");
 		State = EYSInputStatesType::JumpAttack;
-		TransitionRule.Add(EYSInputStatesType::Idle);     // 착지
-		TransitionRule.Add(EYSInputStatesType::Falling);  // 공중 추가 입력 대기
-		// Dodge 없음
+		TransitionRule.Add(EYSInputStatesType::Idle);
+		TransitionRule.Add(EYSInputStatesType::Falling);
 	}
 };

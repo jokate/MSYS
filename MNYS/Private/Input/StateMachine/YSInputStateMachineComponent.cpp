@@ -29,13 +29,16 @@ void UYSInputStateMachineComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AddState<UYSAttackState>();
-	AddState<UYSIdleState>();
-	AddState<UYSDodgeState>();
-	AddState<UYSFallingState>();
-	AddState<UYSReadyState>();
-	AddState<UYSJustAvoidState>();
-	AddState<UYSSkillState>();
+	TArray<UClass*> DerivedClasses;
+	GetDerivedClasses(UYSInputStates::StaticClass(), DerivedClasses, true);
+	for (UClass* StateClass : DerivedClasses)
+	{
+		UYSInputStates* State = NewObject<UYSInputStates>(this, StateClass);
+		if (!IsValid(State))
+			continue;
+		State->InitState(GetOwner());
+		InputStates.Emplace(State->GetStateType(), State);
+	}
 
 	TransitionState(EYSInputStatesType::Idle);
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &UYSInputStateMachineComponent::ResetInputTags, InputProcessingTime, true);

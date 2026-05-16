@@ -24,6 +24,9 @@ public:
 	UYSInputStateMachineComponent();
 	virtual void AcceptInput(const FGameplayTag& Tag);
 	virtual void TransitionState(EYSInputStatesType NewInputState);
+	
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 protected:
 	void ResetInputTags()
 	{
@@ -31,8 +34,6 @@ protected:
 	}
 	
 	// Called when the game starts
-	virtual void BeginPlay() override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	template<typename T>
 	void AddState();

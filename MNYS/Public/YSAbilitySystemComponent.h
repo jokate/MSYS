@@ -40,7 +40,7 @@ public :
 	TArray<FGameplayAbilitySpecHandle> AbilitySpecHandles;
 
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Ability")
-	TArray<FYSGrantedAbilityData> GrantedAbilities;
+	TObjectPtr<class UYSAbilityDataAsset> GrantAbilityData;
 
 	FOnGameplayTagStateChanged OnGameplayTagStateChanged;
 };
