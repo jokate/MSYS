@@ -74,7 +74,7 @@ public:
 	bool TryTransition(const FGameplayTag& InputGameplayTag);
 
 	UFUNCTION()
-	void OnTraceComplete(const TArray<FHitResult>& HitResults, const FString& DamageRow);
+	void OnTraceComplete(const TArray<FHitResult>& HitResults, const FName& DamageRow);
 	
 	YS_ACCESSOR(UYSAT_Trace*, TraceTask);
 	

@@ -17,5 +17,5 @@ class MNYS_API UYSBlueprintFunctionLibrary : public UBlueprintFunctionLibrary
 
 public :
 	UFUNCTION(BlueprintPure)
-	static float GetFinalDamage(const UYSCharacterAttributeSetBase* Owner, const UYSCharacterAttributeSetBase* Target, const FString& SkillID);
+	static float GetFinalDamage(const UYSCharacterAttributeSetBase* Owner, const UYSCharacterAttributeSetBase* Target, const FName& SkillID);
 };

@@ -12,4 +12,10 @@ namespace YSTags
 {
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(BlockInput);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AcceptAbilityInput);
+	
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Command_UpAttack);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Command_DownAttack);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Command_BackDodgeAttack);
+	
+	
 };

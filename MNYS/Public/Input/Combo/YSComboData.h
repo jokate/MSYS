@@ -32,17 +32,17 @@ struct FYSComboTransition
 	TSubclassOf<UGameplayAbility> AbilityClass;
 };
 
-// Purpose : 콤보를 위한 인풋 태그.
+// Purpose : 커맨드 시퀀스.
 USTRUCT(BlueprintType)
-struct FYSComboSequence : public FTableRowBase
+struct FYSCommandSequence : public FTableRowBase
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditDefaultsOnly)
-	FGameplayTag Combo;
+	UPROPERTY(EditDefaultsOnly, meta = (Categories = "Command"))
+	FGameplayTag Command;
 
-	UPROPERTY(EditDefaultsOnly)
-	TArray<FGameplayTag> ComboSequence;
+	UPROPERTY(EditDefaultsOnly, meta = (Categories = "Input"))
+	TArray<FGameplayTag> CommandSequence;
 
-	bool IsSatisfiedCombo(const TArray<FGameplayTag>& InputGameplayTags) const;
+	bool IsSatisfiedCommand(const TArray<FGameplayTag>& InputGameplayTags) const;
 };

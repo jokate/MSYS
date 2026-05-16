@@ -7,7 +7,7 @@
 #include "DataRegistrySubsystem.h"
 
 template <class T>
-const T* UYSDeveloperSettings::GetRegistryData(FName RegistryName, FName RowName)
+const T* UYSDeveloperSettings::GetRegistryData(const FName& RegistryName, const FName& RowName)
 {
 	FDataRegistryId RegistryId;
 	RegistryId.RegistryType = RegistryName;
@@ -19,18 +19,28 @@ const T* UYSDeveloperSettings::GetRegistryData(FName RegistryName, FName RowName
 	{
 		return nullptr;
 	}
-	
 
 	return DataRegistrySubsystem->GetCachedItem<T>(RegistryId);
 }
 
-const FYSComboSequence* UYSDeveloperSettings::GetComboData(FName RowName)
+const FYSCommandSequence* UYSDeveloperSettings::GetComboData(const FName& RowName)
 {
 	const UYSDeveloperSettings* Settings = GetDefault<UYSDeveloperSettings>();
-	if (Settings == nullptr || Settings->ComboRegistryName.IsNone())
+	if (IsValid(Settings) == false || Settings->ComboRegistryName.IsNone())
 	{
 		return nullptr;
 	}
 
-	return GetRegistryData<FYSComboSequence>(Settings->ComboRegistryName, RowName);
+	return GetRegistryData<FYSCommandSequence>(Settings->ComboRegistryName, RowName);
+}
+
+const FYSDamageInfo* UYSDeveloperSettings::GetDamageInfo(const FName& RowName)
+{
+	const UYSDeveloperSettings* Settings = GetDefault<UYSDeveloperSettings>();
+	if (IsValid(Settings) == false || Settings->DamageRegsitryName.IsNone())
+	{
+		return nullptr;
+	}
+
+	return GetRegistryData<FYSDamageInfo>(Settings->DamageRegsitryName, RowName);
 }

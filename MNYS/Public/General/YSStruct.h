@@ -59,7 +59,7 @@ struct FYSTraceConfig
 
 public :
 	UPROPERTY(EditAnywhere, Category="YS | Sweep", meta=(DisplayName="데미지 정보"))
-	FString DamageRow;
+	FName DamageRow;
 	
 	UPROPERTY(EditAnywhere, Category="YS | Sweep", meta=(DisplayName="트레이스 형태"))
 	EYSTraceShape Shape = EYSTraceShape::Box;

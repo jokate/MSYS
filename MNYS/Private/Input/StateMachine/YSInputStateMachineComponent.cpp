@@ -57,11 +57,11 @@ FGameplayTag UYSInputStateMachineComponent::FindBestCombo(const FGameplayTag& Ta
 {
 	FGameplayTag BestTag = Tag;
 	InputTags.Add(Tag);
-	for ( const FYSComboSequence* ComboSequence : AllComboSequence )
+	for ( const FYSCommandSequence* ComboSequence : AllComboSequence )
 	{
-		if ( ComboSequence->IsSatisfiedCombo(InputTags) == true )
+		if ( ComboSequence->IsSatisfiedCommand(InputTags) == true )
 		{
-			BestTag = ComboSequence->Combo;
+			BestTag = ComboSequence->Command;
 			break;
 		}
 	}

@@ -10,7 +10,7 @@
 
 
 class UYSAbilitySystemComponent;
-struct FYSComboSequence;
+struct FYSCommandSequence;
 class UYSInputStates;
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -62,7 +62,7 @@ protected:
 	float InputProcessingTime = 0.2f;
 
 private :
-	TArray<const FYSComboSequence*> AllComboSequence;
+	TArray<const FYSCommandSequence*> AllComboSequence;
 
 	bool bIsInputBlocked;
 	TWeakObjectPtr<UYSAbilitySystemComponent> AbilitySystemComponent;

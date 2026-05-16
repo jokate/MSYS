@@ -4,16 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "YSCharacterBase.h"
-#include "YSCharacter_Enemy.generated.h"
+#include "YSMonster.generated.h"
 
 UCLASS()
-class MNYS_API AYSCharacter_Enemy : public AYSCharacterBase
+class MNYS_API AYSMonster : public AYSCharacterBase
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this character's properties
-	AYSCharacter_Enemy(const FObjectInitializer& ObjectInitializer);
+	AYSMonster(const FObjectInitializer& ObjectInitializer);
 
 protected:
 	// Called when the game starts or when spawned

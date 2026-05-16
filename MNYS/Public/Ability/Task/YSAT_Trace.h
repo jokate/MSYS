@@ -10,7 +10,7 @@
 /**
  * 
  */
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnTraceHit, const TArray<FHitResult>&, HitResults, const FString&, DamageRow);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnTraceHit, const TArray<FHitResult>&, HitResults, const FName&, DamageRow);
 
 UCLASS()
 class MNYS_API UYSAT_Trace : public UAbilityTask
@@ -29,8 +29,6 @@ public :
 	UPROPERTY(BlueprintAssignable)
 	FOnTraceHit OnTraceHit;
 	
-public :
-	FYSTraceConfig TraceConfig;
 
 private :
 	UPROPERTY()
@@ -43,4 +41,6 @@ private :
 	// Sweep 시작점 — Activate() 이후 첫 Tick에서 초기화됨
 	FVector PreviousSocketLocation = FVector::ZeroVector;
 	bool bHasPreviousLocation = false;
+
+	FYSTraceConfig TraceConfig;
 };

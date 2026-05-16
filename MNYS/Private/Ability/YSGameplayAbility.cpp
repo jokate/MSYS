@@ -129,7 +129,7 @@ bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag)
 	return false;
 }
 
-void UYSGameplayAbility::OnTraceComplete(const TArray<FHitResult>& HitResults, const FString& DamageRow)
+void UYSGameplayAbility::OnTraceComplete(const TArray<FHitResult>& HitResults, const FName& DamageRow)
 {
 	// 데미지 처리 로직을 여기에서 수행해야 한다.
 	UAbilitySystemComponent* OwnerASC = GetAbilitySystemComponentFromActorInfo();
@@ -139,11 +139,18 @@ void UYSGameplayAbility::OnTraceComplete(const TArray<FHitResult>& HitResults, c
 	const UYSCharacterAttributeSetBase* OwnerAttribute = OwnerASC->GetSet<UYSCharacterAttributeSetBase>();
 	if ( IsValid(OwnerAttribute) == false )
 		return;
+
+	IGenericTeamAgentInterface* TeamAgentInterface = Cast<IGenericTeamAgentInterface>(GetOwningActorFromActorInfo());
+	if ( TeamAgentInterface == nullptr )
+		return;
 		
 	for ( const FHitResult& HitResult : HitResults ) 
 	{
 		AActor* HitActor = HitResult.GetActor();
 
+		if (TeamAgentInterface->GetTeamAttitudeTowards(*HitActor) == ETeamAttitude::Friendly )
+			continue;
+		
 		if ( IsValid(HitActor) == false ) 
 			continue;
 		IAbilitySystemInterface* ASI = Cast<IAbilitySystemInterface>(HitActor);
@@ -166,7 +173,6 @@ void UYSGameplayAbility::OnTraceComplete(const TArray<FHitResult>& HitResults, c
 		// 아마 해당 부분은 Static 하게 결정되어야 할 듯 싶습니다.
 		// EX ) 기본 공격 * ( 계수 ( 1 + Extra ) ) + 추가 데미지 (버프..?) - 방어력 비례 이런 형태. (수식은 뭐 간단하지만 어느정도의 감각이 있어야 할 듯.)
 		float FinalDamage = UYSBlueprintFunctionLibrary::GetFinalDamage(OwnerAttribute, TargetAttributeSet, DamageRow);
-		
 		
 		// 데미지 처리 로직 추가. ( 클램핑은 내부에서 알아 처리 될 거임 )
 		ASC->SetNumericAttributeBase(TargetAttributeSet->GetCurrentHpAttribute(), CurHp - FinalDamage);
