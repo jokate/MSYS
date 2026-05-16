@@ -18,12 +18,13 @@ class MNYS_API UYSAT_Trace : public UAbilityTask
 	GENERATED_BODY()
 
 public :
+	UYSAT_Trace();
 	static UYSAT_Trace* CreateTask(UGameplayAbility* InAbility, const FYSTraceConfig& InConfig );
 	virtual void TickTask(float DeltaTime) override;
 	virtual void Activate() override;
 
 private :
-	void _TraceByConfig();
+	void _TraceByConfig();;
 
 public :
 	UPROPERTY(BlueprintAssignable)

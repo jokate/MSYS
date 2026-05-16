@@ -12,6 +12,9 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(IdleInputDown, "Idle.Input.Down");
 	UE_DEFINE_GAMEPLAY_TAG(IdleInputLeft, "Idle.Input.Left");
 	UE_DEFINE_GAMEPLAY_TAG(IdleInputRight, "Idle.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(IdleInputUpAttack, "Idle.Input.Command.UpAttack");
+	UE_DEFINE_GAMEPLAY_TAG(IdleInputDownAttack, "Idle.Input.Command.DownAttack");
+	UE_DEFINE_GAMEPLAY_TAG(IdleInputBackDodgeAttack, "Idle.Input.Command.BackDodgeAttack");
 	UE_DEFINE_GAMEPLAY_TAG(AttackInputMove, "Attack.Input.Move");
 	UE_DEFINE_GAMEPLAY_TAG(AttackInputLook, "Attack.Input.Look");
 	UE_DEFINE_GAMEPLAY_TAG(AttackInputAttack, "Attack.Input.Attack");
@@ -22,6 +25,9 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(AttackInputDown, "Attack.Input.Down");
 	UE_DEFINE_GAMEPLAY_TAG(AttackInputLeft, "Attack.Input.Left");
 	UE_DEFINE_GAMEPLAY_TAG(AttackInputRight, "Attack.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(AttackInputUpAttack, "Attack.Input.Command.UpAttack");
+	UE_DEFINE_GAMEPLAY_TAG(AttackInputDownAttack, "Attack.Input.Command.DownAttack");
+	UE_DEFINE_GAMEPLAY_TAG(AttackInputBackDodgeAttack, "Attack.Input.Command.BackDodgeAttack");
 	UE_DEFINE_GAMEPLAY_TAG(DodgeInputMove, "Dodge.Input.Move");
 	UE_DEFINE_GAMEPLAY_TAG(DodgeInputLook, "Dodge.Input.Look");
 	UE_DEFINE_GAMEPLAY_TAG(DodgeInputAttack, "Dodge.Input.Attack");
@@ -32,6 +38,9 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(DodgeInputDown, "Dodge.Input.Down");
 	UE_DEFINE_GAMEPLAY_TAG(DodgeInputLeft, "Dodge.Input.Left");
 	UE_DEFINE_GAMEPLAY_TAG(DodgeInputRight, "Dodge.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(DodgeInputUpAttack, "Dodge.Input.Command.UpAttack");
+	UE_DEFINE_GAMEPLAY_TAG(DodgeInputDownAttack, "Dodge.Input.Command.DownAttack");
+	UE_DEFINE_GAMEPLAY_TAG(DodgeInputBackDodgeAttack, "Dodge.Input.Command.BackDodgeAttack");
 	UE_DEFINE_GAMEPLAY_TAG(JustAvoidInputMove, "JustAvoid.Input.Move");
 	UE_DEFINE_GAMEPLAY_TAG(JustAvoidInputLook, "JustAvoid.Input.Look");
 	UE_DEFINE_GAMEPLAY_TAG(JustAvoidInputAttack, "JustAvoid.Input.Attack");
@@ -42,6 +51,9 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(JustAvoidInputDown, "JustAvoid.Input.Down");
 	UE_DEFINE_GAMEPLAY_TAG(JustAvoidInputLeft, "JustAvoid.Input.Left");
 	UE_DEFINE_GAMEPLAY_TAG(JustAvoidInputRight, "JustAvoid.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(JustAvoidInputUpAttack, "JustAvoid.Input.Command.UpAttack");
+	UE_DEFINE_GAMEPLAY_TAG(JustAvoidInputDownAttack, "JustAvoid.Input.Command.DownAttack");
+	UE_DEFINE_GAMEPLAY_TAG(JustAvoidInputBackDodgeAttack, "JustAvoid.Input.Command.BackDodgeAttack");
 	UE_DEFINE_GAMEPLAY_TAG(FallingInputMove, "Falling.Input.Move");
 	UE_DEFINE_GAMEPLAY_TAG(FallingInputLook, "Falling.Input.Look");
 	UE_DEFINE_GAMEPLAY_TAG(FallingInputAttack, "Falling.Input.Attack");
@@ -52,6 +64,9 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(FallingInputDown, "Falling.Input.Down");
 	UE_DEFINE_GAMEPLAY_TAG(FallingInputLeft, "Falling.Input.Left");
 	UE_DEFINE_GAMEPLAY_TAG(FallingInputRight, "Falling.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(FallingInputUpAttack, "Falling.Input.Command.UpAttack");
+	UE_DEFINE_GAMEPLAY_TAG(FallingInputDownAttack, "Falling.Input.Command.DownAttack");
+	UE_DEFINE_GAMEPLAY_TAG(FallingInputBackDodgeAttack, "Falling.Input.Command.BackDodgeAttack");
 	UE_DEFINE_GAMEPLAY_TAG(SkillInputMove, "Skill.Input.Move");
 	UE_DEFINE_GAMEPLAY_TAG(SkillInputLook, "Skill.Input.Look");
 	UE_DEFINE_GAMEPLAY_TAG(SkillInputAttack, "Skill.Input.Attack");
@@ -62,6 +77,9 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(SkillInputDown, "Skill.Input.Down");
 	UE_DEFINE_GAMEPLAY_TAG(SkillInputLeft, "Skill.Input.Left");
 	UE_DEFINE_GAMEPLAY_TAG(SkillInputRight, "Skill.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(SkillInputUpAttack, "Skill.Input.Command.UpAttack");
+	UE_DEFINE_GAMEPLAY_TAG(SkillInputDownAttack, "Skill.Input.Command.DownAttack");
+	UE_DEFINE_GAMEPLAY_TAG(SkillInputBackDodgeAttack, "Skill.Input.Command.BackDodgeAttack");
 	UE_DEFINE_GAMEPLAY_TAG(ReadyInputMove, "Ready.Input.Move");
 	UE_DEFINE_GAMEPLAY_TAG(ReadyInputLook, "Ready.Input.Look");
 	UE_DEFINE_GAMEPLAY_TAG(ReadyInputAttack, "Ready.Input.Attack");
@@ -72,4 +90,7 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(ReadyInputDown, "Ready.Input.Down");
 	UE_DEFINE_GAMEPLAY_TAG(ReadyInputLeft, "Ready.Input.Left");
 	UE_DEFINE_GAMEPLAY_TAG(ReadyInputRight, "Ready.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(ReadyInputUpAttack, "Ready.Input.Command.UpAttack");
+	UE_DEFINE_GAMEPLAY_TAG(ReadyInputDownAttack, "Ready.Input.Command.DownAttack");
+	UE_DEFINE_GAMEPLAY_TAG(ReadyInputBackDodgeAttack, "Ready.Input.Command.BackDodgeAttack");
 }

@@ -69,7 +69,7 @@ public :
 	FVector Extent = FVector(30.f, 30.f, 30.f);
 	
 	UPROPERTY(EditAnywhere, Category="YS | Sweep", meta=(DisplayName="충돌 채널"))
-	TEnumAsByte<ECollisionChannel> Channel = ECC_Pawn;
+	FName CollisionProfile = NAME_None;
 
 	UPROPERTY(EditAnywhere, Category="YS | Sweep", meta=(DisplayName="기준 소켓"))
 	FName SocketName = NAME_None;
@@ -85,4 +85,10 @@ public :
 
 	UPROPERTY(EditAnywhere, Category="YS | Sweep", meta=(DisplayName="히트 타이머", EditCondition="bContinuousHit", EditConditionHides))
 	float HitTimeCheck = 0.1f;
+	
+	UPROPERTY(EditAnywhere, Category="YS | Sweep | Debug", meta=(DisplayName="디버그 드로우"))
+	bool bDebugDraw = false;
+	// 0이면 단일 프레임, TraceOnce 사용 시 1.0 이상 권장
+	UPROPERTY(EditAnywhere, Category="YS | Sweep | Debug", meta=(DisplayName="드로우 유지 시간(초)", EditCondition="bDebugDraw", EditConditionHides))
+	float DebugDrawDuration = 0.f;
 };
