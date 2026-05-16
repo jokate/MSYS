@@ -19,6 +19,7 @@ enum class EYSInputStatesType : uint8
 	Falling,
 	Skill,
 	Ready,
+	JumpAttack,
 	End,
 };
 

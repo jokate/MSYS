@@ -155,3 +155,16 @@ public :
 		TransitionRule.Add(EYSInputStatesType::Skill);
 	}
 };
+
+UCLASS()
+class UYSJumpAttackState : public UYSInputStates
+{
+	UYSJumpAttackState() : UYSInputStates()
+	{
+		StateName = TEXT("JumpAttack");
+		State = EYSInputStatesType::JumpAttack;
+		TransitionRule.Add(EYSInputStatesType::Idle);     // 착지
+		TransitionRule.Add(EYSInputStatesType::Falling);  // 공중 추가 입력 대기
+		// Dodge 없음
+	}
+};
