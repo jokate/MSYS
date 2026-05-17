@@ -103,7 +103,7 @@ class UYSSkillState : public UYSInputStates
 public :
 	UYSSkillState() : UYSInputStates()
 	{
-		StateName = TEXT("SpecialSkill");
+		StateName = TEXT("Skill");
 		State = EYSInputStatesType::Skill;
 		TransitionRule.Add(EYSInputStatesType::Idle);
 	}

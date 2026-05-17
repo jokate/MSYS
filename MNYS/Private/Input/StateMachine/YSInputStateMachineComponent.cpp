@@ -68,6 +68,7 @@ FGameplayTag UYSInputStateMachineComponent::FindBestCombo(const FGameplayTag& Ta
 		if ( ComboSequence->IsSatisfiedCommand(InputTags) == true )
 		{
 			BestTag = ComboSequence->Command;
+			InputTags.Empty();
 			break;
 		}
 	}
