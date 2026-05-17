@@ -94,7 +94,10 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 		YSASC->OnGameplayTagStateChanged.RemoveDynamic(this, &UYSGameplayAbility::OnGameplayTagChanged);
 	}
 
-	_ReleaseMotionWarp();
+	if (!RuntimeData.IsChainedAbility())
+	{
+		_ReleaseMotionWarp();
+	}
 
 	RuntimeData.ResetData();
 }
