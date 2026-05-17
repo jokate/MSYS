@@ -59,3 +59,20 @@ UAnimMontage* FYSMontageSelector_ByDirection::SelectMontage(const UYSGameplayAbi
 
 	return GetMontage(static_cast<EYSMoveDirection>(SectorIndex));
 }
+
+UAnimMontage* FYSMontageSelector_ByTag::SelectMontage(const UYSGameplayAbility* Ability) const
+{
+	if (!IsValid(Ability))
+		return nullptr;
+
+	// 태그 매칭이 가장 높은 몽타주를 반환합니다.
+	const FGameplayEventData* EventData = Ability->GetEventData();
+	
+	if (EventData == nullptr)
+		return nullptr;
+	
+	if ( TagMontages.Contains(EventData->EventTag) == false )
+		return nullptr;
+	
+	return TagMontages[EventData->EventTag].IsNull() ? nullptr : TagMontages[EventData->EventTag].LoadSynchronous();
+}

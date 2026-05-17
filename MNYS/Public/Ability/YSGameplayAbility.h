@@ -86,6 +86,9 @@ public:
 	
 	YS_ACCESSOR(UYSAT_Trace*, TraceTask);
 	YS_ACCESSOR(EYSAbilityType, AbilityType);
+	const FGameplayEventData* GetEventData() const { return &CurrentEventData; }
+	
+
 	
 protected:
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;

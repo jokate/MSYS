@@ -106,4 +106,17 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputUpAttack, "JumpAttack.Input.Command.UpAttack");
 	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputDownAttack, "JumpAttack.Input.Command.DownAttack");
 	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputBackDodgeAttack, "JumpAttack.Input.Command.BackDodgeAttack");
+	UE_DEFINE_GAMEPLAY_TAG(DamagedInputMove, "Damaged.Input.Move");
+	UE_DEFINE_GAMEPLAY_TAG(DamagedInputLook, "Damaged.Input.Look");
+	UE_DEFINE_GAMEPLAY_TAG(DamagedInputAttack, "Damaged.Input.Attack");
+	UE_DEFINE_GAMEPLAY_TAG(DamagedInputDodge, "Damaged.Input.Dodge");
+	UE_DEFINE_GAMEPLAY_TAG(DamagedInputJump, "Damaged.Input.Jump");
+	UE_DEFINE_GAMEPLAY_TAG(DamagedInputSprint, "Damaged.Input.Sprint");
+	UE_DEFINE_GAMEPLAY_TAG(DamagedInputUp, "Damaged.Input.Up");
+	UE_DEFINE_GAMEPLAY_TAG(DamagedInputDown, "Damaged.Input.Down");
+	UE_DEFINE_GAMEPLAY_TAG(DamagedInputLeft, "Damaged.Input.Left");
+	UE_DEFINE_GAMEPLAY_TAG(DamagedInputRight, "Damaged.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(DamagedInputUpAttack, "Damaged.Input.Command.UpAttack");
+	UE_DEFINE_GAMEPLAY_TAG(DamagedInputDownAttack, "Damaged.Input.Command.DownAttack");
+	UE_DEFINE_GAMEPLAY_TAG(DamagedInputBackDodgeAttack, "Damaged.Input.Command.BackDodgeAttack");
 }

@@ -5,6 +5,7 @@
 
 #include "YSDeveloperSettings.h"
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
+#include "General/YSGameplayTag.h"
 
 float UYSBlueprintFunctionLibrary::GetFinalDamage(const UYSCharacterAttributeSetBase* Owner,
                                                   const UYSCharacterAttributeSetBase* Target, const FName& SkillID)
@@ -21,4 +22,22 @@ float UYSBlueprintFunctionLibrary::GetFinalDamage(const UYSCharacterAttributeSet
 	// 차후 데미지 증가 버프 혹은 다른 것들이 추가될 경우 해당 부분에 대해서 확장하기로 합니다.
 	
 	return FinalDamage;
+}
+
+void UYSBlueprintFunctionLibrary::SendHitEventToTarget(const AActor* Instigator, UAbilitySystemComponent* TargetASC, float FinalDamage,
+	const FName& SkillID)
+{
+	const FYSDamageInfo* DamageInfo = UYSDeveloperSettings::GetDamageInfo(SkillID);
+
+	// 데미지 정보가 없으면 의미 X
+	if ( DamageInfo == nullptr )
+		return;
+	
+	FGameplayEventData EventData;
+	EventData.EventTag = DamageInfo->HitTag;
+	EventData.Instigator = Instigator;
+	EventData.Target = TargetASC->GetAvatarActor();
+	EventData.EventMagnitude = FinalDamage;
+
+	TargetASC->HandleGameplayEvent(YSTags::Event_OnHit, &EventData);
 }

@@ -169,3 +169,17 @@ class UYSJumpAttackState : public UYSInputStates
 		TransitionRule.Add(EYSInputStatesType::Falling);
 	}
 };
+
+UCLASS()
+class UYSDamagedState : public UYSInputStates
+{
+	GENERATED_BODY()
+
+	UYSDamagedState() : UYSInputStates()
+	{
+		StateName = TEXT("Damaged");
+		State = EYSInputStatesType::Damaged;
+		TransitionRule.Add(EYSInputStatesType::Idle);
+		TransitionRule.Add(EYSInputStatesType::Falling);
+	}
+};

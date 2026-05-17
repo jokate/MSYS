@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-
+#include "GameplayTagContainer.h"
 #include "YSDataStruct.generated.h"
 
 /**
@@ -34,4 +34,7 @@ public :
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	EYSDamageType DamageType;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FGameplayTag HitTag;
 };

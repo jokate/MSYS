@@ -177,6 +177,9 @@ void UYSGameplayAbility::OnTraceComplete(const TArray<FHitResult>& HitResults, c
 		
 		// 데미지 처리 로직 추가. ( 클램핑은 내부에서 알아 처리 될 거임 )
 		ASC->SetNumericAttributeBase(TargetAttributeSet->GetCurrentHpAttribute(), CurHp - FinalDamage);
+		
+		// 데미지 히트에 따른 이벤트 송신.
+		UYSBlueprintFunctionLibrary::SendHitEventToTarget(GetOwningActorFromActorInfo(), ASC, FinalDamage, DamageRow);
 	}
 }
 

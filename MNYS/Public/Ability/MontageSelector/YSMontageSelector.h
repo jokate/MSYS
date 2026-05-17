@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "General/YSEnum.h"
 #include "YSMontageSelector.generated.h"
 
@@ -94,4 +95,20 @@ public:
 	// 방향별 몽타주. 비어있는 방향은 Forward 로 폴백.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName = "방향별 몽타주")
 	TMap<EYSMoveDirection, TSoftObjectPtr<UAnimMontage>> DirectionMontages;
+};
+
+
+// 태그별 몽타주 셀렉터
+USTRUCT(BlueprintType, DisplayName = "태그별 몽타주 선택")
+struct MNYS_API FYSMontageSelector_ByTag : public FYSMontageSelector
+{
+	GENERATED_BODY()
+
+public:
+	virtual UAnimMontage* SelectMontage(const UYSGameplayAbility* Ability) const override;
+
+public:
+	// 태그별 몽타주. 비어있는 태그는 Forward 로 폴백.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName = "태그별 몽타주")
+	TMap<FGameplayTag, TSoftObjectPtr<UAnimMontage>> TagMontages;
 };

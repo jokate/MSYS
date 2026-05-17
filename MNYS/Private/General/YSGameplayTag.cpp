@@ -11,8 +11,10 @@ namespace YSTags
 	
 	UE_DEFINE_GAMEPLAY_TAG(Event_TraceStart, "Event.TraceStart");
 	UE_DEFINE_GAMEPLAY_TAG(Event_TraceEnd, "Event.TraceEnd");
+	UE_DEFINE_GAMEPLAY_TAG(Event_OnHit, "Event.OnHit");
 	
-	UE_DEFINE_GAMEPLAY_TAG(Command_UpAttack, "Command.UpAttack");
-	UE_DEFINE_GAMEPLAY_TAG(Command_DownAttack, "Command.DownAttack");
-	UE_DEFINE_GAMEPLAY_TAG(Command_BackDodgeAttack, "Command.BackDodgeAttack");
+	UE_DEFINE_GAMEPLAY_TAG(Hit_Normal, "Hit.Normal");
+	UE_DEFINE_GAMEPLAY_TAG(Hit_Big, "Hit.Big");
+	UE_DEFINE_GAMEPLAY_TAG(Hit_Medium, "Hit.Medium");
+	
 }
