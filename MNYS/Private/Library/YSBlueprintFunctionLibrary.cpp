@@ -34,10 +34,10 @@ void UYSBlueprintFunctionLibrary::SendHitEventToTarget(const AActor* Instigator,
 		return;
 	
 	FGameplayEventData EventData;
-	EventData.EventTag = DamageInfo->HitTag;
 	EventData.Instigator = Instigator;
 	EventData.Target = TargetASC->GetAvatarActor();
 	EventData.EventMagnitude = FinalDamage;
+	EventData.TargetTags.AddTag(DamageInfo->HitTag);
 
 	TargetASC->HandleGameplayEvent(YSTags::Event_OnHit, &EventData);
 }

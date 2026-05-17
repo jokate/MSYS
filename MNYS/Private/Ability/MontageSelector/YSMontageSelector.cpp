@@ -71,8 +71,13 @@ UAnimMontage* FYSMontageSelector_ByTag::SelectMontage(const UYSGameplayAbility* 
 	if (EventData == nullptr)
 		return nullptr;
 	
-	if ( TagMontages.Contains(EventData->EventTag) == false )
-		return nullptr;
+	for ( const FGameplayTag& Tag : EventData->TargetTags )
+	{
+		if ( TagMontages.Contains(Tag) == false )
+			return nullptr;	
+		
+		return TagMontages[Tag].IsNull() ? nullptr : TagMontages[Tag].LoadSynchronous();
+	}
 	
-	return TagMontages[EventData->EventTag].IsNull() ? nullptr : TagMontages[EventData->EventTag].LoadSynchronous();
+	return nullptr;
 }

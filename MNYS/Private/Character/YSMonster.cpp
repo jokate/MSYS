@@ -2,6 +2,7 @@
 
 #include "Character/YSMonster.h"
 
+#include "YSAbilitySystemComponent.h"
 #include "General/YSDefine.h"
 
 // Sets default values
@@ -16,6 +17,8 @@ void AYSMonster::BeginPlay()
 {
 	Super::BeginPlay();
 	SetGenericTeamId(YS_MONSTER_START);
+	AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	AbilitySystemComponent->GiveInitAbility();
 }
 
 // Called every frame
