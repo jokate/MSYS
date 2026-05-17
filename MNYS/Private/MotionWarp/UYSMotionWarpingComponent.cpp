@@ -17,7 +17,7 @@ void UYSMotionWarpingComponent::SetMotionWarp(const FName InName, EMotionWarpTyp
                                               const float MotionWarpValue)
 {
 	// 정책 결정후에 정하기로..
-	
+	// 현재 위치 기준으로 돌아가고자 한다면? -> 혹은 타겟을 기준으로 돌아가고자 한다면?
 }
 
 void UYSMotionWarpingComponent::ReleaseMotionWarp(const FName InName)
@@ -25,6 +25,7 @@ void UYSMotionWarpingComponent::ReleaseMotionWarp(const FName InName)
 	RemoveWarpTarget(InName);
 }
 
+// 커서 로케이션 기준으로 모션 워프 설정
 void UYSMotionWarpingComponent::SetMotionWarpToCursorDirection(const FName TargetName, EMotionWarpType InMotionWarpType,
 	const FVector& TargetLocation, const FRotator& TargetRotation)
 {

@@ -2,13 +2,14 @@
 
 #include "Ability/MontageSelector/YSMontageSelector.h"
 #include "Ability/YSGameplayAbility.h"
+#include "Ability/MotionWarp/YSMotionWarpParam.h"
 #include "Character/YSCharacterBase.h"
 #include "Character/Components/YSCharacterMovementComponent.h"
 #include "MotionWarp/UYSMotionWarpingComponent.h"
 
 void FYSMontageSelector::SetMotionWarp(const UYSGameplayAbility* Ability, bool bInSet) const
 {
-	if ( !IsValid(Ability) == false )
+	if ( IsValid(Ability) == false )
 		return;
 
 	AActor* AvatarActor = Ability->GetAvatarActorFromActorInfo();
@@ -16,12 +17,12 @@ void FYSMontageSelector::SetMotionWarp(const UYSGameplayAbility* Ability, bool b
 	if ( IsValid(AvatarActor) == false )
 		return;
 
-	UYSMotionWarpingComponent* MotionWarpingComponent = UYSMotionWarpingComponent::GetMotionWarpingComponent(AvatarActor);
-
-	if ( IsValid(MotionWarpingComponent) == false )
+	const FYSMotionWarpParam* Param = MotionWarpingParam.GetPtr<FYSMotionWarpParam>();
+	
+	if ( Param == nullptr )
 		return;
-
-	bInSet ? MotionWarpingComponent->SetMotionWarp(MotionWarpName, MotionWarpType) : MotionWarpingComponent->ReleaseMotionWarp(MotionWarpName);
+	
+	bInSet ? Param->ResolveMotionWarp(Ability) : Param->ReleaseMotionWarp(Ability);
 }
 
 // 다 좋은데 입력 방

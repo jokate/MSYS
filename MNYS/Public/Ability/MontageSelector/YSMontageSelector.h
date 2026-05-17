@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "General/YSEnum.h"
+#include "StructUtils/InstancedStruct.h"
 #include "YSMontageSelector.generated.h"
 
 class UYSGameplayAbility;
@@ -51,11 +52,8 @@ public :
 	UPROPERTY(EditAnywhere, meta = (DisplayName = "모션 워핑 사용"))
 	bool bUseMotionWarping = false;
 
-	UPROPERTY(EditAnywhere, meta = (DisplayName = "모션 워핑 타입", EditCondition = bUseMotionWarping, EditConditionHides))
-	EMotionWarpType MotionWarpType = EMotionWarpType::None;
-
-	UPROPERTY(EditAnywhere, meta = (DisplayName = "모션 워핑 타겟 ID", EditCondition = bUseMotionWarping, EditConditionHides))
-	FName MotionWarpName = NAME_None;
+	UPROPERTY(EditAnywhere, meta = (DisplayName = "모션 워핑 파라미터", EditCondition = bUseMotionWarping, EditConditionHides,  BaseStruct = "/Script/MNYS.YSMotionWarpParam", ExcludeBaseStruct))
+	FInstancedStruct MotionWarpingParam;
 };
 
 
