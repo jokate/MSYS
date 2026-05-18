@@ -81,7 +81,7 @@ public:
 //  섹터 경계는 22.5° 오프셋으로 각 방향 중심에 정렬된다.
 //  등록되지 않은 방향은 Forward로 폴백.
 
-USTRUCT(BlueprintType, DisplayName = "방향별 몽타주 선택 (8방향)")
+USTRUCT(NotBlueprintType)
 struct MNYS_API FYSMontageSelector_ByDirection : public FYSMontageSelector
 {
 	GENERATED_BODY()
@@ -89,12 +89,31 @@ struct MNYS_API FYSMontageSelector_ByDirection : public FYSMontageSelector
 public:
 	virtual UAnimMontage* SelectMontage(const UYSGameplayAbility* Ability) const override;
 
+	virtual EYSMoveDirection GetMontageDirection(const UYSGameplayAbility* Ability) const { return EYSMoveDirection::Forward; }
 public:
 	// 방향별 몽타주. 비어있는 방향은 Forward 로 폴백.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName = "방향별 몽타주")
 	TMap<EYSMoveDirection, TSoftObjectPtr<UAnimMontage>> DirectionMontages;
 };
 
+
+USTRUCT(BlueprintType, DisplayName = "입력 방향 기준 몽타주 선택")
+struct MNYS_API FYSMontageSelector_ControlInputDirection : public FYSMontageSelector_ByDirection
+{
+	GENERATED_BODY()
+	
+public :
+	virtual EYSMoveDirection GetMontageDirection(const UYSGameplayAbility* Ability) const override;
+};
+
+USTRUCT(BlueprintType, DisplayName = "타겟을 향하는 방향 기준 몽타주 선택")
+struct MNYS_API FYSMontageSelector_Target : public FYSMontageSelector_ByDirection
+{
+	GENERATED_BODY()
+	
+public :
+	virtual EYSMoveDirection GetMontageDirection(const UYSGameplayAbility* Ability) const override;
+};
 
 // 태그별 몽타주 셀렉터
 USTRUCT(BlueprintType, DisplayName = "태그별 몽타주 선택")
@@ -106,7 +125,7 @@ public:
 	virtual UAnimMontage* SelectMontage(const UYSGameplayAbility* Ability) const override;
 
 public:
-	// 태그별 몽타주. 비어있는 태그는 Forward 로 폴백.
+	// 태그별 몽타주. 비어있는 태그는 없음 처리.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName = "태그별 몽타주")
 	TMap<FGameplayTag, TSoftObjectPtr<UAnimMontage>> TagMontages;
 };

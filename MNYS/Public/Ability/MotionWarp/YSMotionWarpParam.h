@@ -35,10 +35,14 @@ struct MNYS_API FYSMotionWarpParam_ControlRotation : public FYSMotionWarpParam
 	virtual FMotionWarpingTarget GetWarpTargetData(const UYSGameplayAbility* InAbility) const override;
 };
 
-USTRUCT(BlueprintType, DisplayName = "히트 리액션용 모션 워핑 ( 타겟을 향하도록 )")
-struct MNYS_API FYSMotionWarpParam_HitReaction : public FYSMotionWarpParam
+USTRUCT(BlueprintType, DisplayName = "타겟 기준으로 모션 워핑 ( 회전 ) ")
+struct MNYS_API FYSMotionWarpParam_Target : public FYSMotionWarpParam
 {
 	GENERATED_BODY()
 
 	virtual FMotionWarpingTarget GetWarpTargetData(const UYSGameplayAbility* InAbility) const override;
+	
+public : 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "타겟을 향할 것인가?")
+	bool bFaceTarget = true;
 };

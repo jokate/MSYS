@@ -56,7 +56,7 @@ FMotionWarpingTarget FYSMotionWarpParam_ControlRotation::GetWarpTargetData(const
 	return Target;
 }
 
-FMotionWarpingTarget FYSMotionWarpParam_HitReaction::GetWarpTargetData(const UYSGameplayAbility* InAbility) const
+FMotionWarpingTarget FYSMotionWarpParam_Target::GetWarpTargetData(const UYSGameplayAbility* InAbility) const
 {
 	FMotionWarpingTarget Target;
 	Target.Name = MotionWarpTargetName;
@@ -74,7 +74,7 @@ FMotionWarpingTarget FYSMotionWarpParam_HitReaction::GetWarpTargetData(const UYS
 	if ( IsValid(TargetActor) == false )
 		return Target;
 	
-	const FVector FromAttacker = (OwningActor->GetActorLocation() - TargetActor->GetActorLocation()).GetSafeNormal2D();
-	Target.Rotation = FRotator((-FromAttacker).ToOrientationQuat());
+	const FVector FromAttacker = (OwningActor->GetActorLocation() - TargetActor->GetActorLocation()).GetSafeNormal2D() * (bFaceTarget ? -1.0f : 1.0f);
+	Target.Rotation = FRotator((FromAttacker).ToOrientationQuat());
 	return Target;
 }

@@ -40,15 +40,17 @@ UAnimMontage* FYSMontageSelector_ByDirection::SelectMontage(const UYSGameplayAbi
 		return nullptr;
 	};
 
-	if (!IsValid(Ability))
-		return GetMontage(EYSMoveDirection::Forward);
+	return GetMontage(GetMontageDirection(Ability));
+}ㅁ
 
+EYSMoveDirection FYSMontageSelector_ControlInputDirection::GetMontageDirection(const UYSGameplayAbility* Ability) const
+{
 	// 조작감 때문에 입력에 놓여진 값들을 기준으로 가져오도록 합시다
 	AActor* AvatarActor = Ability->GetAvatarActorFromActorInfo();
 	UYSCharacterMovementComponent* Movement = UYSCharacterMovementComponent::Get(AvatarActor);
 	
 	if (!IsValid(Movement))
-		return GetMontage(EYSMoveDirection::Forward);
+		return EYSMoveDirection::Forward;
 
 	// 로컬 스페이스 정규화 벡터 (입력 없으면 ForwardVector 유지)
 	const FVector LocalInput = Movement->GetLocalSpaceLastInputDirection();
@@ -57,8 +59,31 @@ UAnimMontage* FYSMontageSelector_ByDirection::SelectMontage(const UYSGameplayAbi
 	const float Angle           = FMath::RadiansToDegrees(FMath::Atan2(LocalInput.Y, LocalInput.X));
 	const float NormalizedAngle = FMath::Fmod(Angle + 22.5f + 360.f, 360.f);
 	const int32 SectorIndex     = FMath::FloorToInt(NormalizedAngle / 45.f) % 8;
+	
+	return static_cast<EYSMoveDirection>(SectorIndex);
+}
 
-	return GetMontage(static_cast<EYSMoveDirection>(SectorIndex));
+EYSMoveDirection FYSMontageSelector_Target::GetMontageDirection(const UYSGameplayAbility* Ability) const
+{
+	if ( IsValid(Ability) == false )
+		return EYSMoveDirection::Forward;
+	
+	const FGameplayEventData* EventData = Ability->GetEventData();
+	
+	if (EventData == nullptr )
+		return EYSMoveDirection::Forward;
+	
+	const AActor* TargetActor = EventData->Instigator;
+	AActor* OwningActor = Ability->GetOwningActorFromActorInfo();
+	if ( IsValid(TargetActor) == false )
+		return EYSMoveDirection::Forward;
+	
+	const FVector FromAttacker = ((OwningActor->GetActorLocation() - TargetActor->GetActorLocation()).GetSafeNormal2D());
+	const float Angle           = FMath::RadiansToDegrees(FMath::Atan2(FromAttacker.Y, FromAttacker.X));
+	const float NormalizedAngle = FMath::Fmod(Angle + 22.5f + 360.f, 360.f);
+	const int32 SectorIndex     = FMath::FloorToInt(NormalizedAngle / 45.f) % 8;
+	
+	return static_cast<EYSMoveDirection>(SectorIndex);
 }
 
 UAnimMontage* FYSMontageSelector_ByTag::SelectMontage(const UYSGameplayAbility* Ability) const
