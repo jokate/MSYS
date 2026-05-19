@@ -18,3 +18,5 @@ Readme를 적고 있는 저 조차도 모릅니다.
 https://kkkk4017.youtrack.cloud/issues/MNY
 
 요청을 주세요. 알려드릴게요
+
+아 ㅈㅅ 5명만 들어갈 수 있어요
