@@ -13,3 +13,8 @@ https://www.youtube.com/watch?v=JAhIsiipOQ0
 
 해당 프로젝트는, 어디까지 갈 수 있을까요.
 Readme를 적고 있는 저 조차도 모릅니다.
+
+### 프로젝트 이력에 대해서 알고 싶으세요?
+https://kkkk4017.youtrack.cloud/issues/MNY
+
+요청을 주세요. 알려드릴게요
