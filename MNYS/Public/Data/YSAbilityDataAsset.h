@@ -30,4 +30,7 @@ protected :
 	
 	UPROPERTY(EditDefaultsOnly, Category = "YS | GameplayAbility", meta = (DisplayName = "공중 공격"))
 	TArray<FYSGrantedAbilityData> AirAttackAbilities;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | GameplayAbility", meta = (DisplayName = "죽음"))
+	FYSGrantedAbilityData DeathAbility;
 };

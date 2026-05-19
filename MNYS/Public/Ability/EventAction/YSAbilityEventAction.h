@@ -55,3 +55,23 @@ class MNYS_API UYSAbilityEventAction_StopTrace : public UYSAbilityEventAction
 public :
 	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;	
 };
+
+UCLASS(DisplayName = "파괴")
+class MNYS_API UYSAbilityEventAction_Destroy : public UYSAbilityEventAction
+{
+	GENERATED_BODY()
+public :
+	void DestroyActor();
+	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;	
+	
+		
+protected :
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "죽은 이후 Destroy 시간"))
+	float DestroyTime = 2.0f;
+	
+	FTimerHandle DeathTimerHandle;
+
+private : 
+	UPROPERTY()
+	TWeakObjectPtr<AActor> DestroyTarget;
+};

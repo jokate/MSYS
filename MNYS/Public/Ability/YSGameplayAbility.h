@@ -95,7 +95,7 @@ protected:
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 	
 	UFUNCTION()
-	void OnMontagePlayed();
+	virtual void OnMontagePlayed();
 
 	UFUNCTION()
 	void OnMontageInterrupted();

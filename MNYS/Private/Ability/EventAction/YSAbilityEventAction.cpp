@@ -43,3 +43,29 @@ bool UYSAbilityEventAction_StopTrace::Execute_Implementation(UYSGameplayAbility*
 	
 	return true;
 }
+
+void UYSAbilityEventAction_Destroy::DestroyActor()
+{
+	if ( DestroyTarget.IsValid() == false )
+		return;
+	
+	DestroyTarget->Destroy();
+}
+
+bool UYSAbilityEventAction_Destroy::Execute_Implementation(UYSGameplayAbility* OwningAbility,
+                                                           const FGameplayEventData& EventData)
+{	
+	if ( IsValid(OwningAbility) == false )
+		return false;
+
+	UWorld* World = OwningAbility->GetWorld();
+
+	if ( IsValid(World) == false )
+		return false;
+	
+	DestroyTarget = OwningAbility->GetAvatarActorFromActorInfo();
+	
+	World->GetTimerManager().SetTimer(DeathTimerHandle, this, &ThisClass::DestroyActor, DestroyTime, false);
+	
+	return true;
+}

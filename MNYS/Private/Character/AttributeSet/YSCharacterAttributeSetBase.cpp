@@ -3,6 +3,8 @@
 
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
 
+#include "General/YSGameplayTag.h"
+
 UYSCharacterAttributeSetBase::UYSCharacterAttributeSetBase()
 {
 	CurrentHp = 100.f;
@@ -26,6 +28,21 @@ void UYSCharacterAttributeSetBase::PreAttributeChange(const FGameplayAttribute& 
     {
         (*Handler)(NewValue);
     }
+}
+
+void UYSCharacterAttributeSetBase::PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue,
+	float NewValue)
+{
+	Super::PostAttributeChange(Attribute, OldValue, NewValue);
+	
+	if ( Attribute == GetCurrentHpAttribute() )
+	{ 
+		if (NewValue <= 0.f && OldValue > 0.f)
+		{	
+			FGameplayEventData EventData;
+			GetOwningAbilitySystemComponent()->HandleGameplayEvent(YSTags::Event_OnDead, &EventData);
+		}
+	}
 }
 
 void UYSCharacterAttributeSetBase::AutoRegisterHandler()

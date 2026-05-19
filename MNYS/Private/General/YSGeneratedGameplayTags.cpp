@@ -119,4 +119,17 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(DamagedInputUpAttack, "Damaged.Input.Command.UpAttack");
 	UE_DEFINE_GAMEPLAY_TAG(DamagedInputDownAttack, "Damaged.Input.Command.DownAttack");
 	UE_DEFINE_GAMEPLAY_TAG(DamagedInputBackDodgeAttack, "Damaged.Input.Command.BackDodgeAttack");
+	UE_DEFINE_GAMEPLAY_TAG(DeathInputMove, "Death.Input.Move");
+	UE_DEFINE_GAMEPLAY_TAG(DeathInputLook, "Death.Input.Look");
+	UE_DEFINE_GAMEPLAY_TAG(DeathInputAttack, "Death.Input.Attack");
+	UE_DEFINE_GAMEPLAY_TAG(DeathInputDodge, "Death.Input.Dodge");
+	UE_DEFINE_GAMEPLAY_TAG(DeathInputJump, "Death.Input.Jump");
+	UE_DEFINE_GAMEPLAY_TAG(DeathInputSprint, "Death.Input.Sprint");
+	UE_DEFINE_GAMEPLAY_TAG(DeathInputUp, "Death.Input.Up");
+	UE_DEFINE_GAMEPLAY_TAG(DeathInputDown, "Death.Input.Down");
+	UE_DEFINE_GAMEPLAY_TAG(DeathInputLeft, "Death.Input.Left");
+	UE_DEFINE_GAMEPLAY_TAG(DeathInputRight, "Death.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(DeathInputUpAttack, "Death.Input.Command.UpAttack");
+	UE_DEFINE_GAMEPLAY_TAG(DeathInputDownAttack, "Death.Input.Command.DownAttack");
+	UE_DEFINE_GAMEPLAY_TAG(DeathInputBackDodgeAttack, "Death.Input.Command.BackDodgeAttack");
 }

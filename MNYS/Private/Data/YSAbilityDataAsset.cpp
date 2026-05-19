@@ -11,6 +11,7 @@ TArray<FYSGrantedAbilityData> UYSAbilityDataAsset::GetAllAbilities() const
 	RetVal.Append(AvoidanceAbilities);
 	RetVal.Append(SkillAbilities);
 	RetVal.Append(AirAttackAbilities);
+	RetVal.Add(DeathAbility);
 	
 	return RetVal;
 }

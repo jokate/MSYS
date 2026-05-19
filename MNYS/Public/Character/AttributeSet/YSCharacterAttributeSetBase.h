@@ -11,6 +11,7 @@
 /**
  * 
  */
+
 UCLASS()
 class MNYS_API UYSCharacterAttributeSetBase : public UAttributeSet
 {
@@ -27,7 +28,8 @@ public :
     ATTRIBUTE_ACCESSORS(UYSCharacterAttributeSetBase, DefenseRate);
 
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
-
+	virtual void PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue) override;
+	
 protected :
 	void AutoRegisterHandler();
 	

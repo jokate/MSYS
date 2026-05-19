@@ -170,19 +170,22 @@ void UYSGameplayAbility::OnTraceComplete(const TArray<FHitResult>& HitResults, c
 
 		if ( IsValid(TargetAttributeSet) == false )
 			continue;
-
+		
 		float CurHp = TargetAttributeSet->GetCurrentHp();
+		
+		if ( CurHp <= 0.f )
+			continue;
 
 		// 스킬 별 데미지 관련 정책은 필요함. (다만 현재 기준 정책은 없는 부분이라서 어떻게 해야할 지 고민 좀 해봐야 할 듯 싶음)
 		// 아마 해당 부분은 Static 하게 결정되어야 할 듯 싶습니다.
 		// EX ) 기본 공격 * ( 계수 ( 1 + Extra ) ) + 추가 데미지 (버프..?) - 방어력 비례 이런 형태. (수식은 뭐 간단하지만 어느정도의 감각이 있어야 할 듯.)
 		float FinalDamage = UYSBlueprintFunctionLibrary::GetFinalDamage(OwnerAttribute, TargetAttributeSet, DamageRow);
 		
-		// 데미지 처리 로직 추가. ( 클램핑은 내부에서 알아 처리 될 거임 )
-		ASC->SetNumericAttributeBase(TargetAttributeSet->GetCurrentHpAttribute(), CurHp - FinalDamage);
-		
 		// 데미지 히트에 따른 이벤트 송신.
 		UYSBlueprintFunctionLibrary::SendHitEventToTarget(GetOwningActorFromActorInfo(), ASC, FinalDamage, DamageRow);
+		
+		// 데미지 처리 로직 추가. ( 클램핑은 내부에서 알아 처리 될 거임 )
+		ASC->SetNumericAttributeBase(TargetAttributeSet->GetCurrentHpAttribute(), CurHp - FinalDamage);
 	}
 }
 

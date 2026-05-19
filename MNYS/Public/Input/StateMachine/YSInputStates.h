@@ -183,3 +183,16 @@ class UYSDamagedState : public UYSInputStates
 		TransitionRule.Add(EYSInputStatesType::Falling);
 	}
 };
+
+
+UCLASS()
+class UYSDeathState : public UYSInputStates
+{
+	GENERATED_BODY()
+
+	UYSDeathState() : UYSInputStates()
+	{
+		StateName = TEXT("Death");
+		State = EYSInputStatesType::Death;
+	}
+};
