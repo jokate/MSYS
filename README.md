@@ -12,4 +12,4 @@ https://www.youtube.com/watch?v=JAhIsiipOQ0
 ### 정답의 세계에서는 나침반이 길을 잃는다.
 
 해당 프로젝트는, 어디까지 갈 수 있을까요.
-Readme를 적고 있는 저 조차도 모르빈다.
+Readme를 적고 있는 저 조차도 모릅니다.
