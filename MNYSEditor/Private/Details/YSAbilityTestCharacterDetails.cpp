@@ -58,7 +58,8 @@ void FYSAbilityTestCharacterDetails::GenerateAbilityButtons(IDetailCategoryBuild
 
     for (const FYSGrantedAbilityData& AbilityData : AllAbilities)
     {
-        if (!AbilityData.AbilityClass) continue;
+        if (AbilityData.AbilityClass == nullptr) 
+            continue;
 
         TSubclassOf<UGameplayAbility> AbilityClassCopy = AbilityData.AbilityClass;
         TWeakObjectPtr<const AYSCharacterBase> CharacterPtr(TestCharacter);
@@ -79,11 +80,11 @@ FReply FYSAbilityTestCharacterDetails::OnAbilityButtonClicked(TWeakObjectPtr<AYS
                                                               TSubclassOf<UGameplayAbility> AbilityClass)
 {
     AYSCharacterBase* Character = TestCharacter.Get();
-    if (!Character || !AbilityClass) return FReply::Handled();
+    if (IsValid(Character) == false || IsValid(AbilityClass) == false) return FReply::Handled();
 
-    if (Character->AbilitySystemComponent)
+    if (UYSAbilitySystemComponent* ASC = Character->AbilitySystemComponent)
     {
-        Character->AbilitySystemComponent->TryActivateAbilityByClass(AbilityClass);
+        ASC->TryActivateAbilityByClass(AbilityClass);
     }
 
     return FReply::Handled();
