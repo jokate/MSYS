@@ -48,7 +48,7 @@ public :
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Weapon")
 	TObjectPtr<USkeletalMeshComponent> WeaponMeshComponent;
-
+	
 	UPROPERTY()
 	FGenericTeamId GenericTeamId;
 };
