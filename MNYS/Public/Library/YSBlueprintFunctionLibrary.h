@@ -21,4 +21,5 @@ public :
 
 	UFUNCTION(BlueprintCallable)
 	static void SendHitEventToTarget(const AActor* Instigator, UAbilitySystemComponent* TargetASC, float FinalDamage, const FName& SkillID);
+	
 };
