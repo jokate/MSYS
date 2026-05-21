@@ -75,3 +75,29 @@ private :
 	UPROPERTY()
 	TWeakObjectPtr<AActor> DestroyTarget;
 };
+
+UCLASS(DisplayName = "(플레이어) 입력 State 전환")
+class MNYS_API UYSAbilityEventAction_TransitionState : public UYSAbilityEventAction
+{
+	GENERATED_BODY()
+	
+public : 
+	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
+	
+public : 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "전환할 State"))
+	EYSInputStatesType NextState;
+};
+
+UCLASS(DisplayName = "Gameplay Cue 트리거")
+class MNYS_API UYSAbilityEventAction_GameplayCue : public UYSAbilityEventAction
+{
+	GENERATED_BODY()
+	
+public :
+	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
+	
+public : 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "트리거 할 게임 플레이 큐"))
+	FGameplayTagContainer GameplayCueTag;
+};

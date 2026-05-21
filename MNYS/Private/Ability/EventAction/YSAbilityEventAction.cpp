@@ -3,9 +3,11 @@
 
 #include "Ability/EventAction/YSAbilityEventAction.h"
 
+#include "AbilitySystemComponent.h"
 #include "Ability/YSGameplayAbility.h"
 #include "Ability/Payload/YSAbilityTriggerPayload.h"
 #include "Ability/Task/YSAT_Trace.h"
+#include "Input/StateMachine/YSInputStateMachineComponent.h"
 
 bool UYSAbilityEventAction_StartTrace::Execute_Implementation(UYSGameplayAbility* OwningAbility,
                                                               const FGameplayEventData& EventData)
@@ -66,6 +68,43 @@ bool UYSAbilityEventAction_Destroy::Execute_Implementation(UYSGameplayAbility* O
 	DestroyTarget = OwningAbility->GetAvatarActorFromActorInfo();
 	
 	World->GetTimerManager().SetTimer(DeathTimerHandle, this, &ThisClass::DestroyActor, DestroyTime, false);
+	
+	return true;
+}
+
+bool UYSAbilityEventAction_TransitionState::Execute_Implementation(UYSGameplayAbility* OwningAbility,
+	const FGameplayEventData& EventData)
+{
+	if ( IsValid(OwningAbility) == false )
+		return false;
+
+	AActor* AvatarActor = OwningAbility->GetAvatarActorFromActorInfo();
+	UYSInputStateMachineComponent* StateMachineComponent = UYSInputStateMachineComponent::Get(AvatarActor);
+	
+	if ( IsValid(StateMachineComponent) == false )
+		return false;
+	
+	StateMachineComponent->TransitionState(NextState);
+	
+	return true;
+	
+}
+
+bool UYSAbilityEventAction_GameplayCue::Execute_Implementation(UYSGameplayAbility* OwningAbility,
+	const FGameplayEventData& EventData)
+{
+	if ( IsValid(OwningAbility) == false )
+		return false;
+	
+	UAbilitySystemComponent* ASC = OwningAbility->GetAbilitySystemComponentFromActorInfo();
+	
+	if ( IsValid(ASC) == false )
+		return false;
+	
+	for ( const FGameplayTag& CueTag : GameplayCueTag )
+	{
+		ASC->AddGameplayCue(CueTag);	
+	}
 	
 	return true;
 }
