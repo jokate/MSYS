@@ -9,7 +9,8 @@ public class MNYS : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", 
-			"GameplayAbilities", "AIModule", "MotionWarping", "GameplayTags", "GameplayTasks", "DataRegistry", "DeveloperSettings", "UMG", "Kismet", "AnimGraphRuntime" });
+			"GameplayAbilities", "AIModule", "MotionWarping", "GameplayTags", "GameplayTasks", "DataRegistry", "DeveloperSettings", "UMG", "Kismet", "AnimGraphRuntime", "Niagara", "LevelSequence", "LevelSequence"
+		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "AnimationLocomotionLibraryRuntime" });
 		
