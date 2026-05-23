@@ -49,9 +49,13 @@ void AYSCharacterPlayer::OnMovementModeChanged(EMovementMode PrevMovementMode, u
 {
 	Super::OnMovementModeChanged(PrevMovementMode, PreviousCustomMode);
 	
-	if ((PrevMovementMode == EMovementMode::MOVE_Falling && GetCharacterMovement()->IsFalling() == false) || GetCharacterMovement()->IsFalling() )
+	if (GetCharacterMovement()->IsFalling())
 	{
-		TransitionToDefaultState();
+		AddStateToStateMachine(EYSInputStatesType::Falling);
+	}
+	else
+	{
+		RemoveStateToStateMachine(EYSInputStatesType::Falling);
 	}
 }
 
@@ -118,28 +122,19 @@ void AYSCharacterPlayer::ProcessInput(FGameplayTag InputTag)
 	}
 }
 
-void AYSCharacterPlayer::TransitionStateMachine(EYSInputStatesType InputStateType) const
+void AYSCharacterPlayer::AddStateToStateMachine(EYSInputStatesType InputStateType) const
 {
 	if ( IsValid(InputStateMachineComponent) )
 	{
-		InputStateMachineComponent->TransitionState(InputStateType);
+		InputStateMachineComponent->AddStateStack(InputStateType);
 	}
 }
 
-void AYSCharacterPlayer::TransitionToDefaultState()
+void AYSCharacterPlayer::RemoveStateToStateMachine(EYSInputStatesType InputStateType) const
 {
-	UYSCharacterMovementComponent* CharMove = GetYSCharacterMovement();
-	
-	if ( IsValid(CharMove) == false )
-		return;
-	
-	if ( CharMove->IsFalling() )
+	if ( IsValid(InputStateMachineComponent) )	
 	{
- 		TransitionStateMachine(EYSInputStatesType::Falling);
-	}
-	else
-	{
-		TransitionStateMachine(EYSInputStatesType::Idle);
+		InputStateMachineComponent->RemoveStateStack(InputStateType);
 	}
 }
 

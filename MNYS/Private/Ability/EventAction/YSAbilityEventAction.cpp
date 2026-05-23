@@ -84,7 +84,7 @@ bool UYSAbilityEventAction_TransitionState::Execute_Implementation(UYSGameplayAb
 	if ( IsValid(StateMachineComponent) == false )
 		return false;
 	
-	StateMachineComponent->TransitionState(NextState);
+	StateMachineComponent->AddStateStack(NextState);
 	
 	return true;
 	

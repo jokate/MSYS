@@ -23,7 +23,9 @@ public:
 	static UYSInputStateMachineComponent* Get(AActor* Owner);
 	UYSInputStateMachineComponent();
 	virtual void AcceptInput(const FGameplayTag& Tag);
-	virtual void TransitionState(EYSInputStatesType NewInputState);
+	
+	virtual void AddStateStack(EYSInputStatesType State);
+	virtual void RemoveStateStack(EYSInputStatesType State);
 	
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -32,6 +34,8 @@ protected:
 	{
 		InputTags.Empty();
 	}
+	
+	virtual void TransitionState(EYSInputStatesType NewInputState);
 	
 	// Called when the game starts
 
@@ -44,6 +48,10 @@ protected:
 	void OnTagUpdated(const FGameplayTag& Tag, bool bActive);
 
 public :
+	// 현재 InputState에 대한 요청들을 담아둡니다. 만약 Transition이 불가능하더라도 요청은 남습니다.
+	// 만약 제거 될 때 최상단의 State로 변경됩니다.
+	UPROPERTY(VisibleAnywhere)
+	TArray<EYSInputStatesType> InputStateRequests;
 	
 	UPROPERTY()
 	TObjectPtr<UYSInputStates> CurrentInputState;

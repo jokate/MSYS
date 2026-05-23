@@ -17,6 +17,6 @@ void UYSAnimNotify_TransitionState::Notify(USkeletalMeshComponent* MeshComp, UAn
 		UYSInputStateMachineComponent* StateMachineComponent = UYSInputStateMachineComponent::Get(OwnerActor);
 		
 		if ( IsValid(StateMachineComponent) )
-			StateMachineComponent->TransitionState(NextState);
+			StateMachineComponent->AddStateStack(NextState);
 	}
 }

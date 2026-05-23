@@ -38,8 +38,8 @@ public:
 	UFUNCTION()
 	void ProcessInput(FGameplayTag InputTag);
 
-	void TransitionStateMachine(EYSInputStatesType InputStateType) const;
-	void TransitionToDefaultState();
+	void AddStateToStateMachine(EYSInputStatesType InputStateType) const;
+	void RemoveStateToStateMachine(EYSInputStatesType InputStateType) const;
 	
 	void Look(const FInputActionValue& Value);
 	void Move(const FInputActionValue& Value);

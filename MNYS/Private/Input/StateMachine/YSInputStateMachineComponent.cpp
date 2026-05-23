@@ -40,7 +40,7 @@ void UYSInputStateMachineComponent::BeginPlay()
 		InputStates.Emplace(State->GetStateType(), State);
 	}
 
-	TransitionState(EYSInputStatesType::Idle);
+	AddStateStack(EYSInputStatesType::Idle);
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &UYSInputStateMachineComponent::ResetInputTags, InputProcessingTime, true);
 	
 	AbilitySystemComponent = UYSAbilitySystemComponent::Get(GetOwner());
@@ -99,21 +99,47 @@ void UYSInputStateMachineComponent::AcceptInput(const FGameplayTag& Tag)
 
 void UYSInputStateMachineComponent::TransitionState(EYSInputStatesType NewInputState)
 {
-	if ( IsValid(CurrentInputState) && CurrentInputState->IsEnableTransition(NewInputState))
+	if ( IsValid(CurrentInputState) && CurrentInputState->IsEnableTransition(NewInputState) == false )
 	{
-		UYSInputStates** NextState = InputStates.Find(NewInputState);
-
-		if ( NextState == nullptr )
-		{
-			return;
-		}
-
-		CurrentInputState = *NextState;
+		return;
 	}
-	else
+	
+	UYSInputStates** NextState = InputStates.Find(NewInputState);
+
+	if ( NextState == nullptr )
 	{
-		CurrentInputState = *InputStates.Find(NewInputState);
+		return;
 	}
+
+	CurrentInputState = *NextState;
+}
+
+void UYSInputStateMachineComponent::AddStateStack(EYSInputStatesType State)
+{
+	// 만약 State Stack에 있는 경우 최상단으로 올려준다.
+	if ( InputStateRequests.Contains(State))
+	{
+		InputStateRequests.Remove(State);
+	}
+	
+	InputStateRequests.Add(State);	
+	
+	// 근데 이렇게 State 전환이 정상적이지 않다면 어쩌지?
+	TransitionState(State);
+}
+
+void UYSInputStateMachineComponent::RemoveStateStack(EYSInputStatesType State)
+{
+	// 유일성을 보장한다. (Idle이 아닌 경우에는 제거 가능)
+	if (State != EYSInputStatesType::Idle)
+	{
+		InputStateRequests.Remove(State);
+	}
+	
+	if ( InputStateRequests.IsEmpty() )
+		return;
+	
+	TransitionState(InputStateRequests.Last());
 }
 
 

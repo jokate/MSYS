@@ -63,7 +63,7 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 
 		if ( IsValid(Character) )
 		{
-			Character->TransitionStateMachine(ChangeInputStateType);
+			Character->AddStateToStateMachine(ChangeInputStateType);
 		}
 	}
 
@@ -83,7 +83,7 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 
 		if ( IsValid(Character) && RuntimeData.IsChainedAbility() == false )
 		{
-			Character->TransitionToDefaultState();
+			Character->RemoveStateToStateMachine(ChangeInputStateType);
 		}
 	}
 	
