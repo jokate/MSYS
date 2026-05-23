@@ -9,7 +9,7 @@ public class MNYS : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", 
-			"GameplayAbilities", "AIModule", "MotionWarping", "GameplayTags", "GameplayTasks", "DataRegistry", "DeveloperSettings", "UMG", "Kismet", "AnimGraphRuntime", "Niagara", "LevelSequence", "LevelSequence"
+			"GameplayAbilities", "AIModule", "MotionWarping", "GameplayTags", "GameplayTasks", "DataRegistry", "DeveloperSettings", "UMG", "Kismet", "AnimGraphRuntime", "Niagara", "LevelSequence", "MovieScene"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "AnimationLocomotionLibraryRuntime" });
@@ -30,7 +30,7 @@ public class MNYS : ModuleRules
 				"PhysicsCore",
 				"UnrealEd",           // For Blueprint editing
 				"BlueprintGraph",     // For K2Node classes (F15-F22)
-				"KismetCompiler"      // For Blueprint compilation (F15-F22)
+				"KismetCompiler"      // For Blueprint compilation (F15-F22),
 			}
 		);
 		
