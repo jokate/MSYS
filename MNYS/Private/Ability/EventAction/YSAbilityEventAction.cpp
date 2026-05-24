@@ -3,7 +3,9 @@
 
 #include "Ability/EventAction/YSAbilityEventAction.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "AbilitySystemInterface.h"
 #include "Ability/YSGameplayAbility.h"
 #include "Ability/Payload/YSAbilityTriggerPayload.h"
 #include "Ability/Task/YSAT_Trace.h"
@@ -105,6 +107,56 @@ bool UYSAbilityEventAction_GameplayCue::Execute_Implementation(UYSGameplayAbilit
 	{
 		ASC->AddGameplayCue(CueTag);	
 	}
+	
+	return true;
+}
+
+bool UYSAbilityEventAction_GameplayEffect::Execute_Implementation(UYSGameplayAbility* OwningAbility,
+	const FGameplayEventData& EventData)
+{
+	if ( IsValid(OwningAbility) == false )
+		return false;
+
+	return bIsFromInstigator ? Execute_GameplayEffectFromInstigator(OwningAbility, EventData) 
+		: Execute_GameplayEffectToSelf(OwningAbility, EventData);
+}
+
+bool UYSAbilityEventAction_GameplayEffect::Execute_GameplayEffectToSelf(UYSGameplayAbility* OwningAbility,
+	const FGameplayEventData& EventData)
+{
+	UAbilitySystemComponent* OwnerASC = OwningAbility->GetAbilitySystemComponentFromActorInfo();
+	if ( IsValid(OwnerASC) == false )
+		return false;
+	
+	FGameplayEffectContextHandle EffectContextHandle;
+	EffectContextHandle.SetAbility(OwningAbility);
+	FGameplayEffectSpec Spec(GameplayEffect.LoadSynchronous(), EffectContextHandle);	
+	
+	OwnerASC->ApplyGameplayEffectSpecToSelf(Spec);
+	return true;
+}
+
+bool UYSAbilityEventAction_GameplayEffect::Execute_GameplayEffectFromInstigator(UYSGameplayAbility* OwningAbility,
+	const FGameplayEventData& EventData)
+{
+	if ( IsValid(EventData.Instigator) == false )
+		return false;
+	
+	const IAbilitySystemInterface* ASI = Cast<const IAbilitySystemInterface>(EventData.Instigator);
+	
+	if ( ASI == nullptr )
+		return false;
+	
+	UAbilitySystemComponent* TargetASC = ASI->GetAbilitySystemComponent();
+	UAbilitySystemComponent* OwnerASC = OwningAbility->GetAbilitySystemComponentFromActorInfo();
+	if ( IsValid(TargetASC) == false || IsValid(OwnerASC) == false )
+		return false;
+	
+	
+	FGameplayEffectContextHandle EffectContextHandle;
+	EffectContextHandle.SetAbility(OwningAbility);
+	FGameplayEffectSpec Spec(GameplayEffect.LoadSynchronous(), EffectContextHandle);	
+	TargetASC->ApplyGameplayEffectSpecToTarget(Spec, OwnerASC);
 	
 	return true;
 }

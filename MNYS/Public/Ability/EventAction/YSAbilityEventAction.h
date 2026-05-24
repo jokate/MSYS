@@ -8,6 +8,7 @@
 #include "UObject/Object.h"
 #include "YSAbilityEventAction.generated.h"
 
+class UGameplayEffect;
 struct FYSComboTransition;
 struct FGameplayEventData;
 class UYSGameplayAbility;
@@ -100,4 +101,24 @@ public :
 public : 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "트리거 할 게임 플레이 큐"))
 	FGameplayTagContainer GameplayCueTag;
+};
+
+UCLASS(DisplayName = "Gameplay Effect 트리거")
+class MNYS_API UYSAbilityEventAction_GameplayEffect : public UYSAbilityEventAction
+{
+	GENERATED_BODY()
+	
+public : 
+	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
+	
+protected : 
+	virtual bool Execute_GameplayEffectToSelf(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData);
+	virtual bool Execute_GameplayEffectFromInstigator(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData);
+	
+public :
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "트리거 할 게임 플레이 이펙트"))
+	TSoftObjectPtr<UGameplayEffect> GameplayEffect;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "Instigator로부터 받을 것인가?"))
+	bool bIsFromInstigator = false;
 };
