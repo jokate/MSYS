@@ -4,6 +4,10 @@
 #include "Ability/YSGameplayAbility.h"
 
 #include "AbilitySystemComponent.h"
+#include "LevelSequence.h"
+#include "LevelSequenceActor.h"
+#include "LevelSequencePlayer.h"
+#include "MovieSceneSequencePlaybackSettings.h"
 #include "YSAbilitySystemComponent.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
@@ -52,8 +56,7 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 		YSASC->OnGameplayTagStateChanged.AddDynamic(this, &UYSGameplayAbility::OnGameplayTagChanged);
 	}
 	
-	if ( bShouldPlayMontage )
-		_SetupPlayMontage();
+	SetupPlayBack();
 
 	AActor* OwnerActor = GetOwningActorFromActorInfo();
 
@@ -232,6 +235,43 @@ void UYSGameplayAbility::_SetupPlayMontage()
 	CurMontageSelector->SetMotionWarp(this, true);
 }
 
+void UYSGameplayAbility::OnSequencePlayed()
+{
+	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+}
+
+void UYSGameplayAbility::_SetupSequence()
+{
+	ULevelSequence* Sequence = SequenceSettings.Sequence.LoadSynchronous();
+	if (!IsValid(Sequence))
+	{
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+		return;
+	}
+	FMovieSceneSequencePlaybackSettings Settings;
+	Settings.PlayRate = SequenceSettings.PlayRate;
+	Settings.bPauseAtEnd = false;
+	ALevelSequenceActor* SequenceActor = nullptr;
+	ULevelSequencePlayer* Player = ULevelSequencePlayer::CreateLevelSequencePlayer( this, Sequence , Settings, SequenceActor);
+	
+	if (!IsValid(Player) || !IsValid(SequenceActor))
+	{
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+		return;
+	}
+	
+	ActiveSequenceActor = SequenceActor;
+	
+	if (!SequenceSettings.bOverrideCameraBySequence && IsValid(ActiveSequenceActor))
+	{
+		// 카메라 컷 트랙 비활성화
+		ActiveSequenceActor->bOverrideInstanceData = false;
+	}
+	
+	Player->OnFinished.AddDynamic(this, &UYSGameplayAbility::OnSequencePlayed);
+	Player->Play();
+}
+
 void UYSGameplayAbility::_ReleaseMotionWarp() const
 {
 	const FYSMontageSelector* CurMontageSelector = MontageSelector.GetPtr<FYSMontageSelector>();
@@ -285,6 +325,21 @@ void UYSGameplayAbility::OnMontageInterrupted()
 	bool bReplicatedEndAbility = true;
 	bool bWasCancelled = false;
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, bReplicatedEndAbility, bWasCancelled);
+}
+
+void UYSGameplayAbility::SetupPlayBack()
+{
+	switch ( PlaybackType )
+	{
+	case EYSAbilityPlaybackType::Montage :
+		_SetupPlayMontage();
+		break;
+	case EYSAbilityPlaybackType::Sequence :
+		_SetupSequence();
+		break;
+	default :
+		break;
+	}
 }
 
 #if UE_EDITOR

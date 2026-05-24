@@ -6,11 +6,13 @@
 #include "Abilities/GameplayAbility.h"
 #include "General/YSEnum.h"
 #include "General/YSMacros.h"
+#include "General/YSStruct.h"
 #include "Input/Combo/YSComboData.h"
 #include "MontageSelector/YSMontageSelector.h"
 #include "StructUtils/InstancedStruct.h"
 #include "YSGameplayAbility.generated.h"
 
+class ALevelSequenceActor;
 class UYSAT_Trace;
 struct FYSMontageSelector;
 class UYSAbilityEventAction;
@@ -22,6 +24,14 @@ enum class EYSAbilityType : uint8
 	None,
 	MeleeAttack UMETA(DisplayName = "근접 공격"),
 	RangedAttack UMETA(DisplayName = "원거리 공격"),
+};
+
+UENUM(BlueprintType)
+enum class EYSAbilityPlaybackType : uint8
+{
+	None UMETA(DisplayName = "아무것도 재생 안함"),
+	Montage UMETA(DisplayName = "몽타주 재생"),
+	Sequence UMETA(DisplayName = "시퀀스 재생")
 };
 
 USTRUCT()
@@ -100,6 +110,8 @@ protected:
 	UFUNCTION()
 	void OnMontageInterrupted();
 	
+	virtual void SetupPlayBack();
+	
 public :
 #if UE_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
@@ -112,15 +124,15 @@ private :
 	void _PrepareForAbilityEvent();
 
 	void _SetupPlayMontage();
+	
+	UFUNCTION()
+	void OnSequencePlayed();
+	
+	void _SetupSequence();
 
 	void _ReleaseMotionWarp() const;
 	
 public:
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Montage To Play", meta = (DisplayName = "몽타주 재생 여부"))
-	bool bShouldPlayMontage = true;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Montage To Play", meta = (DisplayName = "재생할 몽타주 정보", EditCondition = "bShouldPlayMontage", BaseStruct = "/Script/MNYS.YSMontageSelector", ExcludeBaseStruct))
-	FInstancedStruct MontageSelector;
 
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Input Related", meta = (DisplayName = "인풋에 따른 반응"))
 	TArray<FYSComboTransition> TransitionsByInput;
@@ -139,8 +151,20 @@ protected :
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Ability Type")
 	EYSAbilityType AbilityType = EYSAbilityType::None;
 	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Ability Playback Type")
+	EYSAbilityPlaybackType PlaybackType = EYSAbilityPlaybackType::Montage;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Sequence", meta = (DisplayName = "시퀀스 설정", 	EditCondition = "PlaybackType == EYSAbilityPlaybackType::Sequence"))
+	FYSSequencePlaySettings SequenceSettings;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Montage To Play", meta = (DisplayName = "재생할 몽타주 정보", EditCondition = "PlaybackType == EYSAbilityPlaybackType::Montage", BaseStruct = "/Script/MNYS.YSMontageSelector", ExcludeBaseStruct))
+	FInstancedStruct MontageSelector;
+	
 private:
 	FYSGameplayAbility_RuntimeData RuntimeData;
+	
+	UPROPERTY()
+	TObjectPtr<ALevelSequenceActor> ActiveSequenceActor = nullptr;
 
 	UPROPERTY()
 	UYSAT_Trace* TraceTask = nullptr;

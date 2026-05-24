@@ -11,6 +11,7 @@
  * 
  */
 
+class ULevelSequence;
 class UYSAbilityTriggerPayload;
 class UYSGameplayAbility;
 
@@ -91,4 +92,21 @@ public :
 	// 0이면 단일 프레임, TraceOnce 사용 시 1.0 이상 권장
 	UPROPERTY(EditAnywhere, Category="YS | Sweep | Debug", meta=(DisplayName="드로우 유지 시간(초)", EditCondition="bDebugDraw", EditConditionHides))
 	float DebugDrawDuration = 0.f;
+};
+
+
+USTRUCT(BlueprintType)
+struct FYSSequencePlaySettings
+{
+	GENERATED_BODY()
+	
+public : 
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Sequence", meta = (DisplayName = "재생할 레벨 시퀀스"))
+	TSoftObjectPtr<ULevelSequence> Sequence;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Sequence",	meta = (DisplayName = "카메라 컷 오버라이드 사용"))
+	bool bOverrideCameraBySequence = true;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Sequence",	meta = (DisplayName = "재생 속도", ClampMin = "0.1"))
+	float PlayRate = 1.0f;
 };
