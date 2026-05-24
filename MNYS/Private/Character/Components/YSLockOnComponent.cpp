@@ -145,7 +145,7 @@ void UYSLockOnComponent::ChaseCamera(float DeltaTime)
 	FRotator TargetRot  = ToTarget.Rotation();
 	FRotator CurrentRot = OwnerPlayerController->GetControlRotation();
 	
-	CurrentRot.Pitch = OwnerPlayerController.Get()->GetControlRotation().Pitch;
+	TargetRot.Pitch = CurrentRot.Pitch;
 	OwnerPlayerController->SetControlRotation(
 		FMath::RInterpTo(CurrentRot, TargetRot, DeltaTime, CameraInterpSpeed));
 }
