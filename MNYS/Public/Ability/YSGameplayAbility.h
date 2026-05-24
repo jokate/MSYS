@@ -113,7 +113,7 @@ public:
 	YS_ACCESSOR(EYSAbilityType, AbilityType);
 	const FGameplayEventData* GetEventData() const { return &CurrentEventData; }
 	
-	void AddRuntimeEffectSpecaHandle(const FActiveGameplayEffectHandle& Handle) { RuntimeData.AddEffectSpecHandle(Handle); }
+	void AddRuntimeEffectSpecHandle(const FActiveGameplayEffectHandle& Handle) { RuntimeData.AddEffectSpecHandle(Handle); }
 	
 protected:
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
@@ -125,7 +125,7 @@ protected:
 	UFUNCTION()
 	void OnMontageInterrupted();
 	
-	virtual void SetupPlayBack();
+	virtual void SetupPlayBack(const FGameplayEventData* TriggerEventData);
 	
 public :
 #if UE_EDITOR
@@ -138,12 +138,12 @@ private :
 	
 	void _PrepareForAbilityEvent();
 
-	void _SetupPlayMontage();
+	void _SetupPlayMontage(const FGameplayEventData* TriggerEventData = nullptr);
 	
 	UFUNCTION()
 	void OnSequencePlayed();
 	
-	void _SetupSequence();
+	void _SetupSequence(const FGameplayEventData* TriggerEventData);
 
 	void _ReleaseMotionWarp() const;
 	

@@ -4,8 +4,14 @@
 #include "Character/YSPlayerController.h"
 
 #include "EnhancedInputSubsystems.h"
+#include "Character/Components/YSLockOnComponent.h"
 
 class UEnhancedInputLocalPlayerSubsystem;
+
+AYSPlayerController::AYSPlayerController(const FObjectInitializer& ObjectInitializer)
+{
+	LockOnComponent = CreateDefaultSubobject<UYSLockOnComponent>(TEXT("LockOnComponent"));
+}
 
 void AYSPlayerController::SetupInputComponent()
 {

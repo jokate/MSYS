@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
 #include "GenericTeamAgentInterface.h"
+#include "YSBattleActor.h"
 #include "GameFramework/Character.h"
 #include "YSCharacterBase.generated.h"
 
@@ -15,7 +16,7 @@ class UCameraComponent;
 class USpringArmComponent;
 
 UCLASS()
-class MNYS_API AYSCharacterBase : public ACharacter, public IAbilitySystemInterface, public IGenericTeamAgentInterface
+class MNYS_API AYSCharacterBase : public ACharacter, public IAbilitySystemInterface, public IGenericTeamAgentInterface, public IYSBattleActor
 {
 	GENERATED_BODY()
 
@@ -27,6 +28,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void PostInitializeComponents() override;
+	virtual bool IsDead() const;
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

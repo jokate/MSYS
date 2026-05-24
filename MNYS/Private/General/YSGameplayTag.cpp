@@ -7,6 +7,7 @@
 namespace YSTags
 {
 	UE_DEFINE_GAMEPLAY_TAG(BlockInput, "Block.Input");
+	UE_DEFINE_GAMEPLAY_TAG(BlockLockOn, "Block.LockOn");
 	UE_DEFINE_GAMEPLAY_TAG(AcceptAbilityInput, "Accept.AbilityInput");
 	
 	UE_DEFINE_GAMEPLAY_TAG(Event_TraceStart, "Event.TraceStart");

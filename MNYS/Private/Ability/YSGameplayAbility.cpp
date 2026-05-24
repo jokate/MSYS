@@ -15,6 +15,7 @@
 #include "Ability/EventAction/YSAbilityEventAction.h"
 #include "Character/YSCharacterPlayer.h"
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
+#include "Character/Components/YSLockOnComponent.h"
 #include "General/YSGameplayTag.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
 
@@ -57,7 +58,7 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 		YSASC->OnGameplayTagStateChanged.AddDynamic(this, &UYSGameplayAbility::OnGameplayTagChanged);
 	}
 	
-	SetupPlayBack();
+	SetupPlayBack(TriggerEventData);
 
 	AActor* OwnerActor = GetOwningActorFromActorInfo();
 
@@ -188,10 +189,14 @@ void UYSGameplayAbility::OnTraceComplete(const TArray<FHitResult>& HitResults, c
 		// 만약 회피 윈도우에 걸린 경우.
 		if (ASC->HasMatchingGameplayTag(YSTags::JustAvoid_Window))
 		{
-			FGameplayEventData GameplayEventData;
-			GameplayEventData.Instigator = GetOwningActorFromActorInfo();
-			GameplayEventData.ContextHandle.AddHitResult(HitResult);
-			ASC->HandleGameplayEvent(YSTags::Event_JustAvoid, &GameplayEventData);
+			UYSLockOnComponent* LockOnComponent = UYSLockOnComponent::Get(GetAvatarActorFromActorInfo());
+			
+			if ( IsValid(LockOnComponent) )
+			{
+				LockOnComponent->ForceSetLockOn(HitActor);
+			}
+			
+			ASC->HandleGameplayEvent(YSTags::Event_JustAvoid, nullptr);
 			continue;
 		}
 		
@@ -213,7 +218,7 @@ void UYSGameplayAbility::OnTraceComplete(const TArray<FHitResult>& HitResults, c
 	}
 }
 
-void UYSGameplayAbility::_SetupPlayMontage()
+void UYSGameplayAbility::_SetupPlayMontage(const FGameplayEventData* TriggerEventData)
 {
 	const FYSMontageSelector* CurMontageSelector = MontageSelector.GetPtr<FYSMontageSelector>();
 
@@ -246,7 +251,7 @@ void UYSGameplayAbility::OnSequencePlayed()
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
-void UYSGameplayAbility::_SetupSequence()
+void UYSGameplayAbility::_SetupSequence(const FGameplayEventData* TriggerEventData)
 {
 	ULevelSequence* Sequence = SequenceSettings.Sequence.LoadSynchronous();
 	if (!IsValid(Sequence))
@@ -267,8 +272,16 @@ void UYSGameplayAbility::_SetupSequence()
 	}
 	
 	ActiveSequenceActor = SequenceActor;
-	
+
 	ActiveSequenceActor->SetBindingByTag(TEXT("Player"), { GetOwningActorFromActorInfo() });
+	
+	UYSLockOnComponent* LockOnComponent = UYSLockOnComponent::Get(GetOwningActorFromActorInfo());
+	
+	if ( IsValid(LockOnComponent) && ActiveSequenceActor->FindNamedBinding(TEXT("Enemy")).IsValid())	
+	{
+		ActiveSequenceActor->SetBindingByTag(TEXT("Enemy"), { LockOnComponent->GetCurrentTarget() });
+	}
+	
 	UDefaultLevelSequenceInstanceData* DefaultInstanceData = Cast<UDefaultLevelSequenceInstanceData>(SequenceActor->DefaultInstanceData);
 	
 	if ( IsValid(DefaultInstanceData) )
@@ -342,7 +355,7 @@ void UYSGameplayAbility::OnMontageInterrupted()
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, bReplicatedEndAbility, bWasCancelled);
 }
 
-void UYSGameplayAbility::SetupPlayBack()
+void UYSGameplayAbility::SetupPlayBack(const FGameplayEventData* TriggerEventData)
 {
 	switch ( PlaybackType )
 	{
@@ -350,7 +363,7 @@ void UYSGameplayAbility::SetupPlayBack()
 		_SetupPlayMontage();
 		break;
 	case EYSAbilityPlaybackType::Sequence :
-		_SetupSequence();
+		_SetupSequence(TriggerEventData);
 		break;
 	default :
 		break;

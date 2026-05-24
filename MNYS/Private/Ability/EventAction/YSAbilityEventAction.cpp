@@ -134,7 +134,7 @@ bool UYSAbilityEventAction_GameplayEffect::Execute_GameplayEffectToSelf(UYSGamep
 	
 	if ( bRemoveWhenFinished )
 	{
-		OwningAbility->AddRuntimeEffectSpecaHandle(OwnerASC->ApplyGameplayEffectSpecToSelf(Spec));
+		OwningAbility->AddRuntimeEffectSpecHandle(OwnerASC->ApplyGameplayEffectSpecToSelf(Spec));
 	}
 	return true;
 }
@@ -162,7 +162,7 @@ bool UYSAbilityEventAction_GameplayEffect::Execute_GameplayEffectFromInstigator(
 	
 	if (bRemoveWhenFinished)
 	{
-		OwningAbility->AddRuntimeEffectSpecaHandle(TargetASC->ApplyGameplayEffectSpecToTarget(Spec, OwnerASC));	
+		OwningAbility->AddRuntimeEffectSpecHandle(TargetASC->ApplyGameplayEffectSpecToTarget(Spec, OwnerASC));	
 	}
 	
 	return true;
