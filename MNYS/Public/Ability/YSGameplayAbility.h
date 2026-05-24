@@ -132,7 +132,7 @@ public:
 	bool bBlockMovementDuringAbility = false;
 
 	// 어빌리티 에디터 세팅
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Event Actions")
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Event Actions", meta = (Categories = "Event"))
 	TMap<FGameplayTag, FYSEventPayload> EventActionMap;
 	
 protected :

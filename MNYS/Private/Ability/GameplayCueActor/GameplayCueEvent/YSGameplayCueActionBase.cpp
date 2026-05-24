@@ -62,3 +62,40 @@ void UYSGameplayCueAction_NiagaraEffect::OnActive(AYSGameplayCueNotifyBase* Game
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(	GetWorld(), FX, Parameters.Location, Parameters.Normal.Rotation());
 	}
 }
+
+void UYSGameplayCueAction_TimeDilation::OnActive(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget,
+	const FGameplayCueParameters& Parameters)
+{
+	Super::OnActive(GameplayCueNotify, MyTarget, Parameters);
+	
+	UWorld* World = GetWorld();
+	
+	if ( IsValid(World) == false )
+		return;
+	
+	AWorldSettings* WorldSettings = World->GetWorldSettings();
+	
+	if ( IsValid(WorldSettings) == false )
+		return;
+	
+	WorldSettings->SetTimeDilation(TimeDilation);
+}
+
+void UYSGameplayCueAction_TimeDilation::OnRemove(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget,
+	const FGameplayCueParameters& Parameters)
+{
+	UWorld* World = GetWorld();
+	
+	if ( IsValid(World) )
+	{
+		AWorldSettings* WorldSettings = World->GetWorldSettings();
+	
+		if ( IsValid(WorldSettings) )
+		{
+			WorldSettings->SetTimeDilation(1.f);
+		}
+	}
+	
+	Super::OnRemove(GameplayCueNotify, MyTarget, Parameters);
+	
+}

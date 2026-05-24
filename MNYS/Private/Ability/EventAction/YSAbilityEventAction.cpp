@@ -130,7 +130,7 @@ bool UYSAbilityEventAction_GameplayEffect::Execute_GameplayEffectToSelf(UYSGamep
 	
 	FGameplayEffectContextHandle EffectContextHandle;
 	EffectContextHandle.SetAbility(OwningAbility);
-	FGameplayEffectSpec Spec(GameplayEffect.LoadSynchronous(), EffectContextHandle);	
+	FGameplayEffectSpec Spec(GameplayEffect.GetDefaultObject(), EffectContextHandle);	
 	
 	OwnerASC->ApplyGameplayEffectSpecToSelf(Spec);
 	return true;
@@ -155,7 +155,7 @@ bool UYSAbilityEventAction_GameplayEffect::Execute_GameplayEffectFromInstigator(
 	
 	FGameplayEffectContextHandle EffectContextHandle;
 	EffectContextHandle.SetAbility(OwningAbility);
-	FGameplayEffectSpec Spec(GameplayEffect.LoadSynchronous(), EffectContextHandle);	
+	FGameplayEffectSpec Spec(GameplayEffect.GetDefaultObject(), EffectContextHandle);	
 	TargetASC->ApplyGameplayEffectSpecToTarget(Spec, OwnerASC);
 	
 	return true;

@@ -57,3 +57,17 @@ protected :
 	UPROPERTY(EditDefaultsOnly, Category = "YS | FX", meta = (DisplayName = "나이아가라 이펙트"))
 	TSoftObjectPtr<UNiagaraSystem> NiagaraEffect;
 };
+
+UCLASS(DisplayName = "타임 딜레이션 적용")
+class MNYS_API UYSGameplayCueAction_TimeDilation : public UYSGameplayCueActionBase
+{
+	GENERATED_BODY()
+	
+public : 
+	virtual void OnActive(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget, const FGameplayCueParameters& Parameters) override;
+	virtual void OnRemove(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget, const FGameplayCueParameters& Parameters) override;
+
+protected :
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | GameplayCue", meta = (DisplayName = "딜레이 비율"))
+	float TimeDilation = 1.0f;
+};

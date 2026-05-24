@@ -117,7 +117,7 @@ protected :
 	
 public :
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "트리거 할 게임 플레이 이펙트"))
-	TSoftObjectPtr<UGameplayEffect> GameplayEffect;
+	TSubclassOf<UGameplayEffect> GameplayEffect;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "Instigator로부터 받을 것인가?"))
 	bool bIsFromInstigator = false;
