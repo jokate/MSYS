@@ -43,8 +43,19 @@ public:
 	// ── Accessors ─────────────────────────────────────────────────────────
 	YS_GETTER(const FYSComboTransition*, PendingTransition)
 	YS_SETTER(const FYSComboTransition*, PendingTransition)
+	YS_GETTER_REF(TArray<FActiveGameplayEffectHandle>, ActiveGameplayEffectHandle)
 	YS_BOOL_ACCESSOR(bIsInputAcceptable, InputAcceptable)
 	YS_BOOL_ACCESSOR(bIsChainedAbility,  ChainedAbility)
+	
+	void AddEffectSpecHandle(const FActiveGameplayEffectHandle& Handle)
+	{
+		ActiveGameplayEffectHandle.Add(Handle);
+	}
+	
+	void RemoveEffectSpecHandle(const FActiveGameplayEffectHandle& Handle)
+	{
+		ActiveGameplayEffectHandle.Remove(Handle);
+	}
 
 	FORCEINLINE bool IsPendingTransition() const { return PendingTransition != nullptr; }
 
@@ -53,6 +64,7 @@ public:
 		PendingTransition  = nullptr;
 		bIsInputAcceptable = false;
 		bIsChainedAbility  = false;
+		ActiveGameplayEffectHandle.Empty();
 	}
 
 private:
@@ -64,6 +76,9 @@ private:
 
 	// 어빌리티에 대해서 체이닝이 성공한 경우
 	bool bIsChainedAbility = false;
+	
+	UPROPERTY()
+	TArray<FActiveGameplayEffectHandle> ActiveGameplayEffectHandle;
 };
 
 USTRUCT(BlueprintType)
@@ -98,7 +113,7 @@ public:
 	YS_ACCESSOR(EYSAbilityType, AbilityType);
 	const FGameplayEventData* GetEventData() const { return &CurrentEventData; }
 	
-
+	void AddRuntimeEffectSpecaHandle(const FActiveGameplayEffectHandle& Handle) { RuntimeData.AddEffectSpecHandle(Handle); }
 	
 protected:
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;

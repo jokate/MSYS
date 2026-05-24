@@ -138,6 +138,7 @@ public :
 		TransitionRule.Add(EYSInputStatesType::Idle);
 		TransitionRule.Add(EYSInputStatesType::Attack);
 		TransitionRule.Add(EYSInputStatesType::Falling);
+		TransitionRule.Add(EYSInputStatesType::JustAvoid);
 	}
 };
 

@@ -4,6 +4,7 @@
 #include "Ability/YSGameplayAbility.h"
 
 #include "AbilitySystemComponent.h"
+#include "DefaultLevelSequenceInstanceData.h"
 #include "LevelSequence.h"
 #include "LevelSequenceActor.h"
 #include "LevelSequencePlayer.h"
@@ -95,6 +96,11 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 	if ( IsValid(YSASC) )
 	{
 		YSASC->OnGameplayTagStateChanged.RemoveDynamic(this, &UYSGameplayAbility::OnGameplayTagChanged);
+		
+		for ( const FActiveGameplayEffectHandle& RuntimeHandle : RuntimeData.GetActiveGameplayEffectHandle() )
+		{
+			YSASC->RemoveActiveGameplayEffect(RuntimeHandle);	
+		}
 	}
 
 	if (!RuntimeData.IsChainedAbility())
@@ -261,6 +267,15 @@ void UYSGameplayAbility::_SetupSequence()
 	}
 	
 	ActiveSequenceActor = SequenceActor;
+	
+	ActiveSequenceActor->SetBindingByTag(TEXT("Player"), { GetOwningActorFromActorInfo() });
+	UDefaultLevelSequenceInstanceData* DefaultInstanceData = Cast<UDefaultLevelSequenceInstanceData>(SequenceActor->DefaultInstanceData);
+	
+	if ( IsValid(DefaultInstanceData) )
+	{
+		DefaultInstanceData->TransformOriginActor = GetOwningActorFromActorInfo();
+		DefaultInstanceData->TransformOrigin = GetOwningActorFromActorInfo()->GetActorTransform();
+	}
 	
 	if (!SequenceSettings.bOverrideCameraBySequence && IsValid(ActiveSequenceActor))
 	{
