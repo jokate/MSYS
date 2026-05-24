@@ -4,26 +4,25 @@
 
 #include "CoreMinimal.h"
 #include "GameplayCueNotify_Actor.h"
-#include "YSGameplayCueNotify_Sequence.generated.h"
+#include "YSGameplayCueNotifyBase.generated.h"
 
-class ALevelSequenceActor;
+class UYSGameplayCueActionBase;
 
 UCLASS()
-class MNYS_API AYSGameplayCueNotify_Sequence : public AGameplayCueNotify_Actor
+class MNYS_API AYSGameplayCueNotifyBase : public AGameplayCueNotify_Actor
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this actor's properties
-	AYSGameplayCueNotify_Sequence();
+	AYSGameplayCueNotifyBase();
+
+protected:
 	virtual bool OnActive_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) override;
 	virtual bool OnRemove_Implementation(AActor* MyTarget, const FGameplayCueParameters& Parameters) override;
 	
-protected:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | GameplayCue", meta = (DisplayName = "재생할 레벨 시퀀스 액터"))
-	TWeakObjectPtr<ALevelSequenceActor> SequenceToPlay;
-private:
-	UFUNCTION()
-	void OnSequenceFinished();
-	void StopSequenceSafely();
+	
+public : 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Instanced)
+	TArray<UYSGameplayCueActionBase*> GameplayCueNotifyList;
 };

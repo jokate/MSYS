@@ -1,0 +1,64 @@
+﻿// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "Ability/GameplayCueActor/GameplayCueEvent/YSGameplayCueActionBase.h"
+
+#include "AbilitySystemGlobals.h"
+#include "GameplayCueManager.h"
+#include "LevelSequenceActor.h"
+#include "LevelSequencePlayer.h"
+#include "NiagaraFunctionLibrary.h"
+#include "Ability/GameplayCueActor/YSGameplayCueNotifyBase.h"
+
+void UYSGameplayCueAction_SequencePlay::OnActive(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget,
+                                                 const FGameplayCueParameters& Parameters)
+{
+	Super::OnActive(GameplayCueNotify, MyTarget, Parameters);
+	if (SequenceToPlay.IsValid())
+	{
+		ULevelSequencePlayer* Player = SequenceToPlay->GetSequencePlayer();
+		if (ensureMsgf(Player, TEXT("YSGameplayCueAction_SequencePlay: SequencePlayer is null")))
+		{
+			Player->OnStop.AddDynamic(this, &ThisClass::OnSequenceFinished);
+			Player->Play();
+		}
+	}
+}
+
+void UYSGameplayCueAction_SequencePlay::OnRemove(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget,
+	const FGameplayCueParameters& Parameters)
+{
+	StopSequenceSafely();
+	Super::OnRemove(GameplayCueNotify, MyTarget, Parameters);
+}
+
+
+void UYSGameplayCueAction_SequencePlay::OnSequenceFinished()
+{
+	if (UGameplayCueManager* CueManager = UAbilitySystemGlobals::Get().GetGameplayCueManager())
+	{
+		CueManager->NotifyGameplayCueActorFinished(OwningGameplayCueNotify.Get());
+	}
+}
+
+void UYSGameplayCueAction_SequencePlay::StopSequenceSafely()
+{
+	if (!SequenceToPlay.IsValid()) { return; }
+	ULevelSequencePlayer* Player = SequenceToPlay->GetSequencePlayer();
+	if (IsValid(Player) == false)
+	{
+		Player->OnStop.RemoveDynamic(this, &ThisClass::OnSequenceFinished);
+		Player->Stop();
+	}
+}
+
+void UYSGameplayCueAction_NiagaraEffect::OnActive(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget,
+	const FGameplayCueParameters& Parameters)
+{
+	Super::OnActive(GameplayCueNotify, MyTarget, Parameters);
+
+	if (UNiagaraSystem* FX = NiagaraEffect.LoadSynchronous())
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(	GetWorld(), FX, Parameters.Location, Parameters.Normal.Rotation());
+	}
+}

@@ -9,7 +9,7 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(DisplayName = "게임 플레이 큐 액터 트리거.")
 class MNYS_API UYSGameplayCueGEComponent : public UYSGameplayEffectComponent
 {
 	GENERATED_BODY()

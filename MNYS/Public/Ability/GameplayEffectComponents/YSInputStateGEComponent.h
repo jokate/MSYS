@@ -10,7 +10,7 @@ enum class EYSInputStatesType : uint8;
 /**
  * 
  */
-UCLASS()
+UCLASS(DisplayName = "입력 State 전환 (플레이어 한정)")
 class MNYS_API UYSInputStateGEComponent : public UYSGameplayEffectComponent
 {
 	GENERATED_BODY()

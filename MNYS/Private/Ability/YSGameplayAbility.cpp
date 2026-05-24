@@ -179,7 +179,10 @@ void UYSGameplayAbility::OnTraceComplete(const TArray<FHitResult>& HitResults, c
 		// 만약 회피 윈도우에 걸린 경우.
 		if (ASC->HasMatchingGameplayTag(YSTags::JustAvoid_Window))
 		{
-			ASC->HandleGameplayEvent(YSTags::Event_JustAvoid, nullptr);
+			FGameplayEventData GameplayEventData;
+			GameplayEventData.Instigator = GetOwningActorFromActorInfo();
+			GameplayEventData.ContextHandle.AddHitResult(HitResult);
+			ASC->HandleGameplayEvent(YSTags::Event_JustAvoid, &GameplayEventData);
 			continue;
 		}
 		
