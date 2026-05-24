@@ -132,7 +132,10 @@ bool UYSAbilityEventAction_GameplayEffect::Execute_GameplayEffectToSelf(UYSGamep
 	EffectContextHandle.SetAbility(OwningAbility);
 	FGameplayEffectSpec Spec(GameplayEffect.GetDefaultObject(), EffectContextHandle);	
 	
-	OwningAbility->AddRuntimeEffectSpecaHandle(OwnerASC->ApplyGameplayEffectSpecToSelf(Spec));
+	if ( bRemoveWhenFinished )
+	{
+		OwningAbility->AddRuntimeEffectSpecaHandle(OwnerASC->ApplyGameplayEffectSpecToSelf(Spec));
+	}
 	return true;
 }
 
@@ -157,7 +160,10 @@ bool UYSAbilityEventAction_GameplayEffect::Execute_GameplayEffectFromInstigator(
 	EffectContextHandle.SetAbility(OwningAbility);
 	FGameplayEffectSpec Spec(GameplayEffect.GetDefaultObject(), EffectContextHandle);	
 	
-	OwningAbility->AddRuntimeEffectSpecaHandle(TargetASC->ApplyGameplayEffectSpecToTarget(Spec, OwnerASC));
+	if (bRemoveWhenFinished)
+	{
+		OwningAbility->AddRuntimeEffectSpecaHandle(TargetASC->ApplyGameplayEffectSpecToTarget(Spec, OwnerASC));	
+	}
 	
 	return true;
 }
