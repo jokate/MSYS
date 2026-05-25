@@ -69,14 +69,7 @@ void UYSLockOnComponent::ProcessLockOnFunction(float DeltaTime)
 		return;
 	
 	// 락온 잡혀있으면 락온 X
-	if ( CurrentLockedTarget.IsValid() )
-	{
-		IYSBattleActor* BattleActor = Cast<IYSBattleActor>(CurrentLockedTarget.Get());
-		if ( BattleActor == nullptr || BattleActor->IsDead() )
-		{
-			CurrentLockedTarget = nullptr;
-		}
-	}
+	TryReleaseLockOn();
 	
 	if ( CurrentLockedTarget.IsValid() )
 	{
@@ -101,36 +94,16 @@ void UYSLockOnComponent::FindTarget()
 		double Distance = MaxLockOnDistance * MaxLockOnDistance;
 		for ( AActor* Actor : OverlappedActors )
 		{
-			if (Player->GetTeamAttitudeTowards(*Actor) != ETeamAttitude::Hostile )
+			double TempDistance = (Player->GetActorLocation() - Actor->GetActorLocation()).SizeSquared();
+			
+			if ( IsLockOnableTarget(Actor) == false )
 				continue;
-			
-			UYSAbilitySystemComponent* ASC = UYSAbilitySystemComponent::Get(Actor);
-			
-			if ( IsValid(ASC) == false )
-				continue;
-			
-			IYSBattleActor* BattleActor = Cast<IYSBattleActor>(Actor);
-			if ( BattleActor == nullptr || BattleActor->IsDead() )
-				continue;
-			
-			FVector DirectionToActor = Actor->GetActorLocation() - OwnerPlayer->GetActorLocation();
-			double TempDist = DirectionToActor.SizeSquared();
-			DirectionToActor.Z = 0.0f; // 수평면에서의 방향만 고려
-			
-			DirectionToActor.Normalize();
-
-			FVector ForwardVector = OwnerPlayer->GetActorForwardVector();
-			ForwardVector.Z = 0.0f;
-			ForwardVector.Normalize();
-
-			float AngleToActor = FMath::Acos(FVector::DotProduct(ForwardVector, DirectionToActor));
-			AngleToActor = FMath::RadiansToDegrees(AngleToActor);
 
 			// 각도 기준으로 탐색하되, 가장 가까운 대상을 선택한다.
-			if ( AngleToActor <= MaxLockOnAngle && TempDist < Distance )
+			if ( TempDistance < Distance )
 			{
 				CurrentLockedTarget = Actor;
-				Distance = TempDist;
+				Distance = TempDistance;
 			}
 		}
 	}
@@ -148,5 +121,61 @@ void UYSLockOnComponent::ChaseCamera(float DeltaTime)
 	TargetRot.Pitch = CurrentRot.Pitch;
 	OwnerPlayerController->SetControlRotation(
 		FMath::RInterpTo(CurrentRot, TargetRot, DeltaTime, CameraInterpSpeed));
+}
+
+bool UYSLockOnComponent::IsLockOnableTarget(AActor* Target)
+{
+	AYSCharacterPlayer* Player = OwnerPlayer.Get();
+	
+	if ( IsValid(Player) == false )
+		return false;
+	
+	if (Player->GetTeamAttitudeTowards(*Target) != ETeamAttitude::Hostile )
+		return false;
+			
+	IYSBattleActor* BattleActor = Cast<IYSBattleActor>(Target);
+	if ( BattleActor == nullptr || BattleActor->IsDead() )
+		return false;
+			
+	FVector DirectionToActor = Target->GetActorLocation() - OwnerPlayer->GetActorLocation();
+	DirectionToActor.Z = 0.0f; // 수평면에서의 방향만 고려
+			
+	DirectionToActor.Normalize();
+
+	FVector ForwardVector = OwnerPlayer->GetActorForwardVector();
+	ForwardVector.Z = 0.0f;
+	ForwardVector.Normalize();
+
+	float AngleToActor = FMath::Acos(FVector::DotProduct(ForwardVector, DirectionToActor));
+	AngleToActor = FMath::RadiansToDegrees(AngleToActor);
+	
+	return AngleToActor <= MaxLockOnAngle;
+}
+
+void UYSLockOnComponent::TryReleaseLockOn()
+{
+	AYSCharacterPlayer* Player = OwnerPlayer.Get();
+	
+	if ( IsValid(Player) == false )
+		return;
+	
+	UAbilitySystemComponent* ASC = Player->GetAbilitySystemComponent();
+	
+	if ( IsValid(ASC) == false )
+		return;
+	
+	if ( CurrentLockedTarget.IsValid() )
+	{
+		if (ASC->HasMatchingGameplayTag(YSTags::BlockLockOn))
+		{
+			return;
+		}
+		
+		if ( IsLockOnableTarget(CurrentLockedTarget.Get()) == false )
+		{
+			UE_LOG(LogTemp, Log, TEXT("Release Lock On"))
+			CurrentLockedTarget = nullptr;	
+		}
+	}
 }
 

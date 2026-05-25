@@ -36,7 +36,9 @@ protected :
 	void ProcessLockOnFunction(float DeltaTime);
 	virtual void FindTarget();
 	void ChaseCamera(float DeltaTime);
-	                           
+	bool IsLockOnableTarget(AActor* Target);      
+	void TryReleaseLockOn();
+	
 public : 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "잠금 대상이 될 수 있는 최대 거리"))
 	float MaxLockOnDistance = 500.0f;
