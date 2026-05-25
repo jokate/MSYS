@@ -23,6 +23,7 @@ public:
 	UYSAbilitySystemComponent();
 	static UYSAbilitySystemComponent* Get(AActor* Owner);
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	void ProcessAbilityByInputPass(const FGameplayTag& InputTag);
 	void GiveInitAbility();
 

@@ -5,9 +5,12 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Ability/YSGameplayAbility.h"
+#include "Character/YSCharacterPlayer.h"
 #include "Data/YSAbilityDataAsset.h"
 #include "General/YSGeneratedGameplayTags.h"
 #include "General/YSStruct.h"
+#include "Input/YSInputSaveData.h"
+#include "Kismet/GameplayStatics.h"
 
 
 // Sets default values for this component's properties
@@ -31,6 +34,30 @@ void UYSAbilitySystemComponent::BeginPlay()
 	Super::BeginPlay();
 }
 
+void UYSAbilitySystemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	AYSCharacterPlayer* PC = Cast<AYSCharacterPlayer>(GetOwner());
+	if (IsValid(PC))
+	{
+		if (UYSInputSaveData* SaveGameInstance = Cast<UYSInputSaveData>(UGameplayStatics::CreateSaveGameObject(UYSInputSaveData::StaticClass())))
+		{
+			for ( FGameplayAbilitySpecHandle& AbilitySpecHandle : AbilitySpecHandles )
+			{
+				FGameplayAbilitySpec* AbilitySpec = FindAbilitySpecFromHandle(AbilitySpecHandle);
+			
+				if (AbilitySpec == nullptr || AbilitySpec->GetDynamicSpecSourceTags().IsEmpty())
+					continue;
+			
+				FYSInputSaveDataMemeber InputSaveData(AbilitySpec->GetDynamicSpecSourceTags(), AbilitySpec->Ability->GetClass());
+				SaveGameInstance->AddInputSaveData(InputSaveData);
+			}
+		
+			UGameplayStatics::SaveGameToSlot(SaveGameInstance,"InputSaveSlot", 0);
+		}	
+	}
+	Super::EndPlay(EndPlayReason);
+}
+
 void UYSAbilitySystemComponent::OnGiveAbility(FGameplayAbilitySpec& AbilitySpec)
 {
 	Super::OnGiveAbility(AbilitySpec);
@@ -44,14 +71,32 @@ void UYSAbilitySystemComponent::GiveInitAbility()
 	if ( IsValid(GrantAbilityData) == false )
 		return;
 	
+	
+	// 테스트 코드 나중에 바꿉시다.
+	UYSInputSaveData* LoadedInput = Cast<UYSInputSaveData>(UGameplayStatics::LoadGameFromSlot("InputSaveSlot", 0));
+	
+	bool bIsValidSaveData = IsValid(LoadedInput);
+	
 	for ( const FYSGrantedAbilityData& GrantedAbilityData : GrantAbilityData->GetAllAbilities())
 	{
 		FGameplayAbilitySpec AbilitySpec(GrantedAbilityData.AbilityClass, GrantedAbilityData.Level);
 
-		if ( GrantedAbilityData.InputTag.IsEmpty() == false )
+		bool bIsProcessed = false;
+		if (bIsValidSaveData)
+		{
+			FGameplayTagContainer InputTag = LoadedInput->GetInputTagByAbilityClass(GrantedAbilityData.AbilityClass);
+			
+			if ( InputTag.IsEmpty() == false )
+			{
+				bIsProcessed = true;
+				AbilitySpec.GetDynamicSpecSourceTags().AppendTags(InputTag);
+			}
+		}
+	
+		if ( bIsProcessed == false && GrantedAbilityData.InputTag.IsEmpty() == false )
 		{
 			AbilitySpec.GetDynamicSpecSourceTags().AppendTags(GrantedAbilityData.InputTag);
-		}
+		}	
 
 		GiveAbility(AbilitySpec);
 	}

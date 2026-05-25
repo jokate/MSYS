@@ -113,3 +113,29 @@ public :
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Sequence", meta = (DisplayName = "선행 몽타주 블렌드아웃 시간", ClampMin = "0.0", ClampMax = "0.5"))
 	float MontageBlendOutTime = 0.15f;
 };
+
+USTRUCT(BlueprintType)
+struct FYSInputSaveDataMemeber
+{
+	GENERATED_BODY()
+	
+public : 
+	FYSInputSaveDataMemeber() = default;
+	
+	FYSInputSaveDataMemeber(const FGameplayTagContainer& InputTags, TSubclassOf<UYSGameplayAbility> InAbilityClass)
+	{
+		InputGameplayTag = InputTags;
+		AbilityClass = InAbilityClass;
+	}
+	
+	bool operator==(const FYSInputSaveDataMemeber& Other) const
+	{
+		return InputGameplayTag == Other.InputGameplayTag;
+	}
+	
+	UPROPERTY()
+	FGameplayTagContainer InputGameplayTag;
+	
+	UPROPERTY()
+	TSubclassOf<UYSGameplayAbility> AbilityClass;
+};
