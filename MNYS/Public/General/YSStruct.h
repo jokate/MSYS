@@ -109,4 +109,7 @@ public :
 	
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Sequence",	meta = (DisplayName = "재생 속도", ClampMin = "0.1"))
 	float PlayRate = 1.0f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Sequence", meta = (DisplayName = "선행 몽타주 블렌드아웃 시간", ClampMin = "0.0", ClampMax = "0.5"))
+	float MontageBlendOutTime = 0.15f;
 };

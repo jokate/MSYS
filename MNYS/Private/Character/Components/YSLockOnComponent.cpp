@@ -142,7 +142,7 @@ bool UYSLockOnComponent::IsLockOnableTarget(AActor* Target)
 			
 	DirectionToActor.Normalize();
 
-	FVector ForwardVector = OwnerPlayer->GetActorForwardVector();
+	FVector ForwardVector = OwnerPlayerController->GetControlRotation().Vector();
 	ForwardVector.Z = 0.0f;
 	ForwardVector.Normalize();
 

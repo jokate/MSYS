@@ -257,6 +257,15 @@ void UYSGameplayAbility::OnSequencePlayed()
 
 void UYSGameplayAbility::_SetupSequence(const FGameplayEventData* TriggerEventData)
 {
+	// Sequencer가 SkeletalMesh 애니메이션의 완전한 제어권을 갖도록,
+	// 진입 전에 AnimInstance 슬롯을 점유 중인 선행 몽타주를 명시적으로 정지한다.
+	// CancelAbilitiesWithTags 대신 CurrentMontageStop을 사용하는 이유:
+	// 어빌리티 라이프사이클을 건드리지 않고 슬롯 레이어만 클리어하기 위함.
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
+	{
+		ASC->CurrentMontageStop(SequenceSettings.MontageBlendOutTime);
+	}
+
 	ULevelSequence* Sequence = SequenceSettings.Sequence.LoadSynchronous();
 	if (!IsValid(Sequence))
 	{

@@ -33,4 +33,7 @@ protected :
 	
 	UPROPERTY(EditDefaultsOnly, Category = "YS | GameplayAbility", meta = (DisplayName = "죽음"))
 	FYSGrantedAbilityData DeathAbility;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | GameplayAbility", meta = (DisplayName = "히트"))
+	FYSGrantedAbilityData HitAbility;
 };
