@@ -28,6 +28,7 @@ public:
 	void GiveInitAbility();
 
 	virtual void OnTagUpdated(const FGameplayTag& Tag, bool TagExists) override;
+	void AllocateSkillToAbilityTag(const FGameplayTag& SkillTag, const TSubclassOf<UGameplayAbility> AbilityClass);
 	
 protected:
 	virtual void OnGiveAbility(FGameplayAbilitySpec& AbilitySpec) override;

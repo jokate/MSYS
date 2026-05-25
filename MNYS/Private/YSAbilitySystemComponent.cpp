@@ -112,6 +112,28 @@ void UYSAbilitySystemComponent::OnTagUpdated(const FGameplayTag& Tag, bool TagEx
 	}
 }
 
+void UYSAbilitySystemComponent::AllocateSkillToAbilityTag(const FGameplayTag& SkillTag,
+	const TSubclassOf<UGameplayAbility> AbilityClass)
+{
+	for ( FGameplayAbilitySpecHandle& AbilitySpecHandle : AbilitySpecHandles )
+	{
+		FGameplayAbilitySpec* AbilitySpec = FindAbilitySpecFromHandle(AbilitySpecHandle);
+
+		if ( AbilitySpec == nullptr )
+			continue;
+
+		if ( AbilitySpec->GetDynamicSpecSourceTags().HasTagExact(SkillTag) )
+		{
+			AbilitySpec->GetDynamicSpecSourceTags().RemoveTag(SkillTag);
+		}
+			
+		if ( AbilitySpec->Ability->GetClass() == AbilityClass )
+		{
+			AbilitySpec->GetDynamicSpecSourceTags().AddTag(SkillTag);
+		}
+	}
+}
+
 
 void UYSAbilitySystemComponent::OnRemoveAbility(FGameplayAbilitySpec& AbilitySpec)
 {
