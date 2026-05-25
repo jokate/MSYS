@@ -3,6 +3,7 @@
 
 #include "Ability/YSGameplayAbility.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "DefaultLevelSequenceInstanceData.h"
 #include "LevelSequence.h"
@@ -167,6 +168,12 @@ void UYSGameplayAbility::OnTraceComplete(const TArray<FHitResult>& HitResults, c
 		
 		if ( IsValid(HitActor) == false ) 
 			continue;
+		
+		IYSBattleActor* BattleActor = Cast<IYSBattleActor>(HitActor);
+		if (BattleActor == nullptr || BattleActor->IsDead())
+		{
+			continue;
+		}
 		IAbilitySystemInterface* ASI = Cast<IAbilitySystemInterface>(HitActor);
 
 		if ( ASI == nullptr )
@@ -177,13 +184,7 @@ void UYSGameplayAbility::OnTraceComplete(const TArray<FHitResult>& HitResults, c
 			continue;
 		
 		const UYSCharacterAttributeSetBase* TargetAttributeSet = ASC->GetSet<UYSCharacterAttributeSetBase>();
-
 		if ( IsValid(TargetAttributeSet) == false )
-			continue;
-		
-		float CurHp = TargetAttributeSet->GetCurrentHp();
-		
-		if ( CurHp <= 0.f )
 			continue;
 		
 		// 만약 회피 윈도우에 걸린 경우.
@@ -209,16 +210,8 @@ void UYSGameplayAbility::OnTraceComplete(const TArray<FHitResult>& HitResults, c
 			continue;
 		}
 		
-		// 스킬 별 데미지 관련 정책은 필요함. (다만 현재 기준 정책은 없는 부분이라서 어떻게 해야할 지 고민 좀 해봐야 할 듯 싶음)
-		// 아마 해당 부분은 Static 하게 결정되어야 할 듯 싶습니다.
-		// EX ) 기본 공격 * ( 계수 ( 1 + Extra ) ) + 추가 데미지 (버프..?) - 방어력 비례 이런 형태. (수식은 뭐 간단하지만 어느정도의 감각이 있어야 할 듯.)
-		float FinalDamage = UYSBlueprintFunctionLibrary::GetFinalDamage(OwnerAttribute, TargetAttributeSet, DamageRow);
-		
 		// 데미지 히트에 따른 이벤트 송신.
-		UYSBlueprintFunctionLibrary::SendHitEventToTarget(GetOwningActorFromActorInfo(), ASC, FinalDamage, DamageRow);
-		
-		// 데미지 처리 로직 추가. ( 클램핑은 내부에서 알아 처리 될 거임 )
-		ASC->SetNumericAttributeBase(TargetAttributeSet->GetCurrentHpAttribute(), CurHp - FinalDamage);	
+		UYSBlueprintFunctionLibrary::SendHitEventToTarget(GetOwningActorFromActorInfo(), HitActor, DamageRow);
 	}
 }
 
@@ -292,7 +285,18 @@ void UYSGameplayAbility::_SetupSequence(const FGameplayEventData* TriggerEventDa
 	
 	if ( IsValid(LockOnComponent) && ActiveSequenceActor->FindNamedBinding(TEXT("Enemy")).IsValid())	
 	{
-		ActiveSequenceActor->SetBindingByTag(TEXT("Enemy"), { LockOnComponent->GetCurrentTarget() });
+		AActor* LockOnTarget = LockOnComponent->GetCurrentTarget();
+		if ( IsValid(LockOnTarget) )
+		{
+			UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(LockOnTarget);
+			
+			if (IsValid(TargetASC) )
+			{
+				TargetASC->CurrentMontageStop(SequenceSettings.MontageBlendOutTime);
+			}
+			
+        	ActiveSequenceActor->SetBindingByTag(TEXT("Enemy"), { LockOnComponent->GetCurrentTarget() });	
+		}
 	}
 	
 	UDefaultLevelSequenceInstanceData* DefaultInstanceData = Cast<UDefaultLevelSequenceInstanceData>(SequenceActor->DefaultInstanceData);

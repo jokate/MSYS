@@ -6,6 +6,7 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "YSBlueprintFunctionLibrary.generated.h"
 
+class UAbilitySystemComponent;
 class UYSCharacterAttributeSetBase;
 /**
  * 
@@ -20,6 +21,6 @@ public :
 	static float GetFinalDamage(const UYSCharacterAttributeSetBase* Owner, const UYSCharacterAttributeSetBase* Target, const FName& SkillID);
 
 	UFUNCTION(BlueprintCallable)
-	static void SendHitEventToTarget(const AActor* Instigator, UAbilitySystemComponent* TargetASC, float FinalDamage, const FName& SkillID);
+	static void SendHitEventToTarget(AActor* Instigator, AActor* Target, const FName& SkillID);
 	
 };

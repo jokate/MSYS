@@ -3,6 +3,7 @@
 
 #include "Library/YSBlueprintFunctionLibrary.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
 #include "YSDeveloperSettings.h"
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
 #include "General/YSGameplayTag.h"
@@ -11,6 +12,9 @@ float UYSBlueprintFunctionLibrary::GetFinalDamage(const UYSCharacterAttributeSet
                                                   const UYSCharacterAttributeSetBase* Target, const FName& SkillID)
 {
 	const FYSDamageInfo* DamageInfo = UYSDeveloperSettings::GetDamageInfo(SkillID);
+	
+	if (IsValid(Owner) == false || IsValid(Target) == false )
+		return 0.f;
 
 	// 데미지 정보가 없으면 의미 X
 	if ( DamageInfo == nullptr )
@@ -24,18 +28,25 @@ float UYSBlueprintFunctionLibrary::GetFinalDamage(const UYSCharacterAttributeSet
 	return FinalDamage;
 }
 
-void UYSBlueprintFunctionLibrary::SendHitEventToTarget(const AActor* Instigator, UAbilitySystemComponent* TargetASC, float FinalDamage,
-	const FName& SkillID)
+void UYSBlueprintFunctionLibrary::SendHitEventToTarget(AActor* Instigator, AActor* Target, const FName& SkillID)
 {
 	const FYSDamageInfo* DamageInfo = UYSDeveloperSettings::GetDamageInfo(SkillID);
 
 	// 데미지 정보가 없으면 의미 X
 	if ( DamageInfo == nullptr )
 		return;
+
+	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Instigator);
+	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Target);
+	
+	if ( IsValid(ASC) == false || IsValid(TargetASC) == false )
+		return;
+	
+	float FinalDamage = GetFinalDamage(ASC->GetSet<UYSCharacterAttributeSetBase>(), ASC->GetSet<UYSCharacterAttributeSetBase>(), SkillID);
 	
 	FGameplayEventData EventData;
 	EventData.Instigator = Instigator;
-	EventData.Target = TargetASC->GetAvatarActor();
+	EventData.Target = Target;
 	EventData.EventMagnitude = FinalDamage;
 
 	TargetASC->HandleGameplayEvent(DamageInfo->HitTag, &EventData);
