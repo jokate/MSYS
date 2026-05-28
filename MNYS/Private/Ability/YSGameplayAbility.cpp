@@ -19,6 +19,7 @@
 #include "Character/Components/YSLockOnComponent.h"
 #include "General/YSGameplayTag.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
+#include "Ability/AbilityComponent/YSAbilityPlayback.h"
 
 UYSGameplayAbility::UYSGameplayAbility()
 {
@@ -44,6 +45,19 @@ void UYSGameplayAbility::OnGameplayTagChanged(const FGameplayTag& Tag, bool bInI
 			ASC->TryActivateAbilityByClass(Transition->AbilityClass);	
 		}
 	}
+}
+
+void UYSGameplayAbility::ActivePlayback(int32 Index, const FYSPlaybackContext& Context)
+{	
+	if ( Playbacks.IsValidIndex(Index) == false )
+		return;
+
+	UYSAbilityPlaybackBase* Playback = Playbacks[Index];
+
+	if ( IsValid(Playback) == false )
+		return;
+
+	Playback->Play(Context);
 }
 
 void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
@@ -107,7 +121,10 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 
 	if (!RuntimeData.IsChainedAbility())
 	{
-		_ReleaseMotionWarp();
+		if ( IsValid(CurrentPlayback.Get()) )
+		{
+			CurrentPlayback.Get()->ReleaseMotionWarp();
+		}
 	}
 
 	RuntimeData.ResetData();
@@ -215,119 +232,21 @@ void UYSGameplayAbility::OnTraceComplete(const TArray<FHitResult>& HitResults, c
 	}
 }
 
-void UYSGameplayAbility::_SetupPlayMontage(const FGameplayEventData* TriggerEventData)
-{
-	const FYSMontageSelector* CurMontageSelector = MontageSelector.GetPtr<FYSMontageSelector>();
-
-	if ( CurMontageSelector == nullptr )
-	{
-		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
-		return;
-	};
-
-	UAnimMontage* TargetToPlayMontage = CurMontageSelector->SelectMontage(this);
-	
-	if ( IsValid(TargetToPlayMontage) ) 
-	{
-		UAbilityTask_PlayMontageAndWait* PlayMontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, TEXT("PlayMontage"), TargetToPlayMontage);
-		if ( IsValid(PlayMontageTask))
-		{
-			PlayMontageTask->OnCompleted.AddDynamic(this, &UYSGameplayAbility::OnMontagePlayed);
-			PlayMontageTask->OnInterrupted.AddDynamic(this, &UYSGameplayAbility::OnMontageInterrupted);
-			PlayMontageTask->OnBlendOut.AddDynamic(this, &UYSGameplayAbility::OnMontageInterrupted);
-			PlayMontageTask->OnCancelled.AddDynamic(this, &UYSGameplayAbility::OnMontageInterrupted);
-			PlayMontageTask->ReadyForActivation();	
-		}
-	}
-
-	CurMontageSelector->SetMotionWarp(this, true);
-}
-
-void UYSGameplayAbility::OnSequencePlayed()
+void UYSGameplayAbility::NotifyPlaybackChainFinished()
 {
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
-void UYSGameplayAbility::_SetupSequence(const FGameplayEventData* TriggerEventData)
+UYSAbilityPlaybackBase* UYSGameplayAbility::GetPlaybackNode(int32 Index)
 {
-	// Sequencer가 SkeletalMesh 애니메이션의 완전한 제어권을 갖도록,
-	// 진입 전에 AnimInstance 슬롯을 점유 중인 선행 몽타주를 명시적으로 정지한다.
-	// CancelAbilitiesWithTags 대신 CurrentMontageStop을 사용하는 이유:
-	// 어빌리티 라이프사이클을 건드리지 않고 슬롯 레이어만 클리어하기 위함.
-	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
+	if ( Playbacks.IsValidIndex(Index) )
 	{
-		ASC->CurrentMontageStop(SequenceSettings.MontageBlendOutTime);
+		return Playbacks[Index];
 	}
 
-	ULevelSequence* Sequence = SequenceSettings.Sequence.LoadSynchronous();
-	if (!IsValid(Sequence))
-	{
-		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
-		return;
-	}
-	FMovieSceneSequencePlaybackSettings Settings;
-	Settings.PlayRate = SequenceSettings.PlayRate;
-	Settings.bPauseAtEnd = false;
-	ALevelSequenceActor* SequenceActor = nullptr;
-	ULevelSequencePlayer* Player = ULevelSequencePlayer::CreateLevelSequencePlayer( this, Sequence , Settings, SequenceActor);
-	
-	if (!IsValid(Player) || !IsValid(SequenceActor))
-	{
-		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
-		return;
-	}
-	
-	ActiveSequenceActor = SequenceActor;
-
-	ActiveSequenceActor->SetBindingByTag(TEXT("Player"), { GetOwningActorFromActorInfo() });
-	
-	UYSLockOnComponent* LockOnComponent = UYSLockOnComponent::Get(GetOwningActorFromActorInfo());
-	
-	if ( IsValid(LockOnComponent) && ActiveSequenceActor->FindNamedBinding(TEXT("Enemy")).IsValid())	
-	{
-		AActor* LockOnTarget = LockOnComponent->GetCurrentTarget();
-		if ( IsValid(LockOnTarget) )
-		{
-			UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(LockOnTarget);
-			
-			if (IsValid(TargetASC) )
-			{
-				TargetASC->CurrentMontageStop(SequenceSettings.MontageBlendOutTime);
-			}
-			
-        	ActiveSequenceActor->SetBindingByTag(TEXT("Enemy"), { LockOnComponent->GetCurrentTarget() });	
-		}
-	}
-	
-	UDefaultLevelSequenceInstanceData* DefaultInstanceData = Cast<UDefaultLevelSequenceInstanceData>(SequenceActor->DefaultInstanceData);
-	
-	if ( IsValid(DefaultInstanceData) )
-	{
-		DefaultInstanceData->TransformOriginActor = GetOwningActorFromActorInfo();
-		DefaultInstanceData->TransformOrigin = GetOwningActorFromActorInfo()->GetActorTransform();
-	}
-	
-	if (!SequenceSettings.bOverrideCameraBySequence && IsValid(ActiveSequenceActor))
-	{
-		// 카메라 컷 트랙 비활성화
-		ActiveSequenceActor->bOverrideInstanceData = false;
-	}
-	
-	Player->OnFinished.AddDynamic(this, &UYSGameplayAbility::OnSequencePlayed);
-	Player->Play();
+	return nullptr;
 }
 
-void UYSGameplayAbility::_ReleaseMotionWarp() const
-{
-	const FYSMontageSelector* CurMontageSelector = MontageSelector.GetPtr<FYSMontageSelector>();
-
-	if ( CurMontageSelector == nullptr )
-	{
-		return;
-	};
-
-	CurMontageSelector->SetMotionWarp(this, false);
-}
 
 void UYSGameplayAbility::_ProcessEvent(FGameplayEventData Payload)
 {
@@ -374,17 +293,16 @@ void UYSGameplayAbility::OnMontageInterrupted()
 
 void UYSGameplayAbility::SetupPlayBack(const FGameplayEventData* TriggerEventData)
 {
-	switch ( PlaybackType )
+	if (!Playbacks.IsValidIndex(0))
 	{
-	case EYSAbilityPlaybackType::Montage :
-		_SetupPlayMontage();
-		break;
-	case EYSAbilityPlaybackType::Sequence :
-		_SetupSequence(TriggerEventData);
-		break;
-	default :
-		break;
+		return;
 	}
+
+	FYSPlaybackContext Context;
+	Context.OwnerAbility = this;
+	Context.Instigator   = GetOwningActorFromActorInfo();
+
+	ActivePlayback(0, Context);
 }
 
 #if UE_EDITOR

@@ -139,3 +139,32 @@ public :
 	UPROPERTY()
 	TSubclassOf<UYSGameplayAbility> AbilityClass;
 };
+
+UENUM(BlueprintType)
+enum class EYSPlaybackResult : uint8
+{
+	None        UMETA(DisplayName = "첫 진입"),
+	Completed   UMETA(DisplayName = "정상 완료"),
+	Interrupted UMETA(DisplayName = "중단/취소"),
+};
+
+// 그래프를 흐르는 컨텍스트
+USTRUCT(BlueprintType)
+struct FYSPlaybackContext
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TObjectPtr<UYSGameplayAbility> OwnerAbility;
+
+	UPROPERTY()
+	TObjectPtr<AActor> Instigator;
+
+	UPROPERTY()
+	TObjectPtr<AActor> Target;
+
+	EYSPlaybackResult PreviousResult = EYSPlaybackResult::None;
+
+	// 히트 발생 시 채워짐 (OnTraceComplete에서)
+	TArray<FHitResult> HitResults;
+};
