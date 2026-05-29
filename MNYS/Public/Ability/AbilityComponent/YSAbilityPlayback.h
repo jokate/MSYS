@@ -28,13 +28,13 @@ struct FYSPlaybackEdge
 
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Transition", meta = (DisplayName = "발화 조건"))
 	EYSPlaybackResult RequiredResult = EYSPlaybackResult::Completed;
-
+	
 	// -1 = 체인 종료 (어빌리티 EndAbility)
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Transition", meta = (DisplayName = "다음 노드 인덱스 (-1: 종료)"))
 	int32 NextNodeIndex = INDEX_NONE;
 };
 
-UCLASS(Abstract, EditInlineNew, DefaultToInstanced, CollapseCategories)
+UCLASS(EditInlineNew, DefaultToInstanced, CollapseCategories)
 class MNYS_API UYSAbilityPlaybackBase : public UObject
 {
 	GENERATED_BODY()
@@ -42,6 +42,8 @@ class MNYS_API UYSAbilityPlaybackBase : public UObject
 public : 
 	void Play(const FYSPlaybackContext& Context);
 	void ReleaseMotionWarp();
+	void DispatchNext(EYSPlaybackResult Result);
+	
 protected : 
 	virtual bool CheckCondition(const FYSPlaybackContext& Context);
 	
@@ -59,8 +61,7 @@ protected :
 	void OnSequencePlayed();
 	
 	virtual void SetupSequence(const FYSPlaybackContext& Context);
-	
-	void DispatchNext(EYSPlaybackResult Result);
+
 
 public : 
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Ability Playback Type")

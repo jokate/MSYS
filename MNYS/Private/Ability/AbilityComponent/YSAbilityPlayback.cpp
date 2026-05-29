@@ -17,7 +17,6 @@
 void UYSAbilityPlaybackBase::SetPlayback(const FYSPlaybackContext& Context)
 {
 	CapturedContext = Context;
-	CapturedContext.HitResults.Reset(); 
 	
 	switch ( PlaybackType )
 	{
@@ -30,19 +29,18 @@ void UYSAbilityPlaybackBase::SetPlayback(const FYSPlaybackContext& Context)
 	default :
 		break;
 	}
+	
+	CapturedContext.HitResults.Reset(); 
 }
 
 void UYSAbilityPlaybackBase::OnSequencePlayed()
 {
-	
+	DispatchNext(EYSPlaybackResult::Completed);
 }
 
 void UYSAbilityPlaybackBase::Play(const FYSPlaybackContext& Context)
 {
-	if ( CheckCondition(Context) )
-	{
-		SetPlayback(Context);
-	}
+	SetPlayback(Context);
 }
 
 void UYSAbilityPlaybackBase::ReleaseMotionWarp()
@@ -64,10 +62,12 @@ bool UYSAbilityPlaybackBase::CheckCondition(const FYSPlaybackContext& Context)
 
 void UYSAbilityPlaybackBase::OnMontagePlayed()
 {
+	DispatchNext(EYSPlaybackResult::Completed);
 }
 
 void UYSAbilityPlaybackBase::OnMontageInterrupted()
 {
+	DispatchNext(EYSPlaybackResult::Interrupted);
 }
 
 void UYSAbilityPlaybackBase::SetupMontage(const FYSPlaybackContext& Context)
@@ -183,7 +183,7 @@ void UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackResult Result)
 		UYSAbilityPlaybackBase* Next = Ability->GetPlaybackNode(Edge.NextNodeIndex);
 		if (IsValid(Next) && Next->CheckCondition(NextContext))
 		{
-			Next->Play(NextContext);
+			Ability->ActivePlayback(Edge.NextNodeIndex, NextContext);
 			return;
 		}
 	}
