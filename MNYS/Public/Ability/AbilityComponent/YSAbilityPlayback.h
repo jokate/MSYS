@@ -43,7 +43,7 @@ public :
 	void Play(const FYSPlaybackContext& Context);
 	void ReleaseMotionWarp();
 	void DispatchNext(EYSPlaybackResult Result);
-	
+	void OnHit(const TArray<FHitResult>& HitResults);
 protected : 
 	virtual bool CheckCondition(const FYSPlaybackContext& Context);
 	

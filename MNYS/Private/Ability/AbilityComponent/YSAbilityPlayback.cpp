@@ -192,3 +192,9 @@ void UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackResult Result)
 	Ability->NotifyPlaybackChainFinished();
 }
 
+void UYSAbilityPlaybackBase::OnHit(const TArray<FHitResult>& HitResults)
+{	
+	CapturedContext.HitResults = HitResults;
+	CapturedContext.Target = HitResults[0].GetActor();
+	DispatchNext(EYSPlaybackResult::OnHit);
+}
