@@ -55,3 +55,13 @@ enum class EYSTraceShape : uint8
 	Capsule,
 	Line
 };
+
+UENUM(BlueprintType)
+enum class EYSVelocityDirectionPolicy : uint8
+{
+	UseActorForwardVector UMETA(DisplayName = "액터 전방 벡터 사용"),
+	UseTowardPlaybackTarget 	UMETA(DisplayName = "플레이 백 목표를 향하는 방향 사용"),
+	UseTowardLockOnTarget		UMETA(DisplayName = "락온 목표를 향하는 방향 사용"),
+	UseControlRotation			UMETA(DisplayName = "컨트롤 로테이션 기준"),
+	UseTowardIndicatorPosition	UMETA(DisplayName = "인디케이터 포지션 사용.")
+};

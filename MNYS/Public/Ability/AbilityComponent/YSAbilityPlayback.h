@@ -49,6 +49,7 @@ public :
 	void OnHit(const TArray<FHitResult>& HitResults);
 	
 	const FYSPlaybackContext& GetCurrentPlaybackContext() const { return CapturedContext; }
+	AActor* GetCurrentPlaybackTarget() const { return CapturedContext.Target; }
 protected : 
 	virtual bool CheckCondition(const FYSPlaybackContext& Context);
 	

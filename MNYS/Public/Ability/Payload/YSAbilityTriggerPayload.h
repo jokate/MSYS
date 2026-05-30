@@ -61,6 +61,9 @@ public :
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "시간")
 	float Duration = 0.f;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "방향 정책")
+	EYSVelocityDirectionPolicy VelocityDirectionPolicy = EYSVelocityDirectionPolicy::UseActorForwardVector;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "종료 후 Velocity는 어떻게 할 것인가?")
 	ERootMotionFinishVelocityMode FinishVelocityMode = ERootMotionFinishVelocityMode::MaintainLastRootMotionVelocity;
 	

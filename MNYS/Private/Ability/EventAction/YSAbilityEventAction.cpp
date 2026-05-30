@@ -8,8 +8,11 @@
 #include "AbilitySystemInterface.h"
 #include "Abilities/Tasks/AbilityTask_ApplyRootMotionMoveToForce.h"
 #include "Ability/YSGameplayAbility.h"
+#include "Ability/AbilityComponent/YSAbilityPlayback.h"
 #include "Ability/Payload/YSAbilityTriggerPayload.h"
 #include "Ability/Task/YSAT_Trace.h"
+#include "Character/YSPlayerController.h"
+#include "Character/Components/YSLockOnComponent.h"
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
 
 bool UYSAbilityEventAction_StartTrace::Execute_Implementation(UYSGameplayAbility* OwningAbility,
@@ -178,7 +181,10 @@ bool UYSAbilityEventAction_ApplyVelocity::Execute_Implementation(UYSGameplayAbil
 		return false;
 	
 	AActor* OwnerActor = OwningAbility->GetOwningActorFromActorInfo();
-	const FVector TargetLocation = OwnerActor->GetActorLocation() + OwnerActor->GetActorForwardVector() * ( VelocityData->Velocity * VelocityData->Duration );
+	
+	const FVector TargetLocation = OwnerActor->GetActorLocation() 
+		+ GetDirectionVector(OwningAbility, EventData, VelocityData->VelocityDirectionPolicy) 
+		* ( VelocityData->Velocity * VelocityData->Duration );
 	
 	UAbilityTask_ApplyRootMotionMoveToForce* ApplyVelocityTask = 
 		UAbilityTask_ApplyRootMotionMoveToForce::ApplyRootMotionMoveToForce(OwningAbility, 
@@ -198,4 +204,63 @@ bool UYSAbilityEventAction_ApplyVelocity::Execute_Implementation(UYSGameplayAbil
 	
 	ApplyVelocityTask->ReadyForActivation();
 	return true;
+}
+
+FVector UYSAbilityEventAction_ApplyVelocity::GetDirectionVector(UYSGameplayAbility* OwningAbility,
+	const FGameplayEventData& EventData, EYSVelocityDirectionPolicy DirectionPolicy)
+{
+	AActor* OwnerActor = OwningAbility->GetOwningActorFromActorInfo();
+	
+	if (IsValid(OwnerActor) == false)
+		return FVector::ZeroVector;
+	
+	switch (DirectionPolicy)
+	{
+	case EYSVelocityDirectionPolicy::UseActorForwardVector:
+		return OwnerActor->GetActorForwardVector();
+	case EYSVelocityDirectionPolicy::UseTowardLockOnTarget:
+		{
+			if ( UYSLockOnComponent* LockOnComponent = UYSLockOnComponent::Get(OwnerActor) )
+			{
+				if ( AActor* TargetActor = LockOnComponent->GetCurrentTarget() )
+				{
+					return (TargetActor->GetActorLocation() - OwnerActor->GetActorLocation()).GetSafeNormal();
+				}
+			}
+			return OwnerActor->GetActorForwardVector();
+		}
+	case EYSVelocityDirectionPolicy::UseTowardPlaybackTarget:
+		{
+			const UYSAbilityPlaybackBase* CurPlayback = OwningAbility->GetCurrentPlayback();
+			
+			if ( IsValid(CurPlayback) == false )
+			{
+				return OwnerActor->GetActorForwardVector();
+			}
+			
+			AActor* TargetActor = CurPlayback->GetCurrentPlaybackTarget();
+			if ( IsValid(TargetActor) == false )
+			{
+				return OwnerActor->GetActorForwardVector();
+			}
+			
+			return (TargetActor->GetActorLocation() - OwnerActor->GetActorLocation()).GetSafeNormal();
+		}
+	case EYSVelocityDirectionPolicy::UseControlRotation :
+		{
+			AYSPlayerController* PlayerController = OwnerActor->GetInstigatorController<AYSPlayerController>();
+			
+			if ( IsValid(PlayerController) == false )
+			{
+				return OwnerActor->GetActorForwardVector();
+			}
+			
+			return PlayerController->GetControlRotation().Vector();
+		}
+		
+	// 인디케이터 구현 시, 같이 구현합니다. ( 아마 기존에 하던 플젝에서 끌고 올 예정 )
+	case EYSVelocityDirectionPolicy::UseTowardIndicatorPosition:
+	default:
+		return FVector::ZeroVector;
+	}
 }

@@ -133,4 +133,7 @@ class MNYS_API UYSAbilityEventAction_ApplyVelocity : public UYSAbilityEventActio
 
 public :
 	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
+
+private : 
+	virtual FVector GetDirectionVector(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData, EYSVelocityDirectionPolicy DirectionPolicy);
 };
