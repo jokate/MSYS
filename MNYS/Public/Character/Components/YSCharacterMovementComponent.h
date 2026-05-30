@@ -28,6 +28,8 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 
+	virtual bool HandlePendingLaunch() override;
+	
 	void SetMovementBlocked(bool bBlocked) { bIsMovementBlocked = bBlocked; }
 
 	bool IsMovementBlocked() const { return bIsMovementBlocked; }

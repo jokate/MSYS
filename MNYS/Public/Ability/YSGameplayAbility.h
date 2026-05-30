@@ -23,6 +23,7 @@ enum class EYSAbilityType : uint8
 	None,
 	MeleeAttack UMETA(DisplayName = "근접 공격"),
 	RangedAttack UMETA(DisplayName = "원거리 공격"),
+	Dash,
 };
 
 USTRUCT()
@@ -104,7 +105,7 @@ public:
 	
 	void NotifyPlaybackChainFinished();
 	
-	YS_ACCESSOR(EYSAbilityType, AbilityType)
+	YS_ACCESSOR_REF(TSet<EYSAbilityType>, AbilityTypes);
 	
 	UYSAbilityPlaybackBase* GetPlaybackNode(int32 Index);
 	
@@ -156,7 +157,7 @@ public:
 	
 protected :
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Ability Type")
-	EYSAbilityType AbilityType = EYSAbilityType::None;
+	TSet<EYSAbilityType> AbilityTypes;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Ability Playback", Instanced)
 	TArray<UYSAbilityPlaybackBase*> Playbacks;

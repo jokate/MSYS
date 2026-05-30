@@ -5,13 +5,7 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
-#include "DefaultLevelSequenceInstanceData.h"
-#include "LevelSequence.h"
-#include "LevelSequenceActor.h"
-#include "LevelSequencePlayer.h"
-#include "MovieSceneSequencePlaybackSettings.h"
 #include "YSAbilitySystemComponent.h"
-#include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "Ability/EventAction/YSAbilityEventAction.h"
 #include "Character/YSCharacterPlayer.h"
@@ -320,29 +314,38 @@ void UYSGameplayAbility::PostEditChangeProperty(struct FPropertyChangedEvent& Pr
 	
 	FName PropertyName = (PropertyChangedEvent.Property != NULL) ? PropertyChangedEvent.Property->GetFName() : NAME_None;
 	
-	if ( PropertyName == GET_MEMBER_NAME_CHECKED(UYSGameplayAbility, AbilityType) )
+	if ( PropertyName == GET_MEMBER_NAME_CHECKED(UYSGameplayAbility, AbilityTypes) )
 	{
 		EventActionMap.Empty();
 		
-		switch (AbilityType )
+		for ( EYSAbilityType AbilityType : AbilityTypes )
 		{
-		case EYSAbilityType::None:
-			break;
-		case EYSAbilityType::MeleeAttack :
+			switch (AbilityType )
 			{
-				FYSEventPayload TraceStart;
-				TraceStart.EventActions.Add(NewObject<UYSAbilityEventAction_StartTrace>(this));
-				EventActionMap.Add(YSTags::Event_TraceStart, TraceStart);
-			
-				FYSEventPayload TraceEnd;
-				TraceEnd.EventActions.Add(NewObject<UYSAbilityEventAction_StopTrace>(this));
-				EventActionMap.Add(YSTags::Event_TraceEnd, TraceEnd);
+			case EYSAbilityType::None:
 				break;
-			}
-		case EYSAbilityType::RangedAttack : 
-			break;
-		default: 
-			break;
+			case EYSAbilityType::MeleeAttack :
+				{
+					FYSEventPayload TraceStart;
+					TraceStart.EventActions.Add(NewObject<UYSAbilityEventAction_StartTrace>(this));
+					EventActionMap.Add(YSTags::Event_TraceStart, TraceStart);
+			
+					FYSEventPayload TraceEnd;
+					TraceEnd.EventActions.Add(NewObject<UYSAbilityEventAction_StopTrace>(this));
+					EventActionMap.Add(YSTags::Event_TraceEnd, TraceEnd);
+					break;
+				}
+			case EYSAbilityType::RangedAttack : 
+				break;
+			case EYSAbilityType::Dash :
+				{
+					FYSEventPayload Velocity;
+					Velocity.EventActions.Add(NewObject<UYSAbilityEventAction_ApplyVelocity>(this));
+					EventActionMap.Add(YSTags::Event_ApplyVelocity, Velocity);
+				}
+			default: 
+				break;
+			}	
 		}
 	}
 }

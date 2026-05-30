@@ -56,3 +56,23 @@ void UYSCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Ti
 	}
 }
 
+bool UYSCharacterMovementComponent::HandlePendingLaunch()
+{
+	if (!PendingLaunchVelocity.IsZero() && HasValidData())
+	{
+		Velocity = PendingLaunchVelocity;
+		
+		// 런칭 자체는 사실 Falling이 맞긴한데, Z축으로 힘준 경우에만 Falling 처리.
+		if ( PendingLaunchVelocity.Z > 0.f )
+		{
+			SetMovementMode(MOVE_Falling);	
+		}
+		
+		PendingLaunchVelocity = FVector::ZeroVector;
+		bForceNextFloorCheck = true;
+		return true;
+	}
+
+	return false;
+}
+

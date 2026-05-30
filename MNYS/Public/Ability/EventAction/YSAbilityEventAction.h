@@ -125,3 +125,12 @@ public :
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "끝났을 때 제거 여부"))
 	bool bRemoveWhenFinished = false;
 };
+
+UCLASS(DisplayName = "속도 적용")
+class MNYS_API UYSAbilityEventAction_ApplyVelocity : public UYSAbilityEventAction
+{
+	GENERATED_BODY()
+
+public :
+	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
+};

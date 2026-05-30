@@ -6,6 +6,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemInterface.h"
+#include "Abilities/Tasks/AbilityTask_ApplyRootMotionMoveToForce.h"
 #include "Ability/YSGameplayAbility.h"
 #include "Ability/Payload/YSAbilityTriggerPayload.h"
 #include "Ability/Task/YSAT_Trace.h"
@@ -14,7 +15,7 @@
 bool UYSAbilityEventAction_StartTrace::Execute_Implementation(UYSGameplayAbility* OwningAbility,
                                                               const FGameplayEventData& EventData)
 {
-	const UYSAbilityTriggerPayload_Trace* TraceData = UYSAbilityTriggerPayload_Trace::GetTracePayload(&EventData);
+	const UYSAbilityTriggerPayload_Trace* TraceData = UYSAbilityTriggerPayload::GetPayload<UYSAbilityTriggerPayload_Trace>(&EventData);
 
 	if ( IsValid(TraceData) == false)
 		return false;
@@ -165,5 +166,36 @@ bool UYSAbilityEventAction_GameplayEffect::Execute_GameplayEffectFromInstigator(
 		OwningAbility->AddRuntimeEffectSpecHandle(TargetASC->ApplyGameplayEffectSpecToTarget(Spec, OwnerASC));	
 	}
 	
+	return true;
+}
+
+bool UYSAbilityEventAction_ApplyVelocity::Execute_Implementation(UYSGameplayAbility* OwningAbility,
+	const FGameplayEventData& EventData)
+{
+	const UYSAbilityTriggerPayload_Velocity* VelocityData = UYSAbilityTriggerPayload::GetPayload<UYSAbilityTriggerPayload_Velocity>(&EventData);;
+
+	if ( IsValid(VelocityData) == false)
+		return false;
+	
+	AActor* OwnerActor = OwningAbility->GetOwningActorFromActorInfo();
+	const FVector TargetLocation = OwnerActor->GetActorLocation() + OwnerActor->GetActorForwardVector() * ( VelocityData->Velocity * VelocityData->Duration );
+	
+	UAbilityTask_ApplyRootMotionMoveToForce* ApplyVelocityTask = 
+		UAbilityTask_ApplyRootMotionMoveToForce::ApplyRootMotionMoveToForce(OwningAbility, 
+			TEXT("AppyVelocity"), TargetLocation, VelocityData->Duration,
+			VelocityData->bSetNewMovementMode,
+			VelocityData->MoveMode,
+			true,
+			nullptr,
+			VelocityData->FinishVelocityMode, 
+			VelocityData->FinishSetVelocity, 
+			VelocityData->FinishClampVelocity);
+	
+	if (IsValid(ApplyVelocityTask) == false )
+	{
+		return false;
+	}
+	
+	ApplyVelocityTask->ReadyForActivation();
 	return true;
 }
