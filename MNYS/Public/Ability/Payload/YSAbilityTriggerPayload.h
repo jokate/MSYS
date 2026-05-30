@@ -64,6 +64,9 @@ public :
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "방향 정책")
 	EYSVelocityDirectionPolicy VelocityDirectionPolicy = EYSVelocityDirectionPolicy::UseActorForwardVector;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "방향으로 액터 돌릴지 여부")
+	bool bRotateActorToDirection = false;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "종료 후 Velocity는 어떻게 할 것인가?")
 	ERootMotionFinishVelocityMode FinishVelocityMode = ERootMotionFinishVelocityMode::MaintainLastRootMotionVelocity;
 	

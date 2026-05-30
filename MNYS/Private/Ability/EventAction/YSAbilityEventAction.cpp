@@ -182,9 +182,16 @@ bool UYSAbilityEventAction_ApplyVelocity::Execute_Implementation(UYSGameplayAbil
 	
 	AActor* OwnerActor = OwningAbility->GetOwningActorFromActorInfo();
 	
+	FVector DirectionVector = GetDirectionVector(OwningAbility, EventData, VelocityData->VelocityDirectionPolicy);
 	const FVector TargetLocation = OwnerActor->GetActorLocation() 
-		+ GetDirectionVector(OwningAbility, EventData, VelocityData->VelocityDirectionPolicy) 
+		+ DirectionVector
 		* ( VelocityData->Velocity * VelocityData->Duration );
+	
+	// 뒤로 쭉 밀려서 들어가야 하는 경우라면?
+	if ( VelocityData->bRotateActorToDirection )
+	{
+		OwnerActor->SetActorRotation(DirectionVector.Rotation());	
+	}
 	
 	UAbilityTask_ApplyRootMotionMoveToForce* ApplyVelocityTask = 
 		UAbilityTask_ApplyRootMotionMoveToForce::ApplyRootMotionMoveToForce(OwningAbility, 
