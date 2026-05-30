@@ -307,15 +307,6 @@ void UYSGameplayAbility::SetupPlayBack(const FGameplayEventData* TriggerEventDat
 	FYSPlaybackContext Context;
 	Context.OwnerAbility = this;
 	Context.Instigator   = GetOwningActorFromActorInfo();
-	if (TriggerEventData != nullptr )
-	{
-		Context.Target = TriggerEventData != nullptr ? const_cast<AActor*>(TriggerEventData->Instigator.Get()) : nullptr;	
-	}
-	
-	if ( UYSLockOnComponent* LockOnComponent = UYSLockOnComponent::Get(Context.Instigator) )
-	{
-		Context.Target = LockOnComponent->GetCurrentTarget();
-	}
 
 	ActivePlayback(0, Context);
 }

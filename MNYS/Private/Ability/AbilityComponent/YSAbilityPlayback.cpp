@@ -13,10 +13,13 @@
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Ability/YSGameplayAbility.h"
 #include "Ability/MontageSelector/YSMontageSelector.h"
+#include "Character/Components/YSLockOnComponent.h"
 
 void UYSAbilityPlaybackBase::SetPlayback(const FYSPlaybackContext& Context)
 {
 	CapturedContext = Context;
+	
+	ProcessContextBeforePlay();
 	
 	switch ( PlaybackType )
 	{
@@ -155,6 +158,18 @@ void UYSAbilityPlaybackBase::SetupSequence(const FYSPlaybackContext& Context)
 	Player->Play();
 }
 
+void UYSAbilityPlayback_LockonTarget::ProcessContextBeforePlay()
+{
+	AActor* ContextInstigator = CapturedContext.Instigator;
+	if (IsValid(ContextInstigator))
+	{
+		if (UYSLockOnComponent* LockOnComponent = UYSLockOnComponent::Get(ContextInstigator))
+		{
+			CapturedContext.Target = LockOnComponent->GetCurrentTarget();
+		}
+	}
+}
+
 void UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackResult Result)
 {
 	FYSPlaybackContext NextContext = CapturedContext;
@@ -173,13 +188,6 @@ void UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackResult Result)
 			continue;
 		}
 
-		// 종료 시그널
-		if (Edge.NextNodeIndex == INDEX_NONE)
-		{
-			Ability->NotifyPlaybackChainFinished();
-			return;
-		}
-
 		UYSAbilityPlaybackBase* Next = Ability->GetPlaybackNode(Edge.NextNodeIndex);
 		if (IsValid(Next) && Next->CheckCondition(NextContext))
 		{
@@ -188,13 +196,12 @@ void UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackResult Result)
 		}
 	}
 
-	// 매칭 엣지 없음 = 종료
+	
 	Ability->NotifyPlaybackChainFinished();
 }
 
 void UYSAbilityPlaybackBase::OnHit(const TArray<FHitResult>& HitResults)
 {	
 	CapturedContext.HitResults = HitResults;
-	CapturedContext.Target = HitResults[0].GetActor();
-	DispatchNext(EYSPlaybackResult::OnHit);
+	DispatchNext(EYSPlaybackResult::OnHitTarget);
 }

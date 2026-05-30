@@ -146,7 +146,9 @@ enum class EYSPlaybackResult : uint8
 	None        UMETA(DisplayName = "첫 진입"),
 	Completed   UMETA(DisplayName = "정상 완료"),
 	Interrupted UMETA(DisplayName = "중단/취소"),
-	OnHit		UMETA(DisplayName = "히트 시")
+	OnHitTarget		UMETA(DisplayName = "타겟 히트 시"),
+	OnHitPlayed		UMETA(DisplayName = "히트 당했을 시"),
+	CustomEvent		UMETA(DisplayName = "커스텀 이벤트")
 };
 
 // 그래프를 흐르는 컨텍스트
