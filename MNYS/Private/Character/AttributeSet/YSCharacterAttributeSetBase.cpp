@@ -7,7 +7,7 @@
 
 UYSCharacterAttributeSetBase::UYSCharacterAttributeSetBase()
 {
-	CurrentHp = 100.f;
+	Hp = 100.f;
 	MaxHp = 100.f;
 	AttackDmg = 10.f;
 	DefenseRate = 0.1f;
@@ -35,7 +35,7 @@ void UYSCharacterAttributeSetBase::PostAttributeChange(const FGameplayAttribute&
 {
 	Super::PostAttributeChange(Attribute, OldValue, NewValue);
 	
-	if ( Attribute == GetCurrentHpAttribute() )
+	if ( Attribute == GetHpAttribute() )
 	{ 
 		if (NewValue <= 0.f && OldValue > 0.f)
 		{	

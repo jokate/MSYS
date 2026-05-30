@@ -50,7 +50,7 @@ bool AYSCharacterBase::IsDead() const
 	if (AttributeSet == nullptr)
 		return true;
 
-	return AttributeSet->GetCurrentHp() <= 0.f;
+	return AttributeSet->GetHp() <= 0.f;
 }
 
 // Called every frame

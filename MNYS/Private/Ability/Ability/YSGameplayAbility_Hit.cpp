@@ -23,7 +23,7 @@ void UYSGameplayAbility_Hit::_ProcessDamage(const FGameplayEventData* TriggerDat
 	if ( IsValid(TargetAttributeSet) == false )
 		return;
 		
-	float CurHp = TargetAttributeSet->GetCurrentHp();
+	float CurHp = TargetAttributeSet->GetHp();
 		
 	if ( CurHp <= 0.f )
 		return;
@@ -31,6 +31,6 @@ void UYSGameplayAbility_Hit::_ProcessDamage(const FGameplayEventData* TriggerDat
 	if ( IsValid(ASC) )
 	{
 		// 데미지 처리 로직 추가. ( 클램핑은 내부에서 알아 처리 될 거임 )
-		ASC->SetNumericAttributeBase(TargetAttributeSet->GetCurrentHpAttribute(), CurHp - TriggerData->EventMagnitude);		
+		ASC->SetNumericAttributeBase(TargetAttributeSet->GetHpAttribute(), CurHp - TriggerData->EventMagnitude);		
 	}
 }

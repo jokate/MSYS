@@ -21,7 +21,7 @@ public :
 	UYSCharacterAttributeSetBase();
 	
 	virtual void PostInitProperties() override;
-	ATTRIBUTE_ACCESSORS(UYSCharacterAttributeSetBase, CurrentHp);
+	ATTRIBUTE_ACCESSORS(UYSCharacterAttributeSetBase, Hp);
     ATTRIBUTE_ACCESSORS(UYSCharacterAttributeSetBase, MaxHp);
 	
     ATTRIBUTE_ACCESSORS(UYSCharacterAttributeSetBase, AttackDmg);
@@ -36,7 +36,7 @@ protected :
 protected :
 		
 	UPROPERTY(BlueprintReadOnly, Category = "YS | Character", Meta = (AllowPrivateAccess = true))
-	FGameplayAttributeData CurrentHp;
+	FGameplayAttributeData Hp;
 	UPROPERTY(BlueprintReadOnly, Category = "YS | Character", Meta = (AllowPrivateAccess = true))
 	FGameplayAttributeData MaxHp;
 
