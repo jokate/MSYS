@@ -170,7 +170,17 @@ void UYSAbilityPlayback_LockonTarget::ProcessContextBeforePlay()
 	}
 }
 
-void UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackResult Result)
+void UYSAbilityPlayback_FirstHitTarget::ProcessContextBeforePlay()
+{
+	if ( CapturedContext.HitResults.IsEmpty() )
+	{
+		return;
+	}
+	
+	CapturedContext.Target = CapturedContext.HitResults[0].GetActor();;
+}
+
+void UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackResult Result, bool bIsEvaluate)
 {
 	FYSPlaybackContext NextContext = CapturedContext;
 	NextContext.PreviousResult = Result;
@@ -195,13 +205,16 @@ void UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackResult Result)
 			return;
 		}
 	}
-
 	
-	Ability->NotifyPlaybackChainFinished();
+	// 평가하는 경우에는 단순히 조건 체크 용도로만 사용되고, 실제로 플레이백이 전환되는 것은 아니므로 체인 종료 알림을 보내지 않는다.
+	if (!bIsEvaluate)
+	{
+		Ability->NotifyPlaybackChainFinished();	
+	}
 }
 
 void UYSAbilityPlaybackBase::OnHit(const TArray<FHitResult>& HitResults)
 {	
 	CapturedContext.HitResults = HitResults;
-	DispatchNext(EYSPlaybackResult::OnHitTarget);
+	DispatchNext(EYSPlaybackResult::OnHitTarget, true);
 }

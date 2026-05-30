@@ -4,6 +4,7 @@
 #include "Ability/MotionWarp/YSMotionWarpParam.h"
 
 #include "Ability/YSGameplayAbility.h"
+#include "Ability/AbilityComponent/YSAbilityPlayback.h"
 #include "Character/YSPlayerController.h"
 #include "MotionWarp/UYSMotionWarpingComponent.h"
 
@@ -55,7 +56,7 @@ FMotionWarpingTarget FYSMotionWarpParam_ControlRotation::GetWarpTargetData(const
 	Target.Rotation = FRotator(0, PlayerController->GetControlRotation().Yaw, 0);
 	return Target;
 }
-
+// 정책이 변경되어서 Playback 기준으로 변경.
 FMotionWarpingTarget FYSMotionWarpParam_Target::GetWarpTargetData(const UYSGameplayAbility* InAbility) const
 {
 	FMotionWarpingTarget Target;
@@ -64,17 +65,25 @@ FMotionWarpingTarget FYSMotionWarpParam_Target::GetWarpTargetData(const UYSGamep
 	if ( IsValid(InAbility) == false )
 		return Target;
 	
-	const FGameplayEventData* EventData = InAbility->GetEventData();
+	const UYSAbilityPlaybackBase* CurrentPlayback = InAbility->GetCurrentPlayback();
 	
-	if (EventData == nullptr )
+	if ( IsValid(CurrentPlayback) == false )
 		return Target;
 	
-	const AActor* TargetActor = EventData->Instigator;
-	AActor* OwningActor = InAbility->GetOwningActorFromActorInfo();
+	AActor* OwnerActor = InAbility->GetOwningActorFromActorInfo();
+	if ( IsValid(OwnerActor) == false )
+	{
+		return Target;
+	}
+	const FYSPlaybackContext& Context = CurrentPlayback->GetCurrentPlaybackContext();
+	
+	AActor* TargetActor = Context.Target;
 	if ( IsValid(TargetActor) == false )
+	{
 		return Target;
+	}
 	
-	const FVector FromAttacker = (OwningActor->GetActorLocation() - TargetActor->GetActorLocation()).GetSafeNormal2D() * (bFaceTarget ? -1.0f : 1.0f);
+	const FVector FromAttacker = (OwnerActor->GetActorLocation() - TargetActor->GetActorLocation()).GetSafeNormal2D() * (bFaceTarget ? -1.0f : 1.0f);
 	Target.Rotation = FRotator((FromAttacker).ToOrientationQuat());
 	return Target;
 }

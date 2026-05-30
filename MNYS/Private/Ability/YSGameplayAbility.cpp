@@ -177,6 +177,7 @@ void UYSGameplayAbility::OnTraceComplete(const TArray<FHitResult>& HitResults, c
 	if ( TeamAgentInterface == nullptr )
 		return;
 		
+	TArray<FHitResult> PlaybackHitResult;
 	for ( const FHitResult& HitResult : HitResults ) 
 	{
 		AActor* HitActor = HitResult.GetActor();
@@ -230,11 +231,12 @@ void UYSGameplayAbility::OnTraceComplete(const TArray<FHitResult>& HitResults, c
 		
 		// 데미지 히트에 따른 이벤트 송신.
 		UYSBlueprintFunctionLibrary::SendHitEventToTarget(GetOwningActorFromActorInfo(), HitActor, DamageRow);
+		PlaybackHitResult.Add(HitResult);
 	}
 	
-	if ( HitResults.Num() > 0 )
+	if ( PlaybackHitResult.Num() > 0 )
 	{
-		CurrentPlayback->OnHit(HitResults);
+		CurrentPlayback->OnHit(PlaybackHitResult);
 	}
 }
 

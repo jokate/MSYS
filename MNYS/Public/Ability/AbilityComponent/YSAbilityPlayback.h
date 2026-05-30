@@ -45,8 +45,10 @@ class MNYS_API UYSAbilityPlaybackBase : public UObject
 public : 
 	void Play(const FYSPlaybackContext& Context);
 	void ReleaseMotionWarp();
-	void DispatchNext(EYSPlaybackResult Result);
+	void DispatchNext(EYSPlaybackResult Result, bool bIsEvaluate = false);
 	void OnHit(const TArray<FHitResult>& HitResults);
+	
+	const FYSPlaybackContext& GetCurrentPlaybackContext() const { return CapturedContext; }
 protected : 
 	virtual bool CheckCondition(const FYSPlaybackContext& Context);
 	
@@ -95,5 +97,14 @@ class MNYS_API UYSAbilityPlayback_LockonTarget : public UYSAbilityPlaybackBase
 	GENERATED_BODY()
 
 protected : 
+	virtual void ProcessContextBeforePlay() override;
+};
+
+UCLASS(DisplayName = "히트 첫번째 타겟 기준 플레이 백")
+class MNYS_API UYSAbilityPlayback_FirstHitTarget : public UYSAbilityPlaybackBase
+{
+	GENERATED_BODY()
+	
+protected :
 	virtual void ProcessContextBeforePlay() override;
 };
