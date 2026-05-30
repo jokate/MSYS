@@ -23,7 +23,7 @@ enum class EYSAbilityType : uint8
 	None,
 	MeleeAttack UMETA(DisplayName = "근접 공격"),
 	RangedAttack UMETA(DisplayName = "원거리 공격"),
-	Dash,
+	Dash UMETA(Displayname = "속도 적용"),
 };
 
 USTRUCT()

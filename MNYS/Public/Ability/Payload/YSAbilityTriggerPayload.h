@@ -56,7 +56,7 @@ class MNYS_API UYSAbilityTriggerPayload_Velocity : public UYSAbilityTriggerPaylo
 
 public : 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "속도")
-	FVector Velocity = FVector::ZeroVector;
+	float Velocity = 0.f;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "시간")
 	float Duration = 0.f;
