@@ -33,7 +33,7 @@ public :
 	float AdditiveTrueDamage = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	EYSDamageType DamageType;
+	EYSDamageType DamageType = EYSDamageType::None;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGameplayTag HitTag;

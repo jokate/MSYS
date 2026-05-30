@@ -14,6 +14,7 @@
 #include "General/YSGameplayTag.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
 #include "Ability/AbilityComponent/YSAbilityPlayback.h"
+#include "Character/Components/YSCharacterMovementComponent.h"
 
 UYSGameplayAbility::UYSGameplayAbility()
 {
@@ -48,6 +49,11 @@ void UYSGameplayAbility::ActivePlayback(int32 Index, const FYSPlaybackContext& C
 
 	UYSAbilityPlaybackBase* Playback = Playbacks[Index];
 
+	if ( IsValid(CurrentPlayback.Get()))
+	{
+		CurrentPlayback->EndPlay();	
+	}
+	
 	if ( IsValid(Playback) == false )
 		return;
 
@@ -82,6 +88,16 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 		}
 	}
 
+	if ( bBlockMovementDuringAbility )
+	{
+		UYSCharacterMovementComponent* MovementComponent = UYSCharacterMovementComponent::Get(OwnerActor);
+		
+		if ( IsValid(MovementComponent) )
+		{
+			MovementComponent->SetMovementBlocked(true);
+		}
+	}
+	
 	_PrepareForAbilityEvent();
 }
 
@@ -123,6 +139,16 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 	}
 
 	RuntimeData.ResetData();
+	
+	if ( bBlockMovementDuringAbility )
+	{
+		UYSCharacterMovementComponent* MovementComponent = UYSCharacterMovementComponent::Get(OwnerActor);
+		
+		if ( IsValid(MovementComponent) )
+		{
+			MovementComponent->SetMovementBlocked(false);
+		}
+	}
 }
 
 bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag) 

@@ -63,6 +63,20 @@ bool UYSAbilityPlaybackBase::CheckCondition(const FYSPlaybackContext& Context)
 	return true;
 }
 
+void UYSAbilityPlaybackBase::EndPlay()
+{
+	if ( IsValid(PlayMontageAndWaitTask) )
+	{
+		PlayMontageAndWaitTask->EndTask();
+	}
+	
+	if ( IsValid(LevelSequencePlayer) )
+	{
+		LevelSequencePlayer->OnFinished.RemoveAll(this);
+		LevelSequencePlayer->Stop();
+	}
+}
+
 void UYSAbilityPlaybackBase::OnMontagePlayed()
 {
 	DispatchNext(EYSPlaybackResult::Completed);
@@ -86,15 +100,15 @@ void UYSAbilityPlaybackBase::SetupMontage(const FYSPlaybackContext& Context)
 	
 	if ( IsValid(TargetToPlayMontage) ) 
 	{
-		UAbilityTask_PlayMontageAndWait* PlayMontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(CapturedContext.OwnerAbility, 
+		PlayMontageAndWaitTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(CapturedContext.OwnerAbility, 
 			TEXT("PlayMontage"), TargetToPlayMontage);
-		if ( IsValid(PlayMontageTask))
+		if ( IsValid(PlayMontageAndWaitTask))
 		{
-			PlayMontageTask->OnCompleted.AddDynamic(this, &ThisClass::OnMontagePlayed);
-			PlayMontageTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageInterrupted);
-			PlayMontageTask->OnBlendOut.AddDynamic(this, &ThisClass::OnMontageInterrupted);
-			PlayMontageTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageInterrupted);
-			PlayMontageTask->ReadyForActivation();	
+			PlayMontageAndWaitTask->OnCompleted.AddDynamic(this, &ThisClass::OnMontagePlayed);
+			PlayMontageAndWaitTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageInterrupted);
+			PlayMontageAndWaitTask->OnBlendOut.AddDynamic(this, &ThisClass::OnMontageInterrupted);
+			PlayMontageAndWaitTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageInterrupted);
+			PlayMontageAndWaitTask->ReadyForActivation();	
 		}
 	}
 
@@ -122,9 +136,9 @@ void UYSAbilityPlaybackBase::SetupSequence(const FYSPlaybackContext& Context)
 	Settings.PlayRate = SequenceSettings.PlayRate;
 	Settings.bPauseAtEnd = false;
 	ALevelSequenceActor* SequenceActor = nullptr;
-	ULevelSequencePlayer* Player = ULevelSequencePlayer::CreateLevelSequencePlayer( this, Sequence , Settings, SequenceActor);
+	LevelSequencePlayer = ULevelSequencePlayer::CreateLevelSequencePlayer( this, Sequence , Settings, SequenceActor);
 	
-	if (!IsValid(Player) || !IsValid(SequenceActor))
+	if (!IsValid(LevelSequencePlayer) || !IsValid(SequenceActor))
 	{
 		return;
 	}
@@ -154,8 +168,8 @@ void UYSAbilityPlaybackBase::SetupSequence(const FYSPlaybackContext& Context)
 		ActiveSequenceActor->bOverrideInstanceData = false;
 	}
 	
-	Player->OnFinished.AddDynamic(this, &ThisClass::OnSequencePlayed);
-	Player->Play();
+	LevelSequencePlayer->OnFinished.AddDynamic(this, &ThisClass::OnSequencePlayed);
+	LevelSequencePlayer->Play();
 }
 
 void UYSAbilityPlayback_LockonTarget::ProcessContextBeforePlay()

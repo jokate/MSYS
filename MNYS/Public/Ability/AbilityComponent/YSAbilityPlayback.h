@@ -8,6 +8,8 @@
 #include "UObject/Object.h"
 #include "YSAbilityPlayback.generated.h"
 
+class ULevelSequencePlayer;
+class UAbilityTask_PlayMontageAndWait;
 class ALevelSequenceActor;
 /**
  * 
@@ -50,9 +52,9 @@ public :
 	
 	const FYSPlaybackContext& GetCurrentPlaybackContext() const { return CapturedContext; }
 	AActor* GetCurrentPlaybackTarget() const { return CapturedContext.Target; }
+	virtual void EndPlay();
 protected : 
 	virtual bool CheckCondition(const FYSPlaybackContext& Context);
-	
 	UFUNCTION()
 	void OnMontagePlayed();
 
@@ -89,6 +91,12 @@ protected :
 private :
 	UPROPERTY()
 	TObjectPtr<ALevelSequenceActor> ActiveSequenceActor = nullptr;
+	
+	UPROPERTY()
+	TObjectPtr<UAbilityTask_PlayMontageAndWait> PlayMontageAndWaitTask = nullptr;
+	
+	UPROPERTY()
+	TObjectPtr<ULevelSequencePlayer> LevelSequencePlayer = nullptr;
 	
 };
 

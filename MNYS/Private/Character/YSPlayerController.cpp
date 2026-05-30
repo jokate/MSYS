@@ -25,7 +25,7 @@ void AYSPlayerController::SetupInputComponent()
 
 void AYSPlayerController::AddYawInput(float Val)
 {
-	/*
+	/* 컨트롤 로테이션 관련해서 문제가 좀 있을 수 있음 ( 락온 자체가 조금 느낌이 쎄 하단 말이지 )
 	if ( IsValid(LockOnComponent) && IsValid(LockOnComponent->GetCurrentTarget()))
 	{
 		if ( Val <= LockOnBreakThreshold )
