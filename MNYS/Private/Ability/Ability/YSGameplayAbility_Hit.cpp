@@ -30,6 +30,11 @@ bool UYSGameplayAbility_Hit::CanActivateAbility(const FGameplayAbilitySpecHandle
 
 void UYSGameplayAbility_Hit::_ProcessDamage(const FGameplayEventData* TriggerData)
 {
+	if ( TriggerData == nullptr )
+	{
+		return;
+	}
+	
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 	const UYSCharacterAttributeSetBase* TargetAttributeSet = ASC->GetSet<UYSCharacterAttributeSetBase>();
 
