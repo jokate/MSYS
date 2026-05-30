@@ -28,16 +28,6 @@ public :
 	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) { return true; }
 };
 
-// 임의 클래스 제작.
-UCLASS(DisplayName = "프로젝타일 스폰")
-class MNYS_API UYSAbilityEventAction_SpawnProjectile : public UYSAbilityEventAction
-{
-	GENERATED_BODY()
-
-public :
-	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override { return true; }
-};
-
 // 트레이스 시작.
 UCLASS(DisplayName = "트레이스 시작")
 class MNYS_API UYSAbilityEventAction_StartTrace : public UYSAbilityEventAction
@@ -136,4 +126,16 @@ public :
 
 private : 
 	virtual FVector GetDirectionVector(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData, EYSVelocityDirectionPolicy DirectionPolicy);
+};
+
+UCLASS(DisplayName = "액터 스폰")
+class MNYS_API UYSAbilityEventAction_SpawnActor : public UYSAbilityEventAction
+{
+	GENERATED_BODY()
+	
+public : 
+	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
+	
+private : 
+	virtual FTransform CalculateTransform(AActor* SpawnInstigator, const FYSSpawnActorConfig& SpawnConfig);
 };

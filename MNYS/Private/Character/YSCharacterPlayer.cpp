@@ -22,7 +22,7 @@ AYSCharacterPlayer::AYSCharacterPlayer(const FObjectInitializer& ObjectInitializ
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UYSCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
 	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = true;
+	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
 	
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.

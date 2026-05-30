@@ -11,6 +11,7 @@
 #include "Ability/AbilityComponent/YSAbilityPlayback.h"
 #include "Ability/Payload/YSAbilityTriggerPayload.h"
 #include "Ability/Task/YSAT_Trace.h"
+#include "Character/YSCharacterBase.h"
 #include "Character/YSPlayerController.h"
 #include "Character/Components/YSLockOnComponent.h"
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
@@ -270,4 +271,69 @@ FVector UYSAbilityEventAction_ApplyVelocity::GetDirectionVector(UYSGameplayAbili
 	default:
 		return FVector::ZeroVector;
 	}
+}
+
+bool UYSAbilityEventAction_SpawnActor::Execute_Implementation(UYSGameplayAbility* OwningAbility,
+	const FGameplayEventData& EventData)
+{
+	const UYSAbilityTriggerPayload_SpawnActor* SpawnActorPayload = UYSAbilityTriggerPayload::GetPayload<UYSAbilityTriggerPayload_SpawnActor>(&EventData);
+	
+	if ( IsValid(SpawnActorPayload) == false )
+	{
+		return false;
+	}
+	
+	AActor* OwningActor = OwningAbility->GetOwningActorFromActorInfo();
+	if ( IsValid(OwningActor) == false )
+	{
+		return false;
+	}
+	
+	UWorld* World = OwningAbility->GetWorld();
+	
+	if ( IsValid(World) == false )
+	{
+		return false;
+	}
+	
+	for (const FYSSpawnActorConfig& SpawnActorConfig : SpawnActorPayload->SpawnActorConfigs)
+	{
+		FTransform CalculatedTransform = CalculateTransform(OwningActor, SpawnActorConfig);
+		AActor* SpawnedActor = World->SpawnActorDeferred<AActor>(SpawnActorConfig.ActorClass, CalculatedTransform);
+		
+		if ( IsValid(SpawnedActor) == false )
+		{
+			continue;
+		}
+		
+		if ( SpawnActorConfig.bAttachToActor )
+		{
+			AActor* OwnerActor = OwningAbility->GetAvatarActorFromActorInfo();
+			
+			if ( IsValid(OwnerActor) )
+			{
+				SpawnedActor->AttachToActor(OwnerActor, FAttachmentTransformRules::KeepWorldTransform);
+			}
+		}
+		
+		SpawnedActor->FinishSpawning(CalculatedTransform);
+	}
+	
+	return true;
+}
+
+FTransform UYSAbilityEventAction_SpawnActor::CalculateTransform(AActor* SpawnInstigator, const FYSSpawnActorConfig& SpawnConfig)
+{
+	FTransform RetTransform = SpawnInstigator->GetActorTransform();;
+	
+	AYSCharacterBase* Character = Cast<AYSCharacterBase>(SpawnInstigator);
+	
+	if ( IsValid(Character) && IsValid(Character->GetMesh()))
+	{
+		USkeletalMeshComponent* SkelComponent = Character->GetMesh();
+		RetTransform = SkelComponent->GetSocketTransform(SpawnConfig.SpawnSocket);
+	}
+	
+	RetTransform.AddToTranslation(SpawnConfig.SpawnOffset);
+	return RetTransform;
 }

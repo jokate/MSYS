@@ -82,3 +82,15 @@ public :
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "움직이는 동안 무브먼트 모드", meta = (EditCondition="bSetNewMovementMode", EditConditionHides))
 	TEnumAsByte<EMovementMode> MoveMode = EMovementMode::MOVE_Walking;
 };
+
+// 예를 들어서 역장 1개 폭탄 2개 뿅뿅 스폰하고 싶다면 이걸 활용하면 될 것으로 보임.
+// 근데 만약에 여러개 스폰 가능하다고 하면 어떻게 하지..?
+UCLASS(BlueprintType, EditInlineNew, DisplayName = "액터 스폰")
+class MNYS_API UYSAbilityTriggerPayload_SpawnActor : public UYSAbilityTriggerPayload
+{
+	GENERATED_BODY()
+	
+public : 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "스폰 관련 파라미터 세팅")
+	TArray<FYSSpawnActorConfig> SpawnActorConfigs;
+};

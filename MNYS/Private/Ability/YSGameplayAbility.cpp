@@ -335,13 +335,19 @@ void UYSGameplayAbility::PostEditChangeProperty(struct FPropertyChangedEvent& Pr
 					EventActionMap.Add(YSTags::Event_TraceEnd, TraceEnd);
 					break;
 				}
-			case EYSAbilityType::RangedAttack : 
-				break;
+			case EYSAbilityType::RangedAttack :
+				{
+					FYSEventPayload SpawnActor;
+					SpawnActor.EventActions.Add(NewObject<UYSAbilityEventAction_SpawnActor>(this));
+					EventActionMap.Add(YSTags::Event_SpawnActor, SpawnActor);
+					break;
+				}
 			case EYSAbilityType::Dash :
 				{
 					FYSEventPayload Velocity;
 					Velocity.EventActions.Add(NewObject<UYSAbilityEventAction_ApplyVelocity>(this));
 					EventActionMap.Add(YSTags::Event_ApplyVelocity, Velocity);
+					break;
 				}
 			default: 
 				break;

@@ -20,10 +20,17 @@ public :
 	AYSPlayerController(const FObjectInitializer& ObjectInitializer);
 	virtual void SetupInputComponent() override;
 	
+protected : 
+	virtual void AddYawInput(float Val) override;
+	
 public :
 	UPROPERTY(EditDefaultsOnly, Category="Input|Input Mappings")
 	TObjectPtr<UInputMappingContext> UIInputMappingContext;
 	
 	UPROPERTY(EditDefaultsOnly, Category="YS | Lock On")
 	TObjectPtr<UYSLockOnComponent> LockOnComponent;
+	
+protected : 
+	UPROPERTY(EditDefaultsOnly)
+	float LockOnBreakThreshold = 3.0f; 
 };

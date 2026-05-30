@@ -22,3 +22,19 @@ void AYSPlayerController::SetupInputComponent()
 		Subsystem->AddMappingContext(UIInputMappingContext, 0);
 	}
 }
+
+void AYSPlayerController::AddYawInput(float Val)
+{
+	/*
+	if ( IsValid(LockOnComponent) && IsValid(LockOnComponent->GetCurrentTarget()))
+	{
+		if ( Val <= LockOnBreakThreshold )
+		{
+			return;
+		}
+	}
+	*/
+	
+	
+	Super::AddYawInput(Val);
+}

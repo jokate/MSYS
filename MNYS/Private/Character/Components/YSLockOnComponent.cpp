@@ -138,6 +138,10 @@ bool UYSLockOnComponent::IsLockOnableTarget(AActor* Target)
 		return false;
 			
 	FVector DirectionToActor = Target->GetActorLocation() - OwnerPlayer->GetActorLocation();
+	
+	if ( DirectionToActor.Size() >= MaxLockOnDistance )
+		return false;
+	
 	DirectionToActor.Z = 0.0f; // 수평면에서의 방향만 고려
 			
 	DirectionToActor.Normalize();

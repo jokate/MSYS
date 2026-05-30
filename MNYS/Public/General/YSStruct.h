@@ -171,3 +171,23 @@ struct FYSPlaybackContext
 	// 히트 발생 시 채워짐 (OnTraceComplete에서)
 	TArray<FHitResult> HitResults;
 };
+
+// 일단은 이정도만 구현하고 필요한 부분이 있다면 추가 구현하자..
+USTRUCT(BlueprintType)
+struct FYSSpawnActorConfig
+{
+	GENERATED_BODY()
+	
+public : 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName = "스폰할 액터 클래스")
+	TSubclassOf<AActor> ActorClass;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName = "스폰 소켓")
+	FName SpawnSocket = NAME_None;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName = "오프셋")
+	FVector SpawnOffset = FVector::ZeroVector;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName = "어태치 여부")
+	bool bAttachToActor = false;
+};
