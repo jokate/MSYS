@@ -3,9 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "General/YSEnum.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "YSBlueprintFunctionLibrary.generated.h"
 
+class UYSGameplayAbility;
 class UAbilitySystemComponent;
 class UYSCharacterAttributeSetBase;
 /**
@@ -23,4 +25,11 @@ public :
 	UFUNCTION(BlueprintCallable)
 	static void SendHitEventToTarget(AActor* Instigator, AActor* Target, const FName& SkillID);
 	
+	UFUNCTION(BlueprintCallable)
+	static FRotator GetAbilityEventRotation(EYSDirectionPolicy DirectionPolicy, UYSGameplayAbility* OwningAbility, const FName& SocketName); 
+	
+	UFUNCTION(BlueprintCallable)
+	static FVector GetAbilityEventPosition(EYSPositionPolicy PositionPolicy, UYSGameplayAbility* OwningAbility, 
+		const FName& SocketName, const FVector& RelativeOffset);
 };
+

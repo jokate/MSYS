@@ -16,6 +16,7 @@
 #include "Character/YSPlayerController.h"
 #include "Character/Components/YSLockOnComponent.h"
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
+#include "Library/YSBlueprintFunctionLibrary.h"
 
 bool UYSAbilityEventAction_StartTrace::Execute_Implementation(UYSGameplayAbility* OwningAbility,
                                                               const FGameplayEventData& EventData)
@@ -184,7 +185,9 @@ bool UYSAbilityEventAction_ApplyVelocity::Execute_Implementation(UYSGameplayAbil
 	
 	AActor* OwnerActor = OwningAbility->GetOwningActorFromActorInfo();
 	
-	FVector DirectionVector = GetDirectionVector(OwningAbility, EventData, VelocityData->VelocityDirectionPolicy);
+	FRotator DirectionRotation = UYSBlueprintFunctionLibrary::GetAbilityEventRotation(VelocityData->VelocityDirectionPolicy, OwningAbility, NAME_None);
+	
+	FVector DirectionVector = DirectionRotation.Vector();
 	const FVector TargetLocation = OwnerActor->GetActorLocation() 
 		+ DirectionVector
 		* ( VelocityData->Velocity * VelocityData->Duration );
@@ -215,127 +218,54 @@ bool UYSAbilityEventAction_ApplyVelocity::Execute_Implementation(UYSGameplayAbil
 	return true;
 }
 
-FVector UYSAbilityEventAction_ApplyVelocity::GetDirectionVector(UYSGameplayAbility* OwningAbility,
-	const FGameplayEventData& EventData, EYSVelocityDirectionPolicy DirectionPolicy)
-{
-	AActor* OwnerActor = OwningAbility->GetOwningActorFromActorInfo();
-	
-	if (IsValid(OwnerActor) == false)
-		return FVector::ZeroVector;
-	
-	switch (DirectionPolicy)
-	{
-	case EYSVelocityDirectionPolicy::UseActorForwardVector:
-		return OwnerActor->GetActorForwardVector();
-	case EYSVelocityDirectionPolicy::UseTowardLockOnTarget:
-		{
-			if ( UYSLockOnComponent* LockOnComponent = UYSLockOnComponent::Get(OwnerActor) )
-			{
-				if ( AActor* TargetActor = LockOnComponent->GetCurrentTarget() )
-				{
-					return (TargetActor->GetActorLocation() - OwnerActor->GetActorLocation()).GetSafeNormal();
-				}
-			}
-			return OwnerActor->GetActorForwardVector();
-		}
-	case EYSVelocityDirectionPolicy::UseTowardPlaybackTarget:
-		{
-			const UYSAbilityPlaybackBase* CurPlayback = OwningAbility->GetCurrentPlayback();
-			
-			if ( IsValid(CurPlayback) == false )
-			{
-				return OwnerActor->GetActorForwardVector();
-			}
-			
-			AActor* TargetActor = CurPlayback->GetCurrentPlaybackTarget();
-			if ( IsValid(TargetActor) == false )
-			{
-				return OwnerActor->GetActorForwardVector();
-			}
-			
-			return (TargetActor->GetActorLocation() - OwnerActor->GetActorLocation()).GetSafeNormal();
-		}
-	case EYSVelocityDirectionPolicy::UseControlRotation :
-		{
-			AYSPlayerController* PlayerController = OwnerActor->GetInstigatorController<AYSPlayerController>();
-			
-			if ( IsValid(PlayerController) == false )
-			{
-				return OwnerActor->GetActorForwardVector();
-			}
-			
-			return PlayerController->GetControlRotation().Vector();
-		}
-		
-	// 인디케이터 구현 시, 같이 구현합니다. ( 아마 기존에 하던 플젝에서 끌고 올 예정 )
-	case EYSVelocityDirectionPolicy::UseTowardIndicatorPosition:
-	default:
-		return FVector::ZeroVector;
-	}
-}
 
 bool UYSAbilityEventAction_SpawnActor::Execute_Implementation(UYSGameplayAbility* OwningAbility,
 	const FGameplayEventData& EventData)
 {
 	const UYSAbilityTriggerPayload_SpawnActor* SpawnActorPayload = UYSAbilityTriggerPayload::GetPayload<UYSAbilityTriggerPayload_SpawnActor>(&EventData);
-	
-	if ( IsValid(SpawnActorPayload) == false )
-	{
+
+	if (IsValid(SpawnActorPayload) == false)
 		return false;
-	}
-	
+
 	AActor* OwningActor = OwningAbility->GetOwningActorFromActorInfo();
-	if ( IsValid(OwningActor) == false )
-	{
+	if (IsValid(OwningActor) == false)
 		return false;
-	}
-	
+
 	UWorld* World = OwningAbility->GetWorld();
-	
-	if ( IsValid(World) == false )
-	{
+	if (IsValid(World) == false)
 		return false;
-	}
-	
+
 	for (const FYSSpawnActorConfig& SpawnActorConfig : SpawnActorPayload->SpawnActorConfigs)
 	{
-		FTransform CalculatedTransform = CalculateTransform(OwningActor, SpawnActorConfig);
-		AActor* SpawnedActor = World->SpawnActorDeferred<AActor>(SpawnActorConfig.ActorClass, CalculatedTransform);
-		
-		if ( IsValid(SpawnedActor) == false )
-		{
+		FTransform SpawnTransform = CalculateTransform(OwningAbility, SpawnActorConfig);
+		AActor* SpawnedActor      = World->SpawnActorDeferred<AActor>(SpawnActorConfig.ActorClass, SpawnTransform);
+
+		if (IsValid(SpawnedActor) == false)
 			continue;
-		}
-		
+
 		AYSAttackableActor* AttackableActor = Cast<AYSAttackableActor>(SpawnedActor);
-		if ( IsValid(AttackableActor) )
+		if (IsValid(AttackableActor))
 		{
 			AttackableActor->AllocateInstigator(OwningActor);
 		}
-		
-		if ( SpawnActorConfig.bAttachToActor )
+
+		if (SpawnActorConfig.bAttachToActor)
 		{
 			SpawnedActor->AttachToActor(OwningActor, FAttachmentTransformRules::KeepWorldTransform);
 		}
-		
-		SpawnedActor->FinishSpawning(CalculatedTransform);
+
+		SpawnedActor->FinishSpawning(SpawnTransform);
 	}
-	
+
 	return true;
 }
 
-FTransform UYSAbilityEventAction_SpawnActor::CalculateTransform(AActor* SpawnInstigator, const FYSSpawnActorConfig& SpawnConfig)
+FTransform UYSAbilityEventAction_SpawnActor::CalculateTransform(UYSGameplayAbility* OwningAbility,
+	const FYSSpawnActorConfig& SpawnConfig)
 {
-	FTransform RetTransform = SpawnInstigator->GetActorTransform();;
-	
-	AYSCharacterBase* Character = Cast<AYSCharacterBase>(SpawnInstigator);
-	
-	if ( IsValid(Character) && IsValid(Character->GetMesh()))
-	{
-		USkeletalMeshComponent* SkelComponent = Character->GetMesh();
-		RetTransform = SkelComponent->GetSocketTransform(SpawnConfig.SpawnSocket);
-	}
-	
-	RetTransform.AddToTranslation(SpawnConfig.SpawnOffset);
-	return RetTransform;
+	const FVector Position = UYSBlueprintFunctionLibrary::GetAbilityEventPosition(SpawnConfig.PositionPolicy, OwningAbility, SpawnConfig.SpawnSocket, SpawnConfig.RelativeOffset);
+	const FRotator  Rotation = UYSBlueprintFunctionLibrary::GetAbilityEventRotation(SpawnConfig.RotationPolicy, OwningAbility, SpawnConfig.RotationSocket);
+
+	return FTransform(Rotation, Position);
 }
+

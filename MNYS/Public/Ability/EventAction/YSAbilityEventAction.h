@@ -123,19 +123,17 @@ class MNYS_API UYSAbilityEventAction_ApplyVelocity : public UYSAbilityEventActio
 
 public :
 	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
-
-private : 
-	virtual FVector GetDirectionVector(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData, EYSVelocityDirectionPolicy DirectionPolicy);
 };
 
 UCLASS(DisplayName = "액터 스폰")
 class MNYS_API UYSAbilityEventAction_SpawnActor : public UYSAbilityEventAction
 {
 	GENERATED_BODY()
-	
-public : 
+
+public :
 	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
-	
-private : 
-	virtual FTransform CalculateTransform(AActor* SpawnInstigator, const FYSSpawnActorConfig& SpawnConfig);
+
+private :
+	/** 위치·회전 정책을 독립적으로 계산해 최종 스폰 Transform을 반환합니다. */
+	FTransform CalculateTransform(UYSGameplayAbility* OwningAbility, const FYSSpawnActorConfig& SpawnConfig);
 };

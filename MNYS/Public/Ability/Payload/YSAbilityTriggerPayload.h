@@ -62,7 +62,7 @@ public :
 	float Duration = 0.f;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "방향 정책")
-	EYSVelocityDirectionPolicy VelocityDirectionPolicy = EYSVelocityDirectionPolicy::UseActorForwardVector;
+	EYSDirectionPolicy VelocityDirectionPolicy = EYSDirectionPolicy::UseActorForwardVector;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "방향으로 액터 돌릴지 여부")
 	bool bRotateActorToDirection = false;

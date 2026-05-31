@@ -5,7 +5,11 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "YSDeveloperSettings.h"
+#include "Ability/YSGameplayAbility.h"
+#include "Ability/AbilityComponent/YSAbilityPlayback.h"
+#include "Character/YSCharacterBase.h"
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
+#include "Character/Components/YSLockOnComponent.h"
 #include "General/YSGameplayTag.h"
 
 float UYSBlueprintFunctionLibrary::GetFinalDamage(const UYSCharacterAttributeSetBase* Owner,
@@ -50,4 +54,98 @@ void UYSBlueprintFunctionLibrary::SendHitEventToTarget(AActor* Instigator, AActo
 	EventData.EventMagnitude = FinalDamage;
 
 	TargetASC->HandleGameplayEvent(DamageInfo->HitTag, &EventData);
+}
+
+FRotator UYSBlueprintFunctionLibrary::GetAbilityEventRotation(EYSDirectionPolicy DirectionPolicy,
+	UYSGameplayAbility* OwningAbility, const FName& SocketName)
+{
+	AActor* OwnerActor = OwningAbility->GetOwningActorFromActorInfo();
+	
+	if ( IsValid(OwnerActor) == false )
+	{
+		return FRotator();
+	}
+	
+	switch (DirectionPolicy)
+	{
+	case EYSDirectionPolicy::UseSocketRotation:
+		{
+			AYSCharacterBase* Character = Cast<AYSCharacterBase>(OwnerActor);
+			if (IsValid(Character) && IsValid(Character->GetMesh()))
+			{
+				if (SocketName != NAME_None)
+					return Character->GetMesh()->GetSocketRotation(SocketName);
+			}
+			return OwnerActor->GetActorRotation();
+		}
+
+	case EYSDirectionPolicy::UseControlRotation:
+		{
+			if (const AController* Controller = OwnerActor->GetInstigatorController())
+				return Controller->GetControlRotation();
+
+			return OwnerActor->GetActorRotation();
+		}
+
+	case EYSDirectionPolicy::UseTowardLockOnTarget:
+		{
+			if (UYSLockOnComponent* LockOn = UYSLockOnComponent::Get(OwnerActor))
+			{
+				if (AActor* Target = LockOn->GetCurrentTarget())
+				{
+					const FVector Dir = (Target->GetActorLocation() - OwnerActor->GetActorLocation()).GetSafeNormal();
+					return Dir.Rotation();
+				}
+			}
+			return OwnerActor->GetActorRotation();
+		}
+
+	case EYSDirectionPolicy::UseTowardPlaybackTarget:
+		{
+			if (const UYSAbilityPlaybackBase* Playback = OwningAbility->GetCurrentPlayback())
+			{
+				if (AActor* Target = Playback->GetCurrentPlaybackTarget())
+				{
+					const FVector Dir = (Target->GetActorLocation() - OwnerActor->GetActorLocation()).GetSafeNormal();
+					return Dir.Rotation();
+				}
+			}
+			return OwnerActor->GetActorRotation();
+		}
+
+	case EYSDirectionPolicy::UseActorForwardVector:
+	default:
+		return OwnerActor->GetActorRotation();
+	}
+}
+
+FVector UYSBlueprintFunctionLibrary::GetAbilityEventPosition(EYSPositionPolicy PositionPolicy,
+	UYSGameplayAbility* OwningAbility, const FName& SocketName, const FVector& RelativeOffset)
+{
+	AActor* OwnerActor = OwningAbility->GetOwningActorFromActorInfo();
+	
+	if ( IsValid(OwnerActor) == false )
+	{
+		return FVector::ZeroVector;
+	}
+	
+	switch (PositionPolicy)
+	{
+	case EYSPositionPolicy::UseSocket:
+		{
+			AYSCharacterBase* Character = Cast<AYSCharacterBase>(OwnerActor);
+			if (IsValid(Character) && IsValid(Character->GetMesh()) && SocketName != NAME_None)
+			{
+				return Character->GetMesh()->GetSocketLocation(SocketName);
+			}
+			return OwnerActor->GetActorLocation();
+		}
+
+	case EYSPositionPolicy::UseRelativeOffset:
+		return OwnerActor->GetActorTransform().TransformPosition(RelativeOffset);
+
+	case EYSPositionPolicy::UseActorLocation:
+	default:
+		return OwnerActor->GetActorLocation();
+	}
 }

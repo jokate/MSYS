@@ -176,22 +176,36 @@ struct FYSPlaybackContext
 	TArray<FHitResult> HitResults;
 };
 
-// 일단은 이정도만 구현하고 필요한 부분이 있다면 추가 구현하자..
 USTRUCT(BlueprintType)
 struct FYSSpawnActorConfig
 {
 	GENERATED_BODY()
-	
-public : 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName = "스폰할 액터 클래스")
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn", meta = (DisplayName = "스폰할 액터 클래스"))
 	TSubclassOf<AActor> ActorClass;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName = "스폰 소켓")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn | Position", meta = (DisplayName = "위치 기준 정책"))
+	EYSPositionPolicy PositionPolicy = EYSPositionPolicy::UseSocket;
+
+	// PositionPolicy == UseSocket 일 때 사용
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn | Position",
+		meta = (DisplayName = "소켓 이름", EditCondition = "PositionPolicy == EYSPositionPolicy::UseSocket", EditConditionHides))
 	FName SpawnSocket = NAME_None;
+
+	// PositionPolicy == UseRelativeOffset 일 때 사용
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn | Position",
+		meta = (DisplayName = "상대 오프셋",	EditCondition = "PositionPolicy == EYSPositionPolicy::UseRelativeOffset", EditConditionHides))
+	FVector RelativeOffset = FVector::ZeroVector;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName = "오프셋")
-	FVector SpawnOffset = FVector::ZeroVector;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn | Rotation", meta = (DisplayName = "회전 기준 정책"))
+	EYSDirectionPolicy RotationPolicy = EYSDirectionPolicy::UseActorForwardVector;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName = "어태치 여부")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn | Rotation",
+		meta = (DisplayName = "회전 소켓 이름 (빈칸이면 위치 소켓 공유)",
+			EditCondition = "RotationPolicy == EYSDirectionPolicy::UseSocketRotation", EditConditionHides))
+	FName RotationSocket = NAME_None;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn", meta = (DisplayName = "어태치 여부"))
 	bool bAttachToActor = false;
 };

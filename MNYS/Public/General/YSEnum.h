@@ -57,11 +57,23 @@ enum class EYSTraceShape : uint8
 };
 
 UENUM(BlueprintType)
-enum class EYSVelocityDirectionPolicy : uint8
+enum class EYSDirectionPolicy : uint8
 {
 	UseActorForwardVector UMETA(DisplayName = "액터 전방 벡터 사용"),
 	UseTowardPlaybackTarget 	UMETA(DisplayName = "플레이 백 목표를 향하는 방향 사용"),
 	UseTowardLockOnTarget		UMETA(DisplayName = "락온 목표를 향하는 방향 사용"),
 	UseControlRotation			UMETA(DisplayName = "컨트롤 로테이션 기준"),
-	UseTowardIndicatorPosition	UMETA(DisplayName = "인디케이터 포지션 사용.")
+	UseTowardIndicatorPosition	UMETA(DisplayName = "인디케이터 포지션 사용."),
+	UseSocketRotation			UMETA(DisplayName = "소켓 포지션 사용")
+};
+
+/*
+ * 위치(Position)와 회전(Rotation)을 독립적으로 결정하기 위해 분리합니다.
+ */
+UENUM(BlueprintType)
+enum class EYSPositionPolicy : uint8
+{
+	UseActorLocation	UMETA(DisplayName = "액터 위치"),
+	UseSocket			UMETA(DisplayName = "소켓 위치"),
+	UseRelativeOffset	UMETA(DisplayName = "액터 기준 상대 오프셋"),
 };
