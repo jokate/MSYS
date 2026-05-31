@@ -87,6 +87,10 @@ public :
 	UPROPERTY(EditAnywhere, Category="YS | Sweep", meta=(DisplayName="히트 타이머", EditCondition="bContinuousHit", EditConditionHides))
 	float HitTimeCheck = 0.1f;
 	
+	// 0인 경우 개수 제한 X / 0보다 크면 히트카운트 존재.
+	UPROPERTY(EditAnywhere, Category="YS | Sweep", meta=(DisplayName="히트 카운트"))
+	int32 LimitHitCount = 0;
+	
 	UPROPERTY(EditAnywhere, Category="YS | Sweep | Debug", meta=(DisplayName="디버그 드로우"))
 	bool bDebugDraw = false;
 	// 0이면 단일 프레임, TraceOnce 사용 시 1.0 이상 권장
