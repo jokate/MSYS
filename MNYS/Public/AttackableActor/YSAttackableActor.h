@@ -7,6 +7,9 @@
 #include "General/YSStruct.h"
 #include "YSAttackableActor.generated.h"
 
+class UCapsuleComponent;
+class USphereComponent;
+class UBoxComponent;
 class UYSTraceObject;
 
 UCLASS()
@@ -50,4 +53,22 @@ protected :
 	
 	UPROPERTY()
 	TWeakObjectPtr<AActor> OwnerActor;
+	
+	// AYSAttackableActor.h
+#if WITH_EDITORONLY_DATA
+protected:
+	UPROPERTY(VisibleAnywhere, Category = "YS | Debug")
+	TObjectPtr<UBoxComponent> DebugBox;
+
+	UPROPERTY(VisibleAnywhere, Category = "YS | Debug")
+	TObjectPtr<USphereComponent> DebugSphere;
+
+	UPROPERTY(VisibleAnywhere, Category = "YS | Debug")
+	TObjectPtr<UCapsuleComponent> DebugCapsule;
+#endif
+
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+	void _RefreshDebugVisualization();
+#endif
 };

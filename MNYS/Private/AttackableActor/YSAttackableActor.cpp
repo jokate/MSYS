@@ -12,6 +12,11 @@
 #include "General/YSGameplayTag.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
 
+#if UE_EDITOR
+#include "Components/BoxComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/SphereComponent.h"
+#endif
 
 // Sets default values
 AYSAttackableActor::AYSAttackableActor()
@@ -24,6 +29,19 @@ AYSAttackableActor::AYSAttackableActor()
 	RootMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RootMesh"));
 	
 	RootMesh->SetupAttachment(SceneRoot);
+
+#if WITH_EDITORONLY_DATA
+	DebugBox = CreateEditorOnlyDefaultSubobject<UBoxComponent>(TEXT("DebugBox"));
+	DebugSphere = CreateEditorOnlyDefaultSubobject<USphereComponent>(TEXT("DebugSphere"));
+	DebugCapsule = CreateEditorOnlyDefaultSubobject<UCapsuleComponent>(TEXT("DebugCapsule"));
+
+	for (UPrimitiveComponent* Comp : { (UPrimitiveComponent*)DebugBox, (UPrimitiveComponent*)DebugSphere, (UPrimitiveComponent*)DebugCapsule })
+	{
+		Comp->SetupAttachment(GetRootComponent());
+		Comp->SetHiddenInGame(true);           // 런타임엔 완전히 숨김
+		Comp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+#endif
 }
 
 void AYSAttackableActor::AllocateInstigator(AActor* InInstigator)
@@ -153,3 +171,24 @@ void AYSAttackableActor::_OnTraceObjectHit(const TArray<FHitResult>& HitResults,
 	}
 }
 
+#if UE_EDITOR
+void AYSAttackableActor::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+	_RefreshDebugVisualization();
+}
+
+void AYSAttackableActor::_RefreshDebugVisualization()
+{
+	// Shape에 따라 해당 컴포넌트만 보이게
+	DebugBox->SetVisibility(TraceConfig.Shape == EYSTraceShape::Box);
+	DebugSphere->SetVisibility(TraceConfig.Shape == EYSTraceShape::Sphere);
+	DebugCapsule->SetVisibility(TraceConfig.Shape == EYSTraceShape::Capsule);
+
+	// Extent 동기화
+	DebugBox->SetBoxExtent(TraceConfig.Extent);
+	DebugSphere->SetSphereRadius(TraceConfig.Extent.X);
+	DebugCapsule->SetCapsuleSize(TraceConfig.Extent.X, TraceConfig.Extent.Y);
+}
+
+#endif
