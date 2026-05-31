@@ -4,12 +4,16 @@
 #include "AttackableActor/YSTraceObject.h"
 
 #include "DrawDebugHelpers.h"
+#include "GenericTeamAgentInterface.h"
+#include "YSBattleActor.h"
 
-UYSTraceObject* UYSTraceObject::Create(UObject* InOuter, AActor* InOwnerActor, const FYSTraceConfig& InConfig)
+UYSTraceObject* UYSTraceObject::Create(UObject* InOuter, AActor* InOwnerActor, AActor* InInstigator, const FYSTraceConfig& InConfig)
 {
 	UYSTraceObject* TraceObject = NewObject<UYSTraceObject>(InOuter);
 	TraceObject->OwnerActor  = InOwnerActor;
+	TraceObject->Instigator = InInstigator;
 	TraceObject->TraceConfig = InConfig;
+	TraceObject->CurrentHitProcessCount = InConfig.LimitHitCount;
 	return TraceObject;
 }
 
@@ -34,6 +38,15 @@ void UYSTraceObject::ResetHitState()
 	bHasPreviousLocation = false;
 	PreviousLocation     = FVector::ZeroVector;
 	CurrentHitProcessCount = TraceConfig.LimitHitCount;
+}
+
+void UYSTraceObject::DecreaseHitProcessCount()
+{
+	--CurrentHitProcessCount;
+	if (CurrentHitProcessCount <= 0) 
+	{
+		OnHitCountDepleted.Broadcast();
+	}
 }
 
 // 히트 카운트 자체가 나간 경우에는 별도 처리 하지 않음.
@@ -64,12 +77,11 @@ void UYSTraceObject::_TraceByConfig()
 
 	if (TraceConfig.SocketName != NAME_None)
 	{
-		// 소켓 기준 — SkeletalMesh 없으면 소켓 조회 불가이므로 얼리 리턴
-		if (!IsValid(Mesh))
-			return;
-
-		Transform = Mesh->GetSocketTransform(TraceConfig.SocketName);
-		Location  = Transform.GetLocation();
+		if (IsValid(Mesh))
+		{		
+			Transform = Mesh->GetSocketTransform(TraceConfig.SocketName);
+			Location  = Transform.GetLocation();
+		}
 	}
 	else if (TraceConfig.RelativeLocation != FVector::ZeroVector)
 	{
@@ -122,14 +134,9 @@ void UYSTraceObject::_TraceByConfig()
 	{
 		for (const FHitResult& Hit : RawHits)
 		{
-			if ( IsHitCountDepleted() )
-			{
-				break;	
-			}
-			
 			AActor* HitActor = Hit.GetActor();
 			if (!IsValid(HitActor)) continue;
-
+			
 			if (TraceConfig.bContinuousHit)
 			{
 				if (const float* LastHitTime = HitTimeMap.Find(HitActor))
@@ -146,7 +153,6 @@ void UYSTraceObject::_TraceByConfig()
 			}
 
 			ValidHits.Add(Hit);
-			--CurrentHitProcessCount;
 		}
 	}
 
@@ -197,10 +203,5 @@ void UYSTraceObject::_TraceByConfig()
 	if (ValidHits.Num() > 0)
 	{
 		OnTraceHit.Broadcast(ValidHits, TraceConfig.DamageRow);
-	}
-	
-	if ( IsHitCountDepleted() )
-	{
-		OnHitCountDepleted.Broadcast();
 	}
 }

@@ -36,7 +36,7 @@ void UYSAT_Trace::Activate()
 		return;
 	}
 
-	TraceObject = UYSTraceObject::Create(this, AvatarActor, TraceConfig);
+	TraceObject = UYSTraceObject::Create(this, AvatarActor, AvatarActor, TraceConfig);
 	TraceObject->OnTraceHit.AddDynamic(this, &UYSAT_Trace::_OnTraceObjectHit);
 	TraceObject->OnHitCountDepleted.AddDynamic(this, &UYSAT_Trace::_OnHitCountDepleted);
 

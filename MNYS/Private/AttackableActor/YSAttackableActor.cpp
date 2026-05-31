@@ -29,7 +29,9 @@ AYSAttackableActor::AYSAttackableActor()
 void AYSAttackableActor::AllocateInstigator(AActor* InInstigator)
 {
 	OwnerActor = InInstigator;
-	TraceObject = UYSTraceObject::Create(this, InInstigator, TraceConfig);
+	TraceObject = UYSTraceObject::Create(this, this, InInstigator, TraceConfig);
+	TraceObject->OnTraceHit.AddDynamic(this, &AYSAttackableActor::_OnTraceObjectHit);
+	TraceObject->OnHitCountDepleted.AddDynamic(this, &AYSAttackableActor::_OnHitCountDepleted);
 }
 
 // Called when the game starts or when spawned
@@ -37,12 +39,13 @@ void AYSAttackableActor::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	TraceObject->OnTraceHit.AddDynamic(this, &AYSAttackableActor::_OnTraceObjectHit);
-	TraceObject->OnHitCountDepleted.AddDynamic(this, &AYSAttackableActor::_OnHitCountDepleted);
-	if (TraceConfig.bTraceOnce)
+	if ( IsValid(TraceObject) )
 	{
-		TraceObject->ExecuteOnce();
-		Destroy();
+		if (TraceConfig.bTraceOnce)
+		{
+			TraceObject->ExecuteOnce();
+			Destroy();
+		}	
 	}
 }
 
@@ -142,6 +145,11 @@ void AYSAttackableActor::_OnTraceObjectHit(const TArray<FHitResult>& HitResults,
 		
 		// 데미지 히트에 따른 이벤트 송신.
 		UYSBlueprintFunctionLibrary::SendHitEventToTarget(InstigatorPtr, HitActor, DamageRow);
+		
+		if ( IsValid(TraceObject) )
+		{
+			TraceObject->DecreaseHitProcessCount();
+		}
 	}
 }
 

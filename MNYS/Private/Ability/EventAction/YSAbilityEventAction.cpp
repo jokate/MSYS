@@ -11,6 +11,7 @@
 #include "Ability/AbilityComponent/YSAbilityPlayback.h"
 #include "Ability/Payload/YSAbilityTriggerPayload.h"
 #include "Ability/Task/YSAT_Trace.h"
+#include "AttackableActor/YSAttackableActor.h"
 #include "Character/YSCharacterBase.h"
 #include "Character/YSPlayerController.h"
 #include "Character/Components/YSLockOnComponent.h"
@@ -306,14 +307,15 @@ bool UYSAbilityEventAction_SpawnActor::Execute_Implementation(UYSGameplayAbility
 			continue;
 		}
 		
+		AYSAttackableActor* AttackableActor = Cast<AYSAttackableActor>(SpawnedActor);
+		if ( IsValid(AttackableActor) )
+		{
+			AttackableActor->AllocateInstigator(OwningActor);
+		}
+		
 		if ( SpawnActorConfig.bAttachToActor )
 		{
-			AActor* OwnerActor = OwningAbility->GetAvatarActorFromActorInfo();
-			
-			if ( IsValid(OwnerActor) )
-			{
-				SpawnedActor->AttachToActor(OwnerActor, FAttachmentTransformRules::KeepWorldTransform);
-			}
+			SpawnedActor->AttachToActor(OwningActor, FAttachmentTransformRules::KeepWorldTransform);
 		}
 		
 		SpawnedActor->FinishSpawning(CalculatedTransform);

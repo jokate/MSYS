@@ -28,9 +28,10 @@ public:
 	 * 팩토리 메서드.
 	 * @param InOuter      GC 수명 관리용 Outer (소유 Actor 혹은 AbilityTask 권장)
 	 * @param InOwnerActor 트레이스 기준이 되는 Actor (소켓·위치 조회에 사용)
+	 * @param InInstigator 트레이스를 발생한 객체
 	 * @param InConfig     트레이스 설정
 	 */
-	static UYSTraceObject* Create(UObject* InOuter, AActor* InOwnerActor, const FYSTraceConfig& InConfig);
+	static UYSTraceObject* Create(UObject* InOuter, AActor* InOwnerActor, AActor* InInstigator, const FYSTraceConfig& InConfig);
 
 	/** 매 프레임 소유자 Tick에서 호출 */
 	void ExecuteOnce();
@@ -41,6 +42,8 @@ public:
 
 	/** 소유 Actor 교체 — Projectile이 반사 등으로 소유자가 바뀔 경우 대비 */
 	void SetOwnerActor(AActor* InActor) { OwnerActor = InActor; }
+	
+	void DecreaseHitProcessCount();
 
 	UPROPERTY(BlueprintAssignable)
 	FOnTraceHit OnTraceHit;
@@ -58,7 +61,10 @@ private:
 	UPROPERTY()
 	TObjectPtr<AActor> OwnerActor;
 
-	FYSTraceConfig TraceConfig;
+	UPROPERTY()
+	TObjectPtr<AActor> Instigator;
+	
+ 	FYSTraceConfig TraceConfig;
 
 	UPROPERTY()
 	TArray<TObjectPtr<AActor>> TracedActors;
