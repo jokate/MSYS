@@ -48,20 +48,15 @@ public:
 	{
 		ActiveGameplayEffectHandle.Remove(Handle);
 	}
-
-	FORCEINLINE bool IsPendingTransition() const { return PendingTransition != nullptr; }
-
+	
 	void ResetData()
 	{
-		PendingTransition  = nullptr;
 		bIsInputAcceptable = false;
 		bIsChainedAbility  = false;
 		ActiveGameplayEffectHandle.Empty();
 	}
 
 private:
-	// 다음에 펜딩 되어야 하는 트랜지션
-	const FYSComboTransition* PendingTransition = nullptr;
 
 	// 인풋에 대한 어셉팅 여부
 	bool bIsInputAcceptable = false;
@@ -141,10 +136,6 @@ private :
 	void _PrepareForAbilityEvent();
 
 public:
-
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Input Related", meta = (DisplayName = "인풋에 따른 반응"))
-	TArray<FYSComboTransition> TransitionsByInput;
-
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Input Related", meta = (DisplayName = "바뀔 State"))
 	EYSInputStatesType ChangeInputStateType;
 

@@ -145,13 +145,14 @@ public :
 };
 
 UENUM(BlueprintType)
-enum class EYSPlaybackResult : uint8
+enum class EYSPlaybackEvent : uint8
 {
 	None        UMETA(DisplayName = "첫 진입"),
 	Completed   UMETA(DisplayName = "정상 완료"),
 	Interrupted UMETA(DisplayName = "중단/취소"),
 	OnHitTarget		UMETA(DisplayName = "타겟 히트 시"),
 	OnHitPlayed		UMETA(DisplayName = "히트 당했을 시"),
+	OnInputAccepted		UMETA(DisplayName = "인풋 수용 시"),
 	CustomEvent		UMETA(DisplayName = "커스텀 이벤트")
 };
 
@@ -170,10 +171,14 @@ struct FYSPlaybackContext
 	UPROPERTY()
 	TObjectPtr<AActor> Target;
 
-	EYSPlaybackResult PreviousResult = EYSPlaybackResult::None;
+	EYSPlaybackEvent PreviousResult = EYSPlaybackEvent::None;
 
 	// 히트 발생 시 채워짐 (OnTraceComplete에서)
 	TArray<FHitResult> HitResults;
+	
+	// 들어온 인풋에 관한 태그 설정.
+	UPROPERTY()
+	FGameplayTagContainer AcceptedInputTag;
 };
 
 USTRUCT(BlueprintType)

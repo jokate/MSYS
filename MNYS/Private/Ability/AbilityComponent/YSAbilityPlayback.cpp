@@ -33,12 +33,14 @@ void UYSAbilityPlaybackBase::SetPlayback(const FYSPlaybackContext& Context)
 		break;
 	}
 	
+	// 기존에 받은 정보들은 그냥 없앰 처리.
 	CapturedContext.HitResults.Reset(); 
+	CapturedContext.AcceptedInputTag.Reset();
 }
 
 void UYSAbilityPlaybackBase::OnSequencePlayed()
 {
-	DispatchNext(EYSPlaybackResult::Completed);
+	DispatchNext(EYSPlaybackEvent::Completed);
 }
 
 void UYSAbilityPlaybackBase::Play(const FYSPlaybackContext& Context)
@@ -77,14 +79,43 @@ void UYSAbilityPlaybackBase::EndPlay()
 	}
 }
 
+bool UYSAbilityPlaybackBase::TryAcceptInputTag(const FGameplayTag& InputTag)
+{
+	// 1단계: 입력 태그 추가
+	CapturedContext.AcceptedInputTag.AddTag(InputTag);
+	
+	// 2단계: 즉시 전환이 활성화된 경우, 실제로 전환 가능한지 평가
+	if ( bImmediateTransition )
+	{
+		// 실제 전환 시도 (bIsEvaluate=false로 실제 전환 수행)
+		return DispatchNext(EYSPlaybackEvent::OnInputAccepted, false);
+	}
+	
+	// 3단계: 즉시 전환 미활성화 상태 → 조건만 평가
+	// 나중에 실제 전환이 필요할 때를 위해 평가만 수행
+	for (const FYSPlaybackEdge& Edge : Transitions)
+	{
+		if (Edge.RequiredResult == EYSPlaybackEvent::OnInputAccepted)
+		{
+			UYSAbilityPlaybackBase* Next = CapturedContext.OwnerAbility->GetPlaybackNode(Edge.NextNodeIndex);
+			if (IsValid(Next) && Next->CheckCondition(CapturedContext))
+			{
+				return true;  // 조건 만족 → 전환 가능
+			}
+		}
+	}
+	
+	return false;  // 전환 불가
+}
+
 void UYSAbilityPlaybackBase::OnMontagePlayed()
 {
-	DispatchNext(EYSPlaybackResult::Completed);
+	DispatchNext(EYSPlaybackEvent::Completed);
 }
 
 void UYSAbilityPlaybackBase::OnMontageInterrupted()
 {
-	DispatchNext(EYSPlaybackResult::Interrupted);
+	DispatchNext(EYSPlaybackEvent::Interrupted);
 }
 
 void UYSAbilityPlaybackBase::SetupMontage(const FYSPlaybackContext& Context)
@@ -194,20 +225,25 @@ void UYSAbilityPlayback_FirstHitTarget::ProcessContextBeforePlay()
 	CapturedContext.Target = CapturedContext.HitResults[0].GetActor();;
 }
 
-void UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackResult Result, bool bIsEvaluate)
+bool UYSAbilityPlayback_CheckInput::CheckCondition(const FYSPlaybackContext& Context)
+{
+	return Context.AcceptedInputTag.HasTagExact(InputTag);
+}
+
+bool UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackEvent Event, bool bIsEvaluate)
 {
 	FYSPlaybackContext NextContext = CapturedContext;
-	NextContext.PreviousResult = Result;
+	NextContext.PreviousResult = Event;
 
 	UYSGameplayAbility* Ability = CapturedContext.OwnerAbility.Get();
 	if (!IsValid(Ability))
 	{
-		return;
+		return true;
 	}
 
 	for (const FYSPlaybackEdge& Edge : Transitions)
 	{
-		if (Edge.RequiredResult != Result)
+		if (Edge.RequiredResult != Event)
 		{
 			continue;
 		}
@@ -216,7 +252,7 @@ void UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackResult Result, bool bIsEval
 		if (IsValid(Next) && Next->CheckCondition(NextContext))
 		{
 			Ability->ActivePlayback(Edge.NextNodeIndex, NextContext);
-			return;
+			return true;
 		}
 	}
 	
@@ -224,11 +260,14 @@ void UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackResult Result, bool bIsEval
 	if (!bIsEvaluate)
 	{
 		Ability->NotifyPlaybackChainFinished();	
+		return false;
 	}
+	
+	return false;
 }
 
 void UYSAbilityPlaybackBase::OnHit(const TArray<FHitResult>& HitResults)
 {	
 	CapturedContext.HitResults = HitResults;
-	DispatchNext(EYSPlaybackResult::OnHitTarget, true);
+	DispatchNext(EYSPlaybackEvent::OnHitTarget, true);
 }

@@ -30,9 +30,24 @@ public:
 
 	virtual bool HandlePendingLaunch() override;
 	
-	void SetMovementBlocked(bool bBlocked) { bIsMovementBlocked = bBlocked; }
+	void SetMovementBlocked(bool bBlocked) 
+	{ 
+		if (bBlocked)
+		{
+			++MovementBlockSemaphore;
+		}
+		else
+		{
+			--MovementBlockSemaphore;
+			if (MovementBlockSemaphore < 0)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("MovementBlockSemaphore is negative! Check SetMovementBlocked calls."));
+				MovementBlockSemaphore = 0; // 안전장치
+			}
+		}
+	}
 
-	bool IsMovementBlocked() const { return bIsMovementBlocked; }
+	bool IsMovementBlocked() const { return MovementBlockSemaphore > 0; }
 	
 	YS_ACCESSOR(FVector, LocalSpaceVelocity);
 	YS_GETTER(FVector, LocalSpaceLastInputDirection);
@@ -45,5 +60,5 @@ protected :
 	FVector LocalSpaceLastInputDirection = FVector::ForwardVector;
 	
 private :
-	bool bIsMovementBlocked = false;
+	int32 MovementBlockSemaphore = 0;
 };

@@ -28,7 +28,7 @@ struct FYSPlaybackEdge
 	GENERATED_BODY()
 
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Transition", meta = (DisplayName = "발화 조건"))
-	EYSPlaybackResult RequiredResult = EYSPlaybackResult::Completed;
+	EYSPlaybackEvent RequiredResult = EYSPlaybackEvent::Completed;
 	
 	// -1 = 체인 종료 (어빌리티 EndAbility)
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Transition", meta = (DisplayName = "다음 노드 인덱스 (-1: 종료)"))
@@ -47,12 +47,15 @@ class MNYS_API UYSAbilityPlaybackBase : public UObject
 public : 
 	void Play(const FYSPlaybackContext& Context);
 	void ReleaseMotionWarp();
-	void DispatchNext(EYSPlaybackResult Result, bool bIsEvaluate = false);
+	bool DispatchNext(EYSPlaybackEvent Event, bool bIsEvaluate = false);
 	void OnHit(const TArray<FHitResult>& HitResults);
 	
 	const FYSPlaybackContext& GetCurrentPlaybackContext() const { return CapturedContext; }
 	AActor* GetCurrentPlaybackTarget() const { return CapturedContext.Target; }
 	virtual void EndPlay();
+	
+	bool TryAcceptInputTag(const FGameplayTag& InputTag);
+	
 protected : 
 	virtual bool CheckCondition(const FYSPlaybackContext& Context);
 	UFUNCTION()
@@ -84,6 +87,9 @@ public :
 
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Transitions", meta = (DisplayName = "다음 플레이백 전환"))
 	TArray<FYSPlaybackEdge> Transitions;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Transitions", meta = (DisplayName = "즉시 전환 가능 여부"))
+	bool bImmediateTransition = false;
 
 protected : 
 	// Play() 시점에 캡처 — 콜백에서 컨텍스트 참조용
@@ -116,4 +122,17 @@ class MNYS_API UYSAbilityPlayback_FirstHitTarget : public UYSAbilityPlaybackBase
 	
 protected :
 	virtual void ProcessContextBeforePlay() override;
+};
+
+UCLASS(DisplayName = "인풋 기준 플레이 백 처리")
+class MNYS_API UYSAbilityPlayback_CheckInput : public UYSAbilityPlaybackBase
+{
+	GENERATED_BODY()
+	
+protected : 
+	virtual bool CheckCondition(const FYSPlaybackContext& Context) override;
+	
+public : 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Check Input", meta = (DisplayName = "체크할 인풋 태그", Categories = "Input"))
+	FGameplayTag InputTag;
 };
