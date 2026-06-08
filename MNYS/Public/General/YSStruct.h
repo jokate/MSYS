@@ -152,7 +152,7 @@ enum class EYSPlaybackEvent : uint8
 	Interrupted UMETA(DisplayName = "중단/취소"),
 	OnHitTarget		UMETA(DisplayName = "타겟 히트 시"),
 	OnHitPlayed		UMETA(DisplayName = "히트 당했을 시"),
-	OnInputAccepted		UMETA(DisplayName = "인풋 수용 시"),
+	OnCheckContextTag		UMETA(DisplayName = "컨텍스트 태그 추가 시"),
 	CustomEvent		UMETA(DisplayName = "커스텀 이벤트")
 };
 
@@ -176,9 +176,9 @@ struct FYSPlaybackContext
 	// 히트 발생 시 채워짐 (OnTraceComplete에서)
 	TArray<FHitResult> HitResults;
 	
-	// 들어온 인풋에 관한 태그 설정.
+	// 들어온 태그들에 대한 설정.
 	UPROPERTY()
-	FGameplayTagContainer AcceptedInputTag;
+	FGameplayTagContainer ContextTags;
 };
 
 USTRUCT(BlueprintType)

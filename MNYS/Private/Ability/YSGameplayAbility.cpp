@@ -26,19 +26,13 @@ void UYSGameplayAbility::OnGameplayTagChanged(const FGameplayTag& Tag, bool bInI
 	if ( Tag == YSTags::AcceptAbilityInput )
 	{
 		RuntimeData.SetInputAcceptable(bInIsActive);
-
-		const FYSComboTransition* Transition = RuntimeData.GetPendingTransition();
-		// 끝났다면?
-		if ( bInIsActive == false && Transition != nullptr ) 
-		{
-			UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
-
-			if ( IsValid( ASC ) == false )
-				return;
-			// 어빌리티 연쇄 트리거.
-			RuntimeData.SetChainedAbility(true);
-			ASC->TryActivateAbilityByClass(Transition->AbilityClass);	
-		}
+		
+		UYSAbilityPlaybackBase* PlaybackBase = CurrentPlayback.Get();
+	
+		if (IsValid(PlaybackBase) == false)
+			return;
+	
+		PlaybackBase->DispatchNext(EYSPlaybackEvent::OnCheckContextTag, true);
 	}
 }
 
@@ -112,7 +106,7 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 	{
 		AYSCharacterPlayer* Character = Cast<AYSCharacterPlayer>(OwnerActor);
 
-		if ( IsValid(Character) && RuntimeData.IsChainedAbility() == false )
+		if ( IsValid(Character) )
 		{
 			Character->RemoveStateToStateMachine(ChangeInputStateType);
 		}
@@ -130,12 +124,9 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 		}
 	}
 
-	if (!RuntimeData.IsChainedAbility())
+	if ( IsValid(CurrentPlayback.Get()) )
 	{
-		if ( IsValid(CurrentPlayback.Get()) )
-		{
-			CurrentPlayback.Get()->ReleaseMotionWarp();
-		}
+		CurrentPlayback.Get()->ReleaseMotionWarp();
 	}
 
 	RuntimeData.ResetData();
@@ -153,6 +144,11 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 
 bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag) 
 {
+	if ( RuntimeData.IsInputAcceptable() == false )
+	{
+		return false;
+	}
+	
 	UYSAbilityPlaybackBase* AbilityPlaybackBase = CurrentPlayback.Get();
 	if ( IsValid(AbilityPlaybackBase) == false )
 	{
@@ -162,7 +158,7 @@ bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag)
 	// 바로 트랜지션 가능하면 Dispatch Next를 호출하는게 좋을 듯 싶다.. ( 원래는 어셉트 되고 예약이 된다면 return true를 시켰었음..
 	// 사유는 인풋에 따른 처리가 부가적으로 필요한 경우에는 TryTransition에서 true를 리턴해서 인풋이 처리되었다는 것을 알려주는게 좋을 것 같아서임
 	//  ( 예시로는 콤보 입력이 들어왔을 때, 콤보 입력이 처리된 건지, 아니면 인풋이 무시된 건지 구분하기 위해서 )
-	return	AbilityPlaybackBase->TryAcceptInputTag(InputGameplayTag);
+	return	AbilityPlaybackBase->TryAcceptContextTag(InputGameplayTag);
 }
 
 void UYSGameplayAbility::OnTraceComplete(const TArray<FHitResult>& HitResults, const FName& DamageRow)

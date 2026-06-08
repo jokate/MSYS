@@ -33,11 +33,8 @@ struct FYSGameplayAbility_RuntimeData
 
 public:
 	// ── Accessors ─────────────────────────────────────────────────────────
-	YS_GETTER(const FYSComboTransition*, PendingTransition)
-	YS_SETTER(const FYSComboTransition*, PendingTransition)
 	YS_GETTER_REF(TArray<FActiveGameplayEffectHandle>, ActiveGameplayEffectHandle)
 	YS_BOOL_ACCESSOR(bIsInputAcceptable, InputAcceptable)
-	YS_BOOL_ACCESSOR(bIsChainedAbility,  ChainedAbility)
 	
 	void AddEffectSpecHandle(const FActiveGameplayEffectHandle& Handle)
 	{
@@ -52,7 +49,6 @@ public:
 	void ResetData()
 	{
 		bIsInputAcceptable = false;
-		bIsChainedAbility  = false;
 		ActiveGameplayEffectHandle.Empty();
 	}
 
@@ -60,9 +56,6 @@ private:
 
 	// 인풋에 대한 어셉팅 여부
 	bool bIsInputAcceptable = false;
-
-	// 어빌리티에 대해서 체이닝이 성공한 경우
-	bool bIsChainedAbility = false;
 	
 	UPROPERTY()
 	TArray<FActiveGameplayEffectHandle> ActiveGameplayEffectHandle;
@@ -90,7 +83,7 @@ public:
 	
 	UFUNCTION()
 	void OnGameplayTagChanged(const FGameplayTag& Tag, bool bInIsActive);
-	
+
 	bool TryTransition(const FGameplayTag& InputGameplayTag);
 
 	UFUNCTION()

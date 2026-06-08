@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "General/YSStruct.h"
+#include "Ability/AbilityComponent/YSPlaybackCondition.h"
 #include "StructUtils/InstancedStruct.h"
 #include "UObject/Object.h"
 #include "YSAbilityPlayback.generated.h"
@@ -30,6 +31,9 @@ struct FYSPlaybackEdge
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Transition", meta = (DisplayName = "발화 조건"))
 	EYSPlaybackEvent RequiredResult = EYSPlaybackEvent::Completed;
 	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Transition", meta = (DisplayName = "전환 조건", BaseStruct = "/Script/MNYS.YSPlaybackCondition", ExcludeBaseStruct))
+	TArray<FInstancedStruct> TransitionConditions;
+	
 	// -1 = 체인 종료 (어빌리티 EndAbility)
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Transition", meta = (DisplayName = "다음 노드 인덱스 (-1: 종료)"))
 	int32 NextNodeIndex = INDEX_NONE;
@@ -54,10 +58,9 @@ public :
 	AActor* GetCurrentPlaybackTarget() const { return CapturedContext.Target; }
 	virtual void EndPlay();
 	
-	bool TryAcceptInputTag(const FGameplayTag& InputTag);
+	bool TryAcceptContextTag(const FGameplayTag& InputTag);
 	
-protected : 
-	virtual bool CheckCondition(const FYSPlaybackContext& Context);
+protected :
 	UFUNCTION()
 	void OnMontagePlayed();
 
@@ -124,15 +127,3 @@ protected :
 	virtual void ProcessContextBeforePlay() override;
 };
 
-UCLASS(DisplayName = "인풋 기준 플레이 백 처리")
-class MNYS_API UYSAbilityPlayback_CheckInput : public UYSAbilityPlaybackBase
-{
-	GENERATED_BODY()
-	
-protected : 
-	virtual bool CheckCondition(const FYSPlaybackContext& Context) override;
-	
-public : 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Check Input", meta = (DisplayName = "체크할 인풋 태그", Categories = "Input"))
-	FGameplayTag InputTag;
-};

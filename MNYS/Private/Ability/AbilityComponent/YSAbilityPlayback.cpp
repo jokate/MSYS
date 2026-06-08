@@ -13,6 +13,7 @@
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Ability/YSGameplayAbility.h"
 #include "Ability/MontageSelector/YSMontageSelector.h"
+#include "Ability/AbilityComponent/YSPlaybackCondition.h"
 #include "Character/Components/YSLockOnComponent.h"
 
 void UYSAbilityPlaybackBase::SetPlayback(const FYSPlaybackContext& Context)
@@ -35,7 +36,7 @@ void UYSAbilityPlaybackBase::SetPlayback(const FYSPlaybackContext& Context)
 	
 	// 기존에 받은 정보들은 그냥 없앰 처리.
 	CapturedContext.HitResults.Reset(); 
-	CapturedContext.AcceptedInputTag.Reset();
+	CapturedContext.ContextTags.Reset();
 }
 
 void UYSAbilityPlaybackBase::OnSequencePlayed()
@@ -60,11 +61,6 @@ void UYSAbilityPlaybackBase::ReleaseMotionWarp()
 	CurMontageSelector->SetMotionWarp(CapturedContext.OwnerAbility, false);
 }
 
-bool UYSAbilityPlaybackBase::CheckCondition(const FYSPlaybackContext& Context)
-{
-	return true;
-}
-
 void UYSAbilityPlaybackBase::EndPlay()
 {
 	if ( IsValid(PlayMontageAndWaitTask) )
@@ -79,28 +75,45 @@ void UYSAbilityPlaybackBase::EndPlay()
 	}
 }
 
-bool UYSAbilityPlaybackBase::TryAcceptInputTag(const FGameplayTag& InputTag)
+bool UYSAbilityPlaybackBase::TryAcceptContextTag(const FGameplayTag& InputTag)
 {
 	// 1단계: 입력 태그 추가
-	CapturedContext.AcceptedInputTag.AddTag(InputTag);
+	CapturedContext.ContextTags.AddTag(InputTag);
 	
 	// 2단계: 즉시 전환이 활성화된 경우, 실제로 전환 가능한지 평가
 	if ( bImmediateTransition )
 	{
 		// 실제 전환 시도 (bIsEvaluate=false로 실제 전환 수행)
-		return DispatchNext(EYSPlaybackEvent::OnInputAccepted, false);
+		return DispatchNext(EYSPlaybackEvent::OnCheckContextTag, false);
 	}
 	
 	// 3단계: 즉시 전환 미활성화 상태 → 조건만 평가
 	// 나중에 실제 전환이 필요할 때를 위해 평가만 수행
 	for (const FYSPlaybackEdge& Edge : Transitions)
 	{
-		if (Edge.RequiredResult == EYSPlaybackEvent::OnInputAccepted)
+		if (Edge.RequiredResult == EYSPlaybackEvent::OnCheckContextTag)
 		{
-			UYSAbilityPlaybackBase* Next = CapturedContext.OwnerAbility->GetPlaybackNode(Edge.NextNodeIndex);
-			if (IsValid(Next) && Next->CheckCondition(CapturedContext))
+			bool bConditionPassed = true;
+			for ( const FInstancedStruct& InstancedStruct : Edge.TransitionConditions )
 			{
-				return true;  // 조건 만족 → 전환 가능
+				const FYSPlaybackCondition* Condition = InstancedStruct.GetPtr<FYSPlaybackCondition>();
+			
+				if ( !Condition )
+				{
+					continue;
+				}
+			
+				bConditionPassed &= Condition->Evaluate(CapturedContext);
+			
+				if ( !bConditionPassed )
+				{
+					break;
+				}
+			}
+			
+			if (bConditionPassed && CapturedContext.OwnerAbility->GetPlaybackNode(Edge.NextNodeIndex) != nullptr)
+			{
+				return true;
 			}
 		}
 	}
@@ -225,11 +238,6 @@ void UYSAbilityPlayback_FirstHitTarget::ProcessContextBeforePlay()
 	CapturedContext.Target = CapturedContext.HitResults[0].GetActor();;
 }
 
-bool UYSAbilityPlayback_CheckInput::CheckCondition(const FYSPlaybackContext& Context)
-{
-	return Context.AcceptedInputTag.HasTagExact(InputTag);
-}
-
 bool UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackEvent Event, bool bIsEvaluate)
 {
 	FYSPlaybackContext NextContext = CapturedContext;
@@ -247,9 +255,28 @@ bool UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackEvent Event, bool bIsEvalua
 		{
 			continue;
 		}
-
+		
+		bool bConditionPassed = true;
+		for ( const FInstancedStruct& InstancedStruct : Edge.TransitionConditions )
+		{
+			const FYSPlaybackCondition* Condition = InstancedStruct.GetPtr<FYSPlaybackCondition>();
+			
+			if ( !Condition )
+			{
+				continue;
+			}
+			
+			bConditionPassed &= Condition->Evaluate(CapturedContext);
+			
+			 if ( !bConditionPassed )
+			 {
+			 	break;
+			 }
+		}
+		
 		UYSAbilityPlaybackBase* Next = Ability->GetPlaybackNode(Edge.NextNodeIndex);
-		if (IsValid(Next) && Next->CheckCondition(NextContext))
+		
+		if (bConditionPassed && IsValid(Next))
 		{
 			Ability->ActivePlayback(Edge.NextNodeIndex, NextContext);
 			return true;

@@ -269,3 +269,19 @@ FTransform UYSAbilityEventAction_SpawnActor::CalculateTransform(UYSGameplayAbili
 	return FTransform(Rotation, Position);
 }
 
+bool UYSAbilityEventAction_CheckContextTag::Execute_Implementation(UYSGameplayAbility* OwningAbility,
+	const FGameplayEventData& EventData)
+{
+	if ( IsValid(OwningAbility) == false )
+		return false;
+
+	UYSAbilityPlaybackBase* PlaybackBase = const_cast<UYSAbilityPlaybackBase*>(OwningAbility->GetCurrentPlayback());
+	
+	if (IsValid(PlaybackBase) == false)
+		return false;
+	
+	PlaybackBase->DispatchNext(EYSPlaybackEvent::OnCheckContextTag, true);
+	
+	return true;
+}
+
