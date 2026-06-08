@@ -38,6 +38,8 @@ protected :
 
 	UFUNCTION()
 	void _OnTraceObjectHit(const TArray<FHitResult>& HitResults, const FName& DamageRow);
+	
+	void _DecreaseValidHits(const TArray<FHitResult>& HitResults);
 protected : 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Root")
 	TObjectPtr<USceneComponent> SceneRoot;

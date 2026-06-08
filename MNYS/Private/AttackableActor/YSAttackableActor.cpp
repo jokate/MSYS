@@ -3,13 +3,7 @@
 
 #include "AttackableActor/YSAttackableActor.h"
 
-#include "AbilitySystemBlueprintLibrary.h"
-#include "AbilitySystemComponent.h"
-#include "GenericTeamAgentInterface.h"
-#include "YSBattleActor.h"
 #include "AttackableActor/YSTraceObject.h"
-#include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
-#include "General/YSGameplayTag.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
 
 #if UE_EDITOR
@@ -101,70 +95,19 @@ void AYSAttackableActor::_Trace(float DeltaTime)
 
 void AYSAttackableActor::_OnTraceObjectHit(const TArray<FHitResult>& HitResults, const FName& DamageRow)
 {
-	// 데미지 처리 로직을 여기에서 수행해야 한다.
-	AActor* InstigatorPtr = OwnerActor.Get();
-	
-	if (IsValid(InstigatorPtr) == false )
+	UYSBlueprintFunctionLibrary::ProcessHits(
+		OwnerActor.Get(),
+		HitResults,
+		DamageRow,
+		[this](const TArray<FHitResult>& ValidHits) { _DecreaseValidHits(ValidHits); }
+	);
+}
+
+void AYSAttackableActor::_DecreaseValidHits(const TArray<FHitResult>& HitResults)
+{
+	if (IsValid(TraceObject))
 	{
-		return;
-	}
-	
-	UAbilitySystemComponent* OwnerASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(InstigatorPtr);
-	if ( IsValid(OwnerASC) == false )
-		return;
-
-	const UYSCharacterAttributeSetBase* OwnerAttribute = OwnerASC->GetSet<UYSCharacterAttributeSetBase>();
-	if ( IsValid(OwnerAttribute) == false )
-		return;
-
-	IGenericTeamAgentInterface* TeamAgentInterface = Cast<IGenericTeamAgentInterface>(InstigatorPtr);
-	if ( TeamAgentInterface == nullptr )
-		return;
-	
-	for ( const FHitResult& HitResult : HitResults ) 
-	{
-		AActor* HitActor = HitResult.GetActor();
-
-		if (TeamAgentInterface->GetTeamAttitudeTowards(*HitActor) == ETeamAttitude::Friendly )
-			continue;
-		
-		if ( IsValid(HitActor) == false ) 
-			continue;
-		
-		IYSBattleActor* BattleActor = Cast<IYSBattleActor>(HitActor);
-		if (BattleActor == nullptr || BattleActor->IsDead())
-		{
-			continue;
-		}
-		
-		UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(HitActor);
-		if ( IsValid(ASC) == false )
-			continue;
-		
-		const UYSCharacterAttributeSetBase* TargetAttributeSet = ASC->GetSet<UYSCharacterAttributeSetBase>();
-		if ( IsValid(TargetAttributeSet) == false )
-			continue;
-		
-		// 만약 회피 윈도우에 걸린 경우. (이거 고민좀 해봐야 할 거 같음 )
-		if (ASC->HasMatchingGameplayTag(YSTags::JustAvoid_Window))
-		{
-			FGameplayEventData GameplayEventData;
-			GameplayEventData.Instigator = InstigatorPtr;
-			GameplayEventData.ContextHandle.AddHitResult(HitResult);
-			
-			ASC->HandleGameplayEvent(YSTags::Event_JustAvoid, &GameplayEventData);
-			continue;
-		}
-		
-		if (ASC->HasMatchingGameplayTag(YSTags::Invincible))
-		{
-			continue;
-		}
-		
-		// 데미지 히트에 따른 이벤트 송신.
-		UYSBlueprintFunctionLibrary::SendHitEventToTarget(InstigatorPtr, HitActor, DamageRow);
-		
-		if ( IsValid(TraceObject) )
+		for (int32 i = 0; i < HitResults.Num(); ++i)
 		{
 			TraceObject->DecreaseHitProcessCount();
 		}

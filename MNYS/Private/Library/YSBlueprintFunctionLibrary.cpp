@@ -4,6 +4,9 @@
 #include "Library/YSBlueprintFunctionLibrary.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
+#include "GenericTeamAgentInterface.h"
+#include "YSBattleActor.h"
 #include "YSDeveloperSettings.h"
 #include "Ability/YSGameplayAbility.h"
 #include "Ability/AbilityComponent/YSAbilityPlayback.h"
@@ -54,6 +57,85 @@ void UYSBlueprintFunctionLibrary::SendHitEventToTarget(AActor* Instigator, AActo
 	EventData.EventMagnitude = FinalDamage;
 
 	TargetASC->HandleGameplayEvent(DamageInfo->HitTag, &EventData);
+}
+
+void UYSBlueprintFunctionLibrary::ProcessHits(
+	AActor* Instigator,
+	const TArray<FHitResult>& RawHits,
+	const FName& DamageRow,
+	TFunctionRef<void(const TArray<FHitResult>&)> OnValidated,
+	bool bForceLockonOnJustAvoid)
+{
+	if (!IsValid(Instigator))
+		return;
+
+	UAbilitySystemComponent* OwnerASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Instigator);
+	if (!IsValid(OwnerASC))
+		return;
+
+	const UYSCharacterAttributeSetBase* OwnerAttribute = OwnerASC->GetSet<UYSCharacterAttributeSetBase>();
+	if (!IsValid(OwnerAttribute))
+		return;
+
+	IGenericTeamAgentInterface* TeamAgent = Cast<IGenericTeamAgentInterface>(Instigator);
+	if (TeamAgent == nullptr)
+		return;
+
+	TArray<FHitResult> ValidHits;
+
+	for (const FHitResult& HitResult : RawHits)
+	{
+		AActor* HitActor = HitResult.GetActor();
+		if (!IsValid(HitActor))
+			continue;
+
+		if (TeamAgent->GetTeamAttitudeTowards(*HitActor) == ETeamAttitude::Friendly)
+			continue;
+
+		IYSBattleActor* BattleActor = Cast<IYSBattleActor>(HitActor);
+		if (BattleActor == nullptr || BattleActor->IsDead())
+			continue;
+
+		UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(HitActor);
+		if (!IsValid(TargetASC))
+			continue;
+
+		const UYSCharacterAttributeSetBase* TargetAttribute = TargetASC->GetSet<UYSCharacterAttributeSetBase>();
+		if (!IsValid(TargetAttribute))
+			continue;
+
+		// JustAvoid 윈도우 처리
+		if (TargetASC->HasMatchingGameplayTag(YSTags::JustAvoid_Window))
+		{
+			FGameplayEventData EventData;
+			EventData.Instigator = Instigator;
+			EventData.ContextHandle.AddHitResult(HitResult);
+
+			if (bForceLockonOnJustAvoid)
+			{
+				if (UYSLockOnComponent* LockOn = UYSLockOnComponent::Get(HitActor))
+				{
+					LockOn->ForceSetLockOn(Instigator);
+				}
+			}
+
+			TargetASC->HandleGameplayEvent(YSTags::Event_JustAvoid, &EventData);
+			continue;
+		}
+
+		// 무적 상태 스킵
+		if (TargetASC->HasMatchingGameplayTag(YSTags::Invincible))
+			continue;
+
+		// 데미지 이벤트 전송
+		SendHitEventToTarget(Instigator, HitActor, DamageRow);
+		ValidHits.Add(HitResult);
+	}
+
+	if (ValidHits.Num() > 0)
+	{
+		OnValidated(ValidHits);
+	}
 }
 
 FRotator UYSBlueprintFunctionLibrary::GetAbilityEventRotation(EYSDirectionPolicy DirectionPolicy,

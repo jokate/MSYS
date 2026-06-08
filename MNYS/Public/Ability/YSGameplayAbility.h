@@ -90,11 +90,9 @@ public:
 	void OnTraceComplete(const TArray<FHitResult>& HitResults, const FName& DamageRow);
 	
 	YS_ACCESSOR(UYSAT_Trace*, TraceTask)
-	
-	void NotifyPlaybackChainFinished();
-	
 	YS_ACCESSOR_REF(TSet<EYSAbilityType>, AbilityTypes);
 	
+	void NotifyPlaybackChainFinished();
 	UYSAbilityPlaybackBase* GetPlaybackNode(int32 Index);
 	
 	const FGameplayEventData* GetEventData() const { return &CurrentEventData; }

@@ -3,18 +3,15 @@
 
 #include "Ability/YSGameplayAbility.h"
 
-#include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "YSAbilitySystemComponent.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "Ability/EventAction/YSAbilityEventAction.h"
+#include "Ability/AbilityComponent/YSAbilityPlayback.h"
 #include "Character/YSCharacterPlayer.h"
-#include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
-#include "Character/Components/YSLockOnComponent.h"
+#include "Character/Components/YSCharacterMovementComponent.h"
 #include "General/YSGameplayTag.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
-#include "Ability/AbilityComponent/YSAbilityPlayback.h"
-#include "Character/Components/YSCharacterMovementComponent.h"
 
 UYSGameplayAbility::UYSGameplayAbility()
 {
@@ -163,80 +160,15 @@ bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag)
 
 void UYSGameplayAbility::OnTraceComplete(const TArray<FHitResult>& HitResults, const FName& DamageRow)
 {
-	// 데미지 처리 로직을 여기에서 수행해야 한다.
-	UAbilitySystemComponent* OwnerASC = GetAbilitySystemComponentFromActorInfo();
-	if ( IsValid(OwnerASC) == false )
-		return;
-
-	const UYSCharacterAttributeSetBase* OwnerAttribute = OwnerASC->GetSet<UYSCharacterAttributeSetBase>();
-	if ( IsValid(OwnerAttribute) == false )
-		return;
-
-	IGenericTeamAgentInterface* TeamAgentInterface = Cast<IGenericTeamAgentInterface>(GetOwningActorFromActorInfo());
-	if ( TeamAgentInterface == nullptr )
-		return;
-		
-	TArray<FHitResult> PlaybackHitResult;
-	for ( const FHitResult& HitResult : HitResults ) 
-	{
-		AActor* HitActor = HitResult.GetActor();
-
-		if (TeamAgentInterface->GetTeamAttitudeTowards(*HitActor) == ETeamAttitude::Friendly )
-			continue;
-		
-		if ( IsValid(HitActor) == false ) 
-			continue;
-		
-		IYSBattleActor* BattleActor = Cast<IYSBattleActor>(HitActor);
-		if (BattleActor == nullptr || BattleActor->IsDead())
+	UYSBlueprintFunctionLibrary::ProcessHits(GetOwningActorFromActorInfo(),	HitResults,	DamageRow,	
+		[this](const TArray<FHitResult>& ValidHits)
 		{
-			continue;
-		}
-		IAbilitySystemInterface* ASI = Cast<IAbilitySystemInterface>(HitActor);
-
-		if ( ASI == nullptr )
-			continue;
-		
-		UAbilitySystemComponent* ASC = ASI->GetAbilitySystemComponent();
-		if ( IsValid(ASC) == false )
-			continue;
-		
-		const UYSCharacterAttributeSetBase* TargetAttributeSet = ASC->GetSet<UYSCharacterAttributeSetBase>();
-		if ( IsValid(TargetAttributeSet) == false )
-			continue;
-		
-		// 만약 회피 윈도우에 걸린 경우.
-		if (ASC->HasMatchingGameplayTag(YSTags::JustAvoid_Window))
-		{
-			FGameplayEventData GameplayEventData;
-			GameplayEventData.Instigator = GetOwningActorFromActorInfo();
-			GameplayEventData.ContextHandle.AddHitResult(HitResult);
-			
-			UYSLockOnComponent* LockOnComponent = UYSLockOnComponent::Get(HitActor);
-			
-			if ( IsValid(LockOnComponent) )
+			if (IsValid(CurrentPlayback.Get()))
 			{
-				LockOnComponent->ForceSetLockOn(GetOwningActorFromActorInfo());
+				CurrentPlayback->OnHit(ValidHits);
 			}
-			
-			ASC->HandleGameplayEvent(YSTags::Event_JustAvoid, &GameplayEventData);
-			continue;
-		}
-		
-		if (ASC->HasMatchingGameplayTag(YSTags::Invincible))
-		{
-			continue;
-		}
-		
-		// 데미지 히트에 따른 이벤트 송신.
-		UYSBlueprintFunctionLibrary::SendHitEventToTarget(GetOwningActorFromActorInfo(), HitActor, DamageRow);
-		PlaybackHitResult.Add(HitResult);
-	}
-	
-	if ( PlaybackHitResult.Num() > 0 )
-	{
-		CurrentPlayback->OnHit(PlaybackHitResult);
-	}
+		},
+		true);
 }
 
 void UYSGameplayAbility::NotifyPlaybackChainFinished()
