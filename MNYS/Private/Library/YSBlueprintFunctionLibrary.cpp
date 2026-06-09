@@ -6,6 +6,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "GenericTeamAgentInterface.h"
+#include "NiagaraFunctionLibrary.h"
 #include "YSBattleActor.h"
 #include "YSDeveloperSettings.h"
 #include "Ability/YSGameplayAbility.h"
@@ -129,6 +130,9 @@ void UYSBlueprintFunctionLibrary::ProcessHits(
 
 		// 데미지 이벤트 전송
 		SendHitEventToTarget(Instigator, HitActor, DamageRow);
+		
+		SpawnEffects(Instigator, DamageRow, HitResult.ImpactPoint, HitResult.ImpactNormal.ToOrientationRotator());
+		
 		ValidHits.Add(HitResult);
 	}
 
@@ -138,8 +142,42 @@ void UYSBlueprintFunctionLibrary::ProcessHits(
 	}
 }
 
+void UYSBlueprintFunctionLibrary::SpawnEffects(UObject* WorldContextObject, const FName& DamageRow,
+	const FVector& Location, const FRotator& Rotation)
+{
+	const FYSDamageInfo* DamageInfo = UYSDeveloperSettings::GetDamageInfo(DamageRow);
+	
+	if ( DamageInfo == nullptr )
+	{
+		return;
+	}
+	
+	
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(WorldContextObject, DamageInfo->HitEffect, Location, Rotation);
+	
+	
+	UWorld* World = WorldContextObject->GetWorld();
+	
+	if ( IsValid(World) == false )
+	{
+		return;
+	}
+	
+	APlayerController* PC = World->GetFirstPlayerController();
+	
+	// 카메라 셰이크도 함께 처리
+	if (IsValid(DamageInfo->HitCameraShake) && IsValid(PC))
+	{
+		APlayerCameraManager* CameraManager = PC->PlayerCameraManager;
+		if (IsValid(CameraManager))
+		{
+			CameraManager->StartCameraShake(DamageInfo->HitCameraShake);
+		}
+	}
+}
+
 FRotator UYSBlueprintFunctionLibrary::GetAbilityEventRotation(EYSDirectionPolicy DirectionPolicy,
-	UYSGameplayAbility* OwningAbility, const FName& SocketName)
+                                                              UYSGameplayAbility* OwningAbility, const FName& SocketName)
 {
 	AActor* OwnerActor = OwningAbility->GetOwningActorFromActorInfo();
 	

@@ -36,8 +36,9 @@ public :
 	 * @param OnValidated              유효 히트 결과 콜백 (빈 배열이면 호출되지 않음)
 	 * @param bForceLockonOnJustAvoid  JustAvoid 시 상대에게 락온을 강제할지 여부
 	 */
-	static void ProcessHits(AActor* Instigator, const TArray<FHitResult>& RawHits, const FName& DamageRow, TFunctionRef<void(const TArray<FHitResult>&)> OnValidated, bool bForceLockonOnJustAvoid = false
-	);
+	static void ProcessHits(AActor* Instigator, const TArray<FHitResult>& RawHits, const FName& DamageRow, TFunctionRef<void(const TArray<FHitResult>&)> OnValidated, bool bForceLockonOnJustAvoid = false);
+	
+	static void SpawnEffects(UObject* WorldContextObject, const FName& DamageRow, const FVector& Location, const FRotator& Rotation);
 
 	UFUNCTION(BlueprintCallable)
 	static FRotator GetAbilityEventRotation(EYSDirectionPolicy DirectionPolicy, UYSGameplayAbility* OwningAbility, const FName& SocketName);
