@@ -182,7 +182,7 @@ bool UYSAbilityEventAction_ApplyVelocity::Execute_Implementation(UYSGameplayAbil
 	
 	AActor* OwnerActor = OwningAbility->GetOwningActorFromActorInfo();
 	
-	FRotator DirectionRotation = UYSBlueprintFunctionLibrary::GetAbilityEventRotation(VelocityData->VelocityDirectionPolicy, OwningAbility, NAME_None);
+	FRotator DirectionRotation = UYSBlueprintFunctionLibrary::GetAbilityEventRotation(VelocityData->VelocityDirectionPolicy, OwningAbility, NAME_None, FRotator::ZeroRotator);
 	
 	FVector DirectionVector = DirectionRotation.Vector();
 	const FVector TargetLocation = OwnerActor->GetActorLocation() 
@@ -261,7 +261,7 @@ FTransform UYSAbilityEventAction_SpawnActor::CalculateTransform(UYSGameplayAbili
 	const FYSSpawnActorConfig& SpawnConfig)
 {
 	const FVector Position = UYSBlueprintFunctionLibrary::GetAbilityEventPosition(SpawnConfig.PositionPolicy, OwningAbility, SpawnConfig.SpawnSocket, SpawnConfig.RelativeOffset);
-	const FRotator  Rotation = UYSBlueprintFunctionLibrary::GetAbilityEventRotation(SpawnConfig.RotationPolicy, OwningAbility, SpawnConfig.RotationSocket);
+	const FRotator  Rotation = UYSBlueprintFunctionLibrary::GetAbilityEventRotation(SpawnConfig.RotationPolicy, OwningAbility, SpawnConfig.RotationSocket, SpawnConfig.RelativeRotator);
 
 	return FTransform(Rotation, Position);
 }

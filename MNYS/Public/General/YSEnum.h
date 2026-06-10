@@ -64,7 +64,8 @@ enum class EYSDirectionPolicy : uint8
 	UseTowardLockOnTarget		UMETA(DisplayName = "락온 목표를 향하는 방향 사용"),
 	UseControlRotation			UMETA(DisplayName = "컨트롤 로테이션 기준"),
 	UseTowardIndicatorPosition	UMETA(DisplayName = "인디케이터 포지션 사용."),
-	UseSocketRotation			UMETA(DisplayName = "소켓 포지션 사용")
+	UseSocketRotation			UMETA(DisplayName = "소켓 포지션 사용"),
+	UseRelativeOffset			UMETA(DisplayName = "액터 기준 상대 오프셋")
 };
 
 /*

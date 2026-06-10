@@ -210,6 +210,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn | Rotation", meta = (DisplayName = "회전 기준 정책"))
 	EYSDirectionPolicy RotationPolicy = EYSDirectionPolicy::UseActorForwardVector;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn | Rotatation", meta = (DisplayName = "상대 오프셋 ( 회전 )", 
+		EditCondition = "RotationPolicy == EYSDirectionPolicy::UseRelativeOffset", EditConditionHides))
+	FRotator RelativeRotator = FRotator::ZeroRotator;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn | Rotation",
 		meta = (DisplayName = "회전 소켓 이름 (빈칸이면 위치 소켓 공유)",
 			EditCondition = "RotationPolicy == EYSDirectionPolicy::UseSocketRotation", EditConditionHides))

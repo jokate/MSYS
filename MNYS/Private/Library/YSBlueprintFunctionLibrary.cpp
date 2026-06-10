@@ -177,7 +177,7 @@ void UYSBlueprintFunctionLibrary::SpawnEffects(UObject* WorldContextObject, cons
 }
 
 FRotator UYSBlueprintFunctionLibrary::GetEventRotation(EYSDirectionPolicy DirectionPolicy,
-                                                       AActor* OwnerActor, const FName& SocketName, AActor* PlaybackTarget)
+	AActor* OwnerActor, const FName& SocketName, const FRotator& RelativeOffset, AActor* PlaybackTarget )
 {
 	if ( IsValid(OwnerActor) == false )
 	{
@@ -228,6 +228,10 @@ FRotator UYSBlueprintFunctionLibrary::GetEventRotation(EYSDirectionPolicy Direct
 			return OwnerActor->GetActorRotation();
 		}
 
+	case EYSDirectionPolicy::UseRelativeOffset :
+		{
+			return OwnerActor->GetActorTransform().TransformRotation(RelativeOffset.Quaternion()).Rotator();
+		}
 	case EYSDirectionPolicy::UseActorForwardVector:
 	default:
 		return OwnerActor->GetActorRotation();
@@ -235,7 +239,7 @@ FRotator UYSBlueprintFunctionLibrary::GetEventRotation(EYSDirectionPolicy Direct
 }
 
 FRotator UYSBlueprintFunctionLibrary::GetAbilityEventRotation(EYSDirectionPolicy DirectionPolicy,
-                                                              UYSGameplayAbility* OwningAbility, const FName& SocketName)
+                                                              UYSGameplayAbility* OwningAbility, const FName& SocketName, const FRotator& RelativeOffset)
 {
 	AActor* OwnerActor = OwningAbility->GetOwningActorFromActorInfo();
 
@@ -245,7 +249,7 @@ FRotator UYSBlueprintFunctionLibrary::GetAbilityEventRotation(EYSDirectionPolicy
 		PlaybackTarget = Playback->GetCurrentPlaybackTarget();
 	}
 
-	return GetEventRotation(DirectionPolicy, OwnerActor, SocketName, PlaybackTarget);
+	return GetEventRotation(DirectionPolicy, OwnerActor, SocketName, RelativeOffset,  PlaybackTarget);
 }
 
 FVector UYSBlueprintFunctionLibrary::GetEventPosition(EYSPositionPolicy PositionPolicy,

@@ -40,11 +40,11 @@ public :
 	
 	static void SpawnEffects(UObject* WorldContextObject, const FName& DamageRow, const FVector& Location, const FRotator& Rotation);
 
-	static FRotator GetEventRotation(EYSDirectionPolicy DirectionPolicy, AActor* OwnerActor, const FName& SocketName, AActor* PlaybackTarget = nullptr);
+	static FRotator GetEventRotation(EYSDirectionPolicy DirectionPolicy, AActor* OwnerActor, const FName& SocketName, const FRotator& RelativeOffset, AActor* PlaybackTarget = nullptr);
 	static FVector GetEventPosition(EYSPositionPolicy PositionPolicy, AActor* OwnerActor, const FName& SocketName, const FVector& RelativeOffset);
 
 	UFUNCTION(BlueprintCallable)
-	static FRotator GetAbilityEventRotation(EYSDirectionPolicy DirectionPolicy, UYSGameplayAbility* OwningAbility, const FName& SocketName);
+	static FRotator GetAbilityEventRotation(EYSDirectionPolicy DirectionPolicy, UYSGameplayAbility* OwningAbility, const FName& SocketName, const FRotator& RelativeOffset);
 
 	UFUNCTION(BlueprintCallable)
 	static FVector GetAbilityEventPosition(EYSPositionPolicy PositionPolicy, UYSGameplayAbility* OwningAbility,

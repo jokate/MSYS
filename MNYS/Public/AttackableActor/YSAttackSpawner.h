@@ -6,6 +6,7 @@
 #include "YSAttackableBase.h"
 #include "YSAttackSpawner.generated.h"
 
+class UArrowComponent;
 struct FYSSpawnActorConfig;
 
 UCLASS()
@@ -14,26 +15,32 @@ class MNYS_API AYSAttackSpawner : public AYSAttackableBase
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this actor's properties
 	AYSAttackSpawner();
 
 #if WITH_EDITOR
 	virtual void PostEditChangeChainProperty(struct FPropertyChangedChainEvent& PropertyChangedEvent) override;
+	virtual void OnConstruction(const FTransform& Transform) override;
 #endif
-	
+
 protected:
 	virtual void OnActivate() override;
 
 	void SpawnActorByConfig(FYSSpawnActorConfig SpawnConfig);
 	virtual void TrySpawnActor();
-	
-	
-protected : 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawn", meta = (DisplayName = "스폰 처리 관련"))
+
+protected :
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | Spawn", meta = (DisplayName = "스폰 처리 관련"))
 	TArray<FYSSpawnActorConfig> SpawnActorConfigs;
 
 	FTimerHandle SpawnTimerHandle;
 
 	int32 SpawnCount = 0;
+
+#if WITH_EDITORONLY_DATA
+	UPROPERTY()
+	TArray<TObjectPtr<UArrowComponent>> SpawnPreviewArrows;
+
+	void _RefreshSpawnPreview();
+#endif
 };
 
