@@ -176,16 +176,14 @@ void UYSBlueprintFunctionLibrary::SpawnEffects(UObject* WorldContextObject, cons
 	}
 }
 
-FRotator UYSBlueprintFunctionLibrary::GetAbilityEventRotation(EYSDirectionPolicy DirectionPolicy,
-                                                              UYSGameplayAbility* OwningAbility, const FName& SocketName)
+FRotator UYSBlueprintFunctionLibrary::GetEventRotation(EYSDirectionPolicy DirectionPolicy,
+                                                       AActor* OwnerActor, const FName& SocketName, AActor* PlaybackTarget)
 {
-	AActor* OwnerActor = OwningAbility->GetOwningActorFromActorInfo();
-	
 	if ( IsValid(OwnerActor) == false )
 	{
 		return FRotator();
 	}
-	
+
 	switch (DirectionPolicy)
 	{
 	case EYSDirectionPolicy::UseSocketRotation:
@@ -222,13 +220,10 @@ FRotator UYSBlueprintFunctionLibrary::GetAbilityEventRotation(EYSDirectionPolicy
 
 	case EYSDirectionPolicy::UseTowardPlaybackTarget:
 		{
-			if (const UYSAbilityPlaybackBase* Playback = OwningAbility->GetCurrentPlayback())
+			if (IsValid(PlaybackTarget))
 			{
-				if (AActor* Target = Playback->GetCurrentPlaybackTarget())
-				{
-					const FVector Dir = (Target->GetActorLocation() - OwnerActor->GetActorLocation()).GetSafeNormal();
-					return Dir.Rotation();
-				}
+				const FVector Dir = (PlaybackTarget->GetActorLocation() - OwnerActor->GetActorLocation()).GetSafeNormal();
+				return Dir.Rotation();
 			}
 			return OwnerActor->GetActorRotation();
 		}
@@ -239,16 +234,28 @@ FRotator UYSBlueprintFunctionLibrary::GetAbilityEventRotation(EYSDirectionPolicy
 	}
 }
 
-FVector UYSBlueprintFunctionLibrary::GetAbilityEventPosition(EYSPositionPolicy PositionPolicy,
-	UYSGameplayAbility* OwningAbility, const FName& SocketName, const FVector& RelativeOffset)
+FRotator UYSBlueprintFunctionLibrary::GetAbilityEventRotation(EYSDirectionPolicy DirectionPolicy,
+                                                              UYSGameplayAbility* OwningAbility, const FName& SocketName)
 {
 	AActor* OwnerActor = OwningAbility->GetOwningActorFromActorInfo();
-	
+
+	AActor* PlaybackTarget = nullptr;
+	if (const UYSAbilityPlaybackBase* Playback = OwningAbility->GetCurrentPlayback())
+	{
+		PlaybackTarget = Playback->GetCurrentPlaybackTarget();
+	}
+
+	return GetEventRotation(DirectionPolicy, OwnerActor, SocketName, PlaybackTarget);
+}
+
+FVector UYSBlueprintFunctionLibrary::GetEventPosition(EYSPositionPolicy PositionPolicy,
+	AActor* OwnerActor, const FName& SocketName, const FVector& RelativeOffset)
+{
 	if ( IsValid(OwnerActor) == false )
 	{
 		return FVector::ZeroVector;
 	}
-	
+
 	switch (PositionPolicy)
 	{
 	case EYSPositionPolicy::UseSocket:
@@ -268,4 +275,10 @@ FVector UYSBlueprintFunctionLibrary::GetAbilityEventPosition(EYSPositionPolicy P
 	default:
 		return OwnerActor->GetActorLocation();
 	}
+}
+
+FVector UYSBlueprintFunctionLibrary::GetAbilityEventPosition(EYSPositionPolicy PositionPolicy,
+	UYSGameplayAbility* OwningAbility, const FName& SocketName, const FVector& RelativeOffset)
+{
+	return GetEventPosition(PositionPolicy, OwningAbility->GetOwningActorFromActorInfo(), SocketName, RelativeOffset);
 }

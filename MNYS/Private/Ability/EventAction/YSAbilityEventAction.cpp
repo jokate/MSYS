@@ -240,7 +240,7 @@ bool UYSAbilityEventAction_SpawnActor::Execute_Implementation(UYSGameplayAbility
 		if (IsValid(SpawnedActor) == false)
 			continue;
 
-		AYSDamagableActor* AttackableActor = Cast<AYSDamagableActor>(SpawnedActor);
+		AYSAttackableBase* AttackableActor = Cast<AYSAttackableBase>(SpawnedActor);
 		if (IsValid(AttackableActor))
 		{
 			AttackableActor->AllocateInstigator(OwningActor);

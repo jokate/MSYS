@@ -17,11 +17,23 @@ public:
 	// Sets default values for this actor's properties
 	AYSAttackSpawner();
 
+#if WITH_EDITOR
+	virtual void PostEditChangeChainProperty(struct FPropertyChangedChainEvent& PropertyChangedEvent) override;
+#endif
+	
 protected:
 	virtual void OnActivate() override;
 
+	void SpawnActorByConfig(FYSSpawnActorConfig SpawnConfig);
+	virtual void TrySpawnActor();
+	
+	
 protected : 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Spawn", meta = (DisplayName = "스폰 처리 관련"))
 	TArray<FYSSpawnActorConfig> SpawnActorConfigs;
+
+	FTimerHandle SpawnTimerHandle;
+
+	int32 SpawnCount = 0;
 };
 

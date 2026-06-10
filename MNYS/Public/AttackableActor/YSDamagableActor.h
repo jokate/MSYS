@@ -37,12 +37,14 @@ protected :
 	void _Trace(float DeltaTime);
 
 protected : 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Projectile")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Damagable")
 	FYSTraceConfig TraceConfig;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Damagable")
+	bool bNeedToRemainAfterHitCountDepleted = false;
 	
 	UPROPERTY()
 	TObjectPtr<UYSTraceObject> TraceObject;
-	
 	
 	// AYSDamagableActor.h
 #if WITH_EDITORONLY_DATA

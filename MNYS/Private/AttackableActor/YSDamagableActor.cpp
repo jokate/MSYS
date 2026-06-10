@@ -47,6 +47,11 @@ void AYSDamagableActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void AYSDamagableActor::_OnHitCountDepleted()
 {
+	if (bNeedToRemainAfterHitCountDepleted)
+	{
+		return;
+	}
+	
 	Destroy();
 }
 
