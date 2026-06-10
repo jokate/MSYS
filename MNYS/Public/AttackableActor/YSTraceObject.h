@@ -43,7 +43,7 @@ public:
 	/** 소유 Actor 교체 — Projectile이 반사 등으로 소유자가 바뀔 경우 대비 */
 	void SetOwnerActor(AActor* InActor) { OwnerActor = InActor; }
 	
-	void DecreaseHitProcessCount();
+	bool DecreaseHitProcessCount();
 
 	UPROPERTY(BlueprintAssignable)
 	FOnTraceHit OnTraceHit;
@@ -56,7 +56,7 @@ protected :
 
 private:
 	void _TraceByConfig();
-
+	void _ProcessValidHit(const TArray<FHitResult>& InProcessedHits);
 private:
 	UPROPERTY()
 	TObjectPtr<AActor> OwnerActor;
@@ -73,8 +73,9 @@ private:
 	TMap<TObjectPtr<AActor>, float> HitTimeMap;
 
 	UPROPERTY()
-	int32 CurrentHitProcessCount;
+	int32 RemainHitProcessCount;
 	
 	FVector PreviousLocation = FVector::ZeroVector;
+	
 	bool bHasPreviousLocation = false;
 };

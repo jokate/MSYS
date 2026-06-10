@@ -158,18 +158,6 @@ bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag)
 	return	AbilityPlaybackBase->TryAcceptContextTag(InputGameplayTag);
 }
 
-void UYSGameplayAbility::OnTraceComplete(const TArray<FHitResult>& HitResults, const FName& DamageRow)
-{
-	UYSBlueprintFunctionLibrary::ProcessHits(GetOwningActorFromActorInfo(),	HitResults,	DamageRow,	
-		[this](const TArray<FHitResult>& ValidHits)
-		{
-			if (IsValid(CurrentPlayback.Get()))
-			{
-				CurrentPlayback->OnHit(ValidHits);
-			}
-		},
-		true);
-}
 
 void UYSGameplayAbility::NotifyPlaybackChainFinished()
 {

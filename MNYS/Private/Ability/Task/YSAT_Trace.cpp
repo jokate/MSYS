@@ -4,6 +4,8 @@
 #include "Ability/Task/YSAT_Trace.h"
 
 #include "AbilitySystemComponent.h"
+#include "Ability/YSGameplayAbility.h"
+#include "Ability/AbilityComponent/YSAbilityPlayback.h"
 #include "AttackableActor/YSTraceObject.h"
 
 UYSAT_Trace::UYSAT_Trace()
@@ -59,7 +61,19 @@ void UYSAT_Trace::TickTask(float DeltaTime)
 
 void UYSAT_Trace::_OnTraceObjectHit(const TArray<FHitResult>& HitResults, const FName& DamageRow)
 {
-	OnTraceHit.Broadcast(HitResults, DamageRow);
+	UYSGameplayAbility* OwningAbility = Cast<UYSGameplayAbility>(Ability);
+	
+	if ( IsValid(OwningAbility) == false )
+	{
+		return;
+	}
+	
+	UYSAbilityPlaybackBase* AbilityPlaybackBase = OwningAbility->GetCurrentPlayback();
+		
+	if ( IsValid(AbilityPlaybackBase) )
+	{
+		AbilityPlaybackBase->OnHit(HitResults);
+	}
 }
 
 void UYSAT_Trace::_OnHitCountDepleted()

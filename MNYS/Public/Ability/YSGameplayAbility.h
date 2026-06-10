@@ -85,9 +85,6 @@ public:
 	void OnGameplayTagChanged(const FGameplayTag& Tag, bool bInIsActive);
 
 	bool TryTransition(const FGameplayTag& InputGameplayTag);
-
-	UFUNCTION()
-	void OnTraceComplete(const TArray<FHitResult>& HitResults, const FName& DamageRow);
 	
 	YS_ACCESSOR(UYSAT_Trace*, TraceTask)
 	YS_ACCESSOR_REF(TSet<EYSAbilityType>, AbilityTypes);
@@ -101,7 +98,7 @@ public:
 	
 	void ActivePlayback(int32 Index, const FYSPlaybackContext& Context);
 	
-	const UYSAbilityPlaybackBase* GetCurrentPlayback() const { return CurrentPlayback.Get(); }
+	UYSAbilityPlaybackBase* GetCurrentPlayback() const { return CurrentPlayback.Get(); }
 	
 protected:
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;

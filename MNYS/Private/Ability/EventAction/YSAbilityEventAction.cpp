@@ -29,10 +29,7 @@ bool UYSAbilityEventAction_StartTrace::Execute_Implementation(UYSGameplayAbility
 	UYSAT_Trace* TraceTask = UYSAT_Trace::CreateTask(OwningAbility, TraceData->TraceConfig);
 	if ( IsValid(TraceTask) )
 	{
-		TraceTask->OnTraceHit.AddDynamic(OwningAbility, &UYSGameplayAbility::OnTraceComplete);
-
 		OwningAbility->SetTraceTask(TraceTask);
-		
 		TraceTask->ReadyForActivation();
 	}
 	

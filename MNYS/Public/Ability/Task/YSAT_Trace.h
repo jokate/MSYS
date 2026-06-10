@@ -25,10 +25,6 @@ public:
 
 	virtual void TickTask(float DeltaTime) override;
 	virtual void Activate() override;
-
-	UPROPERTY(BlueprintAssignable)
-	FOnTraceHit OnTraceHit;
-
 private:
 	UFUNCTION()
 	void _OnTraceObjectHit(const TArray<FHitResult>& HitResults, const FName& DamageRow);

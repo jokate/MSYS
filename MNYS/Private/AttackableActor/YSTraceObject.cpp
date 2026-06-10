@@ -3,9 +3,15 @@
 
 #include "AttackableActor/YSTraceObject.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
 #include "DrawDebugHelpers.h"
 #include "GenericTeamAgentInterface.h"
 #include "YSBattleActor.h"
+#include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
+#include "Character/Components/YSLockOnComponent.h"
+#include "General/YSGameplayTag.h"
+#include "Library/YSBlueprintFunctionLibrary.h"
 
 UYSTraceObject* UYSTraceObject::Create(UObject* InOuter, AActor* InOwnerActor, AActor* InInstigator, const FYSTraceConfig& InConfig)
 {
@@ -13,7 +19,7 @@ UYSTraceObject* UYSTraceObject::Create(UObject* InOuter, AActor* InOwnerActor, A
 	TraceObject->OwnerActor  = InOwnerActor;
 	TraceObject->Instigator = InInstigator;
 	TraceObject->TraceConfig = InConfig;
-	TraceObject->CurrentHitProcessCount = InConfig.LimitHitCount;
+	TraceObject->RemainHitProcessCount = InConfig.LimitHitCount;
 	return TraceObject;
 }
 
@@ -37,16 +43,13 @@ void UYSTraceObject::ResetHitState()
 	HitTimeMap.Reset();
 	bHasPreviousLocation = false;
 	PreviousLocation     = FVector::ZeroVector;
-	CurrentHitProcessCount = TraceConfig.LimitHitCount;
+	RemainHitProcessCount = TraceConfig.LimitHitCount;
 }
 
-void UYSTraceObject::DecreaseHitProcessCount()
+bool UYSTraceObject::DecreaseHitProcessCount()
 {
-	--CurrentHitProcessCount;
-	if (CurrentHitProcessCount <= 0) 
-	{
-		OnHitCountDepleted.Broadcast();
-	}
+	--RemainHitProcessCount;
+	return IsHitCountDepleted();
 }
 
 // 히트 카운트 자체가 나간 경우에는 별도 처리 하지 않음.
@@ -58,7 +61,7 @@ bool UYSTraceObject::IsHitCountDepleted() const
 		return false;
 	}
 	
-	return CurrentHitProcessCount <= 0;
+	return RemainHitProcessCount <= 0;
 }
 
 void UYSTraceObject::_TraceByConfig()
@@ -201,6 +204,86 @@ void UYSTraceObject::_TraceByConfig()
 #endif
 
 	if (ValidHits.Num() > 0)
+	{
+		_ProcessValidHit(ValidHits);
+	}
+}
+
+void UYSTraceObject::_ProcessValidHit(const TArray<FHitResult>& InProcessedHits)
+{
+	if (!IsValid(Instigator))
+		return;
+
+	UAbilitySystemComponent* OwnerASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Instigator);
+	if (!IsValid(OwnerASC))
+		return;
+
+	const UYSCharacterAttributeSetBase* OwnerAttribute = OwnerASC->GetSet<UYSCharacterAttributeSetBase>();
+	if (!IsValid(OwnerAttribute))
+		return;
+
+	IGenericTeamAgentInterface* TeamAgent = Cast<IGenericTeamAgentInterface>(Instigator);
+	if (TeamAgent == nullptr)
+		return;
+
+	TArray<FHitResult> ValidHits;
+
+	for (const FHitResult& HitResult : InProcessedHits)
+	{
+		AActor* HitActor = HitResult.GetActor();
+		if (!IsValid(HitActor))
+			continue;
+
+		if (TeamAgent->GetTeamAttitudeTowards(*HitActor) == ETeamAttitude::Friendly)
+			continue;
+
+		IYSBattleActor* BattleActor = Cast<IYSBattleActor>(HitActor);
+		if (BattleActor == nullptr || BattleActor->IsDead())
+			continue;
+
+		UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(HitActor);
+		if (!IsValid(TargetASC))
+			continue;
+
+		const UYSCharacterAttributeSetBase* TargetAttribute = TargetASC->GetSet<UYSCharacterAttributeSetBase>();
+		if (!IsValid(TargetAttribute))
+			continue;
+
+		// JustAvoid 윈도우 처리
+		if (TargetASC->HasMatchingGameplayTag(YSTags::JustAvoid_Window))
+		{
+			FGameplayEventData EventData;
+			EventData.Instigator = Instigator;
+			EventData.ContextHandle.AddHitResult(HitResult);
+
+			if (UYSLockOnComponent* LockOn = UYSLockOnComponent::Get(HitActor))
+			{
+				LockOn->ForceSetLockOn(Instigator);
+			}
+
+			TargetASC->HandleGameplayEvent(YSTags::Event_JustAvoid, &EventData);
+			continue;
+		}
+
+		// 무적 상태 스킵
+		if (TargetASC->HasMatchingGameplayTag(YSTags::Invincible))
+			continue;
+
+		// 데미지 이벤트 전송
+		UYSBlueprintFunctionLibrary::SendHitEventToTarget(Instigator, HitActor, TraceConfig.DamageRow);
+		
+		UYSBlueprintFunctionLibrary::SpawnEffects(Instigator, TraceConfig.DamageRow, HitResult.ImpactPoint, HitResult.ImpactNormal.ToOrientationRotator());
+		
+		ValidHits.Add(HitResult);
+		
+		if ( DecreaseHitProcessCount() )
+		{
+			OnHitCountDepleted.Broadcast();
+			break;
+		}
+	}
+	
+	if ( ValidHits.Num() > 0 )
 	{
 		OnTraceHit.Broadcast(ValidHits, TraceConfig.DamageRow);
 	}
