@@ -11,7 +11,7 @@
 #include "Ability/AbilityComponent/YSAbilityPlayback.h"
 #include "Ability/Payload/YSAbilityTriggerPayload.h"
 #include "Ability/Task/YSAT_Trace.h"
-#include "AttackableActor/YSAttackableActor.h"
+#include "AttackableActor/YSDamagableActor.h"
 #include "Character/YSCharacterBase.h"
 #include "Character/YSPlayerController.h"
 #include "Character/Components/YSLockOnComponent.h"
@@ -240,7 +240,7 @@ bool UYSAbilityEventAction_SpawnActor::Execute_Implementation(UYSGameplayAbility
 		if (IsValid(SpawnedActor) == false)
 			continue;
 
-		AYSAttackableActor* AttackableActor = Cast<AYSAttackableActor>(SpawnedActor);
+		AYSDamagableActor* AttackableActor = Cast<AYSDamagableActor>(SpawnedActor);
 		if (IsValid(AttackableActor))
 		{
 			AttackableActor->AllocateInstigator(OwningActor);

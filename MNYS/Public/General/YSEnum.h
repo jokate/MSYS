@@ -77,3 +77,12 @@ enum class EYSPositionPolicy : uint8
 	UseSocket			UMETA(DisplayName = "소켓 위치"),
 	UseRelativeOffset	UMETA(DisplayName = "액터 기준 상대 오프셋"),
 };
+
+// 스킬 슬롯에 세팅할 수 있게끔 처리할 예정 ( Subclass로 판단 할 수 있도록 ) / 내 생각에는 기준이 되는 애셋 잡고, 이걸 기반으로 설정가능하도록 해야 할 듯.
+UENUM(BlueprintType)
+enum class EYSSkillType : uint8
+{
+	Basic,
+	Special,
+	JustAvoid,
+};

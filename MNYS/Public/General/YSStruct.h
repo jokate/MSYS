@@ -217,4 +217,8 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn", meta = (DisplayName = "어태치 여부"))
 	bool bAttachToActor = false;
+	
+	// 해당 기능은 사실상 스포너가 위임할 예정.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn", meta = (DisplayName = "스폰 딜레이 시간"))
+	float SpawnDelay = 0.0f;
 };

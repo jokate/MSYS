@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "YSAttackableActor.h"
+#include "YSDamagableActor.h"
 #include "YSProjectile.generated.h"
 
 class UProjectileMovementComponent;
@@ -12,7 +12,7 @@ struct FYSTraceConfig;
  * 
  */
 UCLASS()
-class MNYS_API AYSProjectile : public AYSAttackableActor
+class MNYS_API AYSProjectile : public AYSDamagableActor
 {
 	GENERATED_BODY()
 
