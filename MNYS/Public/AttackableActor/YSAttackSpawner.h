@@ -23,7 +23,7 @@ public:
 #endif
 
 protected:
-	virtual void OnActivate() override;
+	virtual void OnActivate_Implementation() override;
 
 	void SpawnActorByConfig(FYSSpawnActorConfig SpawnConfig);
 	virtual void TrySpawnActor();

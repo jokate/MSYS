@@ -15,10 +15,8 @@ AYSAttackSpawner::AYSAttackSpawner()
 	PrimaryActorTick.bCanEverTick = false;
 }
 
-void AYSAttackSpawner::OnActivate()
+void AYSAttackSpawner::OnActivate_Implementation()
 {
-	Super::OnActivate();
-	
 	TrySpawnActor();
 }
 
@@ -40,7 +38,7 @@ void AYSAttackSpawner::SpawnActorByConfig(FYSSpawnActorConfig SpawnConfig)
 	AYSAttackableBase* AttackableActor = Cast<AYSAttackableBase>(SpawnedActor);
 	if (IsValid(AttackableActor))
 	{
-		AttackableActor->AllocateInstigator(Owner.Get());
+		AttackableActor->AllocateInstigator(OwnerActor.Get());
 	}
 
 	if (SpawnConfig.bAttachToActor)
@@ -62,7 +60,8 @@ void AYSAttackSpawner::TrySpawnActor()
 	{
 		if (SpawnConfig.SpawnDelay > 0.f )
 		{
-			GetWorldTimerManager().SetTimer(SpawnTimerHandle, FTimerDelegate::CreateUObject(this, &AYSAttackSpawner::SpawnActorByConfig, SpawnConfig), SpawnConfig.SpawnDelay, false);			
+			FTimerHandle TempSpawnTimerHandle;
+			GetWorldTimerManager().SetTimer(TempSpawnTimerHandle, FTimerDelegate::CreateUObject(this, &AYSAttackSpawner::SpawnActorByConfig, SpawnConfig), SpawnConfig.SpawnDelay, false);			
 		}
 		else
 		{
@@ -130,6 +129,7 @@ void AYSAttackSpawner::_RefreshSpawnPreview()
 		if (Config.PositionPolicy == EYSPositionPolicy::UseRelativeOffset)
 		{
 			Arrow->SetRelativeLocation(Config.RelativeOffset);
+			Arrow->SetRelativeRotation(Config.RelativeRotator);
 		}
 
 		SpawnPreviewArrows.Add(Arrow);
