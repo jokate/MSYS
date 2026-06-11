@@ -24,8 +24,8 @@ void AYSAttackSpawner::SpawnActorByConfig(FYSSpawnActorConfig SpawnConfig)
 {
 	++SpawnCount;
 	
-	const FVector Position = UYSBlueprintFunctionLibrary::GetEventPosition(SpawnConfig.PositionPolicy, OwnerActor.Get(), SpawnConfig.SpawnSocket, SpawnConfig.RelativeOffset);
-	const FRotator Rotation = UYSBlueprintFunctionLibrary::GetEventRotation(SpawnConfig.RotationPolicy, OwnerActor.Get(), SpawnConfig.RotationSocket, SpawnConfig.RelativeRotator, TargetActor.Get());
+	const FVector Position = UYSBlueprintFunctionLibrary::GetEventPosition(SpawnConfig.PositionPolicy, this, SpawnConfig.SpawnSocket, SpawnConfig.RelativeOffset);
+	const FRotator Rotation = UYSBlueprintFunctionLibrary::GetEventRotation(SpawnConfig.RotationPolicy, this, SpawnConfig.RotationSocket, SpawnConfig.RelativeRotator, TargetActor.Get());
 	
 	FTransform SpawnTransform = FTransform(Rotation, Position);
 	AActor* SpawnedActor = GetWorld()->SpawnActorDeferred<AActor>(SpawnConfig.ActorClass, SpawnTransform);
