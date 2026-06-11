@@ -27,7 +27,7 @@ protected:
 	UFUNCTION()
 	virtual void _OnHitCountDepleted();
 	
-	virtual void OnActivate() override;
+	virtual void OnActivate_Implementation() override;
 	
 public:
 	// Called every frame

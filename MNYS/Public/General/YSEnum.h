@@ -87,3 +87,11 @@ enum class EYSSkillType : uint8
 	Special,
 	JustAvoid,
 };
+
+UENUM(BlueprintType)
+enum class EYSAttackActivationType : uint8
+{
+	Instant			UMETA(DisplayName = "즉시 발동"),
+	TimeBased		UMETA(DisplayName = "시간 기반"),
+	TagBased		UMETA(DisplayName = "태그 기반"),
+};

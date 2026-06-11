@@ -3,6 +3,9 @@
 
 #include "AttackableActor/YSAttackableBase.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
+
 
 // Sets default values
 AYSAttackableBase::AYSAttackableBase()
@@ -27,12 +30,56 @@ void AYSAttackableBase::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	if ( ActivateTime > 0.f )
+	switch (ActivationType)
 	{
-		GetWorldTimerManager().SetTimer(ActivateTimerHandle, this, &AYSAttackableBase::OnActivate, ActivateTime, false);	
+	case EYSAttackActivationType::Instant :
+		{
+			OnActivate();
+			break;
+		}
+	case EYSAttackActivationType::TagBased :
+		{
+			UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OwnerActor.Get());
+			
+			if ( IsValid(ASC) )
+			{
+				ASC->GenericGameplayEventCallbacks.FindOrAdd(EventTag).AddUObject(this, &AYSAttackableBase::OnActivateTagCallback);
+			}
+		}
+	case EYSAttackActivationType::TimeBased :
+		{
+			if ( ActivateTime > 0.f )
+			{
+				GetWorldTimerManager().SetTimer(ActivateTimerHandle, this, &AYSAttackableBase::OnActivate, ActivateTime, false);	
+			}
+		}
 	}
-	else
+}
+
+void AYSAttackableBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	switch (ActivationType)
 	{
-		OnActivate();
+	case EYSAttackActivationType::TagBased :
+		{
+			UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OwnerActor.Get());
+			
+			if ( IsValid(ASC) )
+			{
+				ASC->GenericGameplayEventCallbacks.Remove(EventTag);
+			}
+		}
+	case EYSAttackActivationType::TimeBased :
+		{
+			GetWorldTimerManager().ClearTimer(ActivateTimerHandle);	
+		}
+	default : 
+		break;
 	}
+	Super::EndPlay(EndPlayReason);
+}
+
+void AYSAttackableBase::OnActivateTagCallback(const FGameplayEventData* GameplayEventData)
+{
+	OnActivate();
 }
