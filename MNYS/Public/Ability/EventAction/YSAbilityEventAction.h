@@ -132,10 +132,6 @@ class MNYS_API UYSAbilityEventAction_SpawnActor : public UYSAbilityEventAction
 
 public :
 	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
-
-private :
-	/** 위치·회전 정책을 독립적으로 계산해 최종 스폰 Transform을 반환합니다. */
-	FTransform CalculateTransform(UYSGameplayAbility* OwningAbility, const FYSSpawnActorConfig& SpawnConfig);
 };
 
 UCLASS(DisplayName = "컨텍스트 태그 체크")

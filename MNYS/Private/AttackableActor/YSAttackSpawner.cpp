@@ -3,9 +3,9 @@
 
 #include "AttackableActor/YSAttackSpawner.h"
 
-#include "NavigationSystem.h"
+#include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
 #include "Components/ArrowComponent.h"
-#include "General/YSDefine.h"
 #include "General/YSStruct.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
 
@@ -25,43 +25,16 @@ void AYSAttackSpawner::OnActivate_Implementation()
 void AYSAttackSpawner::SpawnActorByConfig(FYSSpawnActorConfig SpawnConfig)
 {
 	++SpawnCount;
-	
-	const FVector Position = UYSBlueprintFunctionLibrary::GetEventPosition(SpawnConfig.PositionPolicy, this, SpawnConfig.SpawnSocket, SpawnConfig.RelativeOffset);
-	const FRotator Rotation = UYSBlueprintFunctionLibrary::GetEventRotation(SpawnConfig.RotationPolicy, this, SpawnConfig.RotationSocket, SpawnConfig.RelativeRotator, TargetActor.Get());
-	
-	FTransform SpawnTransform = FTransform(Rotation, Position);
-	
-	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(this);
-	
-	if ( IsValid(NavSystem) && SpawnConfig.bStickGround )
-	{
-		FNavLocation NavLocation;
-		if ( NavSystem->ProjectPointToNavigation(Position, NavLocation, FVector(YS_PROJECTION_MAX_DISTANCE)))
-		{
-			SpawnTransform.SetLocation(NavLocation.Location);
-		}
-	}
-	
-	AActor* SpawnedActor = GetWorld()->SpawnActorDeferred<AActor>(SpawnConfig.ActorClass, SpawnTransform);
 
-	if (IsValid(SpawnedActor) == false)
-	{
-		return;
-	}
+	AActor* OwnerForPolicy = OwnerActor.IsValid() ? OwnerActor.Get() : this;
 
-	AYSAttackableBase* AttackableActor = Cast<AYSAttackableBase>(SpawnedActor);
-	if (IsValid(AttackableActor))
-	{
-		AttackableActor->AllocateInstigator(OwnerActor.Get());
-	}
+	UYSBlueprintFunctionLibrary::SpawnByConfig(
+		this,
+		SpawnConfig,
+		OwnerForPolicy,
+		TargetActor.Get(),
+		/*AttachParent*/ this);
 
-	if (SpawnConfig.bAttachToActor)
-	{
-		SpawnedActor->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
-	}
-
-	SpawnedActor->FinishSpawning(SpawnTransform);
-	
 	if ( SpawnCount >= SpawnActorConfigs.Num() )
 	{
 		Destroy();
@@ -84,6 +57,61 @@ void AYSAttackSpawner::TrySpawnActor()
 	}
 }
 
+void AYSAttackSpawner::ProcessActivationType()
+{
+	switch (ActivationType)
+	{
+	case EYSAttackActivationType::Instant :
+		{
+			OnActivate();
+			break;
+		}
+	case EYSAttackActivationType::TagBased :
+		{
+			UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OwnerActor.Get());
+			
+			if ( IsValid(ASC) )
+			{
+				ASC->GenericGameplayEventCallbacks.FindOrAdd(EventTag).AddUObject(this, &AYSAttackSpawner::OnActivateTagCallback);
+			}
+		}
+	case EYSAttackActivationType::TimeBased :
+		{
+			if ( ActivateTime > 0.f )
+			{
+				GetWorldTimerManager().SetTimer(ActivateTimerHandle, this, &AYSAttackableBase::OnActivate, ActivateTime, false);	
+			}
+		}
+	}
+}
+
+void AYSAttackSpawner::DeprocessActivationType()
+{
+	switch (ActivationType)
+	{
+	case EYSAttackActivationType::TagBased :
+		{
+			UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OwnerActor.Get());
+			
+			if ( IsValid(ASC) )
+			{
+				ASC->GenericGameplayEventCallbacks.Remove(EventTag);
+			}
+		}
+	case EYSAttackActivationType::TimeBased :
+		{
+			GetWorldTimerManager().ClearTimer(ActivateTimerHandle);	
+		}
+	default : 
+		break;
+	}
+}
+
+void AYSAttackSpawner::OnActivateTagCallback(const FGameplayEventData* GameplayEventData)
+{
+	OnActivate();
+}
+
 #if WITH_EDITOR
 void AYSAttackSpawner::PostEditChangeChainProperty(struct FPropertyChangedChainEvent& PropertyChangedEvent)
 {
@@ -104,6 +132,20 @@ void AYSAttackSpawner::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 	_RefreshSpawnPreview();
+}
+
+void AYSAttackSpawner::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	ProcessActivationType();
+}
+
+void AYSAttackSpawner::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	DeprocessActivationType();
+	
+	Super::EndPlay(EndPlayReason);
 }
 
 void AYSAttackSpawner::_RefreshSpawnPreview()

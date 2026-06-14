@@ -6,7 +6,6 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemInterface.h"
-#include "NavigationSystem.h"
 #include "Abilities/Tasks/AbilityTask_ApplyRootMotionMoveToForce.h"
 #include "Ability/YSGameplayAbility.h"
 #include "Ability/AbilityComponent/YSAbilityPlayback.h"
@@ -230,54 +229,18 @@ bool UYSAbilityEventAction_SpawnActor::Execute_Implementation(UYSGameplayAbility
 	if (IsValid(OwningActor) == false)
 		return false;
 
-	UWorld* World = OwningAbility->GetWorld();
-	if (IsValid(World) == false)
-		return false;
+	AActor* PlaybackTarget = nullptr;
+	if (const UYSAbilityPlaybackBase* Playback = OwningAbility->GetCurrentPlayback())
+	{
+		PlaybackTarget = Playback->GetCurrentPlaybackTarget();
+	}
 
 	for (const FYSSpawnActorConfig& SpawnActorConfig : SpawnActorPayload->SpawnActorConfigs)
 	{
-		FTransform SpawnTransform = CalculateTransform(OwningAbility, SpawnActorConfig);
-		
-		AActor* SpawnedActor      = World->SpawnActorDeferred<AActor>(SpawnActorConfig.ActorClass, SpawnTransform);
-		
-		if (IsValid(SpawnedActor) == false)
-			continue;
-
-		AYSAttackableBase* AttackableActor = Cast<AYSAttackableBase>(SpawnedActor);
-		if (IsValid(AttackableActor))
-		{
-			AttackableActor->AllocateInstigator(OwningActor);
-		}
-
-		if (SpawnActorConfig.bAttachToActor)
-		{
-			SpawnedActor->AttachToActor(OwningActor, FAttachmentTransformRules::KeepWorldTransform);
-		}
-
-		SpawnedActor->FinishSpawning(SpawnTransform);
+		UYSBlueprintFunctionLibrary::SpawnByConfig(OwningAbility, SpawnActorConfig,	OwningActor, PlaybackTarget,OwningActor);
 	}
 
 	return true;
-}
-
-FTransform UYSAbilityEventAction_SpawnActor::CalculateTransform(UYSGameplayAbility* OwningAbility,
-	const FYSSpawnActorConfig& SpawnConfig)
-{
-	FVector Position = UYSBlueprintFunctionLibrary::GetAbilityEventPosition(SpawnConfig.PositionPolicy, OwningAbility, SpawnConfig.SpawnSocket, SpawnConfig.RelativeOffset);
-	const FRotator  Rotation = UYSBlueprintFunctionLibrary::GetAbilityEventRotation(SpawnConfig.RotationPolicy, OwningAbility, SpawnConfig.RotationSocket, SpawnConfig.RelativeRotator);
-
-	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(OwningAbility);
-	
-	if ( IsValid(NavSystem) && SpawnConfig.bStickGround )
-	{
-		FNavLocation NavLocation;
-		if ( NavSystem->ProjectPointToNavigation(Position, NavLocation, FVector(YS_PROJECTION_MAX_DISTANCE)))
-		{
-			Position = NavLocation.Location;
-		}
-	}
-	
-	return FTransform(Rotation, Position);
 }
 
 bool UYSAbilityEventAction_CheckContextTag::Execute_Implementation(UYSGameplayAbility* OwningAbility,

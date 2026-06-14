@@ -18,14 +18,10 @@ public:
 	// Sets default values for this actor's properties
 	AYSAttackableBase();
 	virtual void AllocateInstigator(AActor* InInstigator);
-	virtual void BeginPlay() override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 protected : 
 	UFUNCTION(BlueprintNativeEvent)
 	void OnActivate();
 	virtual void OnActivate_Implementation() {};
-	
-	void OnActivateTagCallback(const FGameplayEventData* GameplayEventData);
 protected : 
 	UPROPERTY()
 	TWeakObjectPtr<AActor> OwnerActor;
@@ -39,15 +35,4 @@ protected :
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mesh")
 	TObjectPtr<UStaticMeshComponent> RootMesh;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ActivationType")
-	EYSAttackActivationType ActivationType = EYSAttackActivationType::Instant;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ActiveTime", meta = (DisplayName = "활성 시간", EditCondition = "ActivationType==EYSAttackActivationType::TimeBased", EditConditionHides))
-	float ActivateTime = 0.f;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ActiveCondition", meta = (DisplayName = "태그 이벤트", EditCondition = "ActivationType==EYSAttackActivationType::TagBased", EditConditionHides))
-	FGameplayTag EventTag;
-	
-	FTimerHandle ActivateTimerHandle;
 };

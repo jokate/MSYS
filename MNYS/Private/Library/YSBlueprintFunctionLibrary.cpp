@@ -6,14 +6,17 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "GenericTeamAgentInterface.h"
+#include "NavigationSystem.h"
 #include "NiagaraFunctionLibrary.h"
 #include "YSBattleActor.h"
 #include "YSDeveloperSettings.h"
 #include "Ability/YSGameplayAbility.h"
 #include "Ability/AbilityComponent/YSAbilityPlayback.h"
+#include "AttackableActor/YSAttackableBase.h"
 #include "Character/YSCharacterBase.h"
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
 #include "Character/Components/YSLockOnComponent.h"
+#include "General/YSDefine.h"
 #include "General/YSGameplayTag.h"
 
 float UYSBlueprintFunctionLibrary::GetFinalDamage(const UYSCharacterAttributeSetBase* Owner,
@@ -285,4 +288,61 @@ FVector UYSBlueprintFunctionLibrary::GetAbilityEventPosition(EYSPositionPolicy P
 	UYSGameplayAbility* OwningAbility, const FName& SocketName, const FVector& RelativeOffset)
 {
 	return GetEventPosition(PositionPolicy, OwningAbility->GetOwningActorFromActorInfo(), SocketName, RelativeOffset);
+}
+
+AActor* UYSBlueprintFunctionLibrary::SpawnByConfig(UObject* WorldContext, const FYSSpawnActorConfig& Config,
+	AActor* OwnerActor, AActor* TargetActor, AActor* AttachParent)
+{
+	if (IsValid(WorldContext) == false)
+		return nullptr;
+
+	UWorld* World = WorldContext->GetWorld();
+	if (IsValid(World) == false)
+		return nullptr;
+
+	if (Config.ActorClass == nullptr)
+		return nullptr;
+
+	const FTransform SpawnTransform = CalculateSpawnTransform(WorldContext, Config, OwnerActor, TargetActor);
+
+	AActor* SpawnedActor = World->SpawnActorDeferred<AActor>(Config.ActorClass, SpawnTransform);
+	if (IsValid(SpawnedActor) == false)
+		return nullptr;
+
+	if (AYSAttackableBase* AttackableActor = Cast<AYSAttackableBase>(SpawnedActor))
+	{
+		AttackableActor->AllocateInstigator(OwnerActor);
+	}
+
+	if (Config.bAttachToActor && IsValid(AttachParent))
+	{
+		SpawnedActor->AttachToActor(AttachParent, FAttachmentTransformRules::KeepWorldTransform);
+	}
+
+	SpawnedActor->FinishSpawning(SpawnTransform);
+	return SpawnedActor;
+}
+
+FTransform UYSBlueprintFunctionLibrary::CalculateSpawnTransform(UObject* WorldContext,
+	const FYSSpawnActorConfig& Config, AActor* OwnerActor, AActor* TargetActor)
+{
+	FVector Position = UYSBlueprintFunctionLibrary::GetEventPosition(
+	Config.PositionPolicy, OwnerActor, Config.SpawnSocket, Config.RelativeOffset);
+
+	const FRotator Rotation = UYSBlueprintFunctionLibrary::GetEventRotation(
+		Config.RotationPolicy, OwnerActor, Config.RotationSocket, Config.RelativeRotator, TargetActor);
+
+	if (Config.bStickGround)
+	{
+		if (UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(WorldContext))
+		{
+			FNavLocation NavLocation;
+			if (NavSystem->ProjectPointToNavigation(Position, NavLocation, FVector(YS_PROJECTION_MAX_DISTANCE)))
+			{
+				Position = NavLocation.Location;
+			}
+		}
+	}
+
+	return FTransform(Rotation, Position);
 }

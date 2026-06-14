@@ -9,6 +9,13 @@
 class UArrowComponent;
 struct FYSSpawnActorConfig;
 
+
+/*
+ * 스포너의 경우에는 전조 -> 스폰의 형태를 기반으로 스폰처리를 담당합니다.
+ * 만약에 즉시 스폰 처리를 하고자 한다면, 해당 기능을 사용하면 안됩니다.
+ * 특별한 스폰규칙이 있는경우에는 1 : N의 형태로 스폰이 가능하며 해당 부분에 대한 참고 부탁드립니다.
+ */
+
 UCLASS()
 class MNYS_API AYSAttackSpawner : public AYSAttackableBase
 {
@@ -23,17 +30,29 @@ public:
 #endif
 
 protected:
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	
 	virtual void OnActivate_Implementation() override;
-
 	void SpawnActorByConfig(FYSSpawnActorConfig SpawnConfig);
 	virtual void TrySpawnActor();
+	void ProcessActivationType();	
+	void DeprocessActivationType();
+	void OnActivateTagCallback(const FGameplayEventData* GameplayEventData);
 
 protected :
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ActivationType")
+	EYSAttackActivationType ActivationType = EYSAttackActivationType::Instant;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ActiveTime", meta = (DisplayName = "활성 시간", EditCondition = "ActivationType==EYSAttackActivationType::TimeBased", EditConditionHides))
+	float ActivateTime = 0.f;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ActiveCondition", meta = (DisplayName = "태그 이벤트", EditCondition = "ActivationType==EYSAttackActivationType::TagBased", EditConditionHides))
+	FGameplayTag EventTag;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | Spawn", meta = (DisplayName = "스폰 처리 관련"))
 	TArray<FYSSpawnActorConfig> SpawnActorConfigs;
-
-	FTimerHandle SpawnTimerHandle;
-
+	
 	int32 SpawnCount = 0;
 
 #if WITH_EDITORONLY_DATA
@@ -42,5 +61,7 @@ protected :
 
 	void _RefreshSpawnPreview();
 #endif
+	FTimerHandle ActivateTimerHandle;
+	
 };
 
