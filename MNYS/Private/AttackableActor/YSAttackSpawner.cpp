@@ -79,7 +79,7 @@ void AYSAttackSpawner::ProcessActivationType()
 		{
 			if ( ActivateTime > 0.f )
 			{
-				GetWorldTimerManager().SetTimer(ActivateTimerHandle, this, &AYSAttackableBase::OnActivate, ActivateTime, false);	
+				GetWorldTimerManager().SetTimer(ActivateTimerHandle, this, &AYSAttackSpawner::OnActivate, ActivateTime, false);	
 			}
 		}
 	}
