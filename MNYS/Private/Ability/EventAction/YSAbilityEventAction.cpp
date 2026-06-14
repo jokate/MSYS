@@ -6,6 +6,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemInterface.h"
+#include "NavigationSystem.h"
 #include "Abilities/Tasks/AbilityTask_ApplyRootMotionMoveToForce.h"
 #include "Ability/YSGameplayAbility.h"
 #include "Ability/AbilityComponent/YSAbilityPlayback.h"
@@ -15,6 +16,7 @@
 #include "Character/YSCharacterBase.h"
 #include "Character/YSPlayerController.h"
 #include "Character/Components/YSLockOnComponent.h"
+#include "General/YSDefine.h"
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
 
@@ -235,8 +237,9 @@ bool UYSAbilityEventAction_SpawnActor::Execute_Implementation(UYSGameplayAbility
 	for (const FYSSpawnActorConfig& SpawnActorConfig : SpawnActorPayload->SpawnActorConfigs)
 	{
 		FTransform SpawnTransform = CalculateTransform(OwningAbility, SpawnActorConfig);
+		
 		AActor* SpawnedActor      = World->SpawnActorDeferred<AActor>(SpawnActorConfig.ActorClass, SpawnTransform);
-
+		
 		if (IsValid(SpawnedActor) == false)
 			continue;
 
@@ -260,9 +263,20 @@ bool UYSAbilityEventAction_SpawnActor::Execute_Implementation(UYSGameplayAbility
 FTransform UYSAbilityEventAction_SpawnActor::CalculateTransform(UYSGameplayAbility* OwningAbility,
 	const FYSSpawnActorConfig& SpawnConfig)
 {
-	const FVector Position = UYSBlueprintFunctionLibrary::GetAbilityEventPosition(SpawnConfig.PositionPolicy, OwningAbility, SpawnConfig.SpawnSocket, SpawnConfig.RelativeOffset);
+	FVector Position = UYSBlueprintFunctionLibrary::GetAbilityEventPosition(SpawnConfig.PositionPolicy, OwningAbility, SpawnConfig.SpawnSocket, SpawnConfig.RelativeOffset);
 	const FRotator  Rotation = UYSBlueprintFunctionLibrary::GetAbilityEventRotation(SpawnConfig.RotationPolicy, OwningAbility, SpawnConfig.RotationSocket, SpawnConfig.RelativeRotator);
 
+	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(OwningAbility);
+	
+	if ( IsValid(NavSystem) && SpawnConfig.bStickGround )
+	{
+		FNavLocation NavLocation;
+		if ( NavSystem->ProjectPointToNavigation(Position, NavLocation, FVector(YS_PROJECTION_MAX_DISTANCE)))
+		{
+			Position = NavLocation.Location;
+		}
+	}
+	
 	return FTransform(Rotation, Position);
 }
 

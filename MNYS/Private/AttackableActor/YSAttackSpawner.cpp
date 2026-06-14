@@ -3,7 +3,9 @@
 
 #include "AttackableActor/YSAttackSpawner.h"
 
+#include "NavigationSystem.h"
 #include "Components/ArrowComponent.h"
+#include "General/YSDefine.h"
 #include "General/YSStruct.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
 
@@ -28,6 +30,18 @@ void AYSAttackSpawner::SpawnActorByConfig(FYSSpawnActorConfig SpawnConfig)
 	const FRotator Rotation = UYSBlueprintFunctionLibrary::GetEventRotation(SpawnConfig.RotationPolicy, this, SpawnConfig.RotationSocket, SpawnConfig.RelativeRotator, TargetActor.Get());
 	
 	FTransform SpawnTransform = FTransform(Rotation, Position);
+	
+	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(this);
+	
+	if ( IsValid(NavSystem) && SpawnConfig.bStickGround )
+	{
+		FNavLocation NavLocation;
+		if ( NavSystem->ProjectPointToNavigation(Position, NavLocation, FVector(YS_PROJECTION_MAX_DISTANCE)))
+		{
+			SpawnTransform.SetLocation(NavLocation.Location);
+		}
+	}
+	
 	AActor* SpawnedActor = GetWorld()->SpawnActorDeferred<AActor>(SpawnConfig.ActorClass, SpawnTransform);
 
 	if (IsValid(SpawnedActor) == false)

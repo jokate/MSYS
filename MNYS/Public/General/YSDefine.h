@@ -31,3 +31,5 @@ namespace YSTeamFunction
 		return ETeamAttitude::Hostile;
 	}
 }
+
+#define YS_PROJECTION_MAX_DISTANCE 10000.f

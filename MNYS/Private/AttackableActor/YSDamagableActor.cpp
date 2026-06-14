@@ -1,4 +1,5 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+﻿
+// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "AttackableActor/YSDamagableActor.h"
@@ -30,6 +31,20 @@ AYSDamagableActor::AYSDamagableActor()
 		Comp->SetHiddenInGame(true);           // 런타임엔 완전히 숨김
 		Comp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
+#endif
+}
+
+void AYSDamagableActor::BeginPlay()
+{
+	Super::BeginPlay();
+#if WITH_EDITORONLY_DATA
+	if ( IsValid(DebugBox) && IsValid(DebugSphere) && IsValid(DebugCapsule) )
+	{
+		DebugBox->DestroyComponent();
+		DebugSphere->DestroyComponent();
+		DebugCapsule->DestroyComponent();
+	}
+
 #endif
 }
 

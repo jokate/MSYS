@@ -225,4 +225,8 @@ public:
 	// 해당 기능은 사실상 스포너가 위임할 예정.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn", meta = (DisplayName = "스폰 딜레이 시간"))
 	float SpawnDelay = 0.0f;
+	
+	// 프로젝타일의 경우에는 공중에 스폰되어도 무관하나, 만약 땅에 부조건 붙어야 하는 경우에는 무조건 필요.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn", meta = (DisplayName = "땅에 붙어서 스폰해야 하는 경우"))
+	bool bStickGround = false;
 };
