@@ -127,6 +127,9 @@ void UYSTraceObject::_TraceByConfig()
 		break;
 	}
 
+	FVector Direction = (Start - Location).GetSafeNormal();
+	EffectRotation = Direction.ToOrientationRotator();
+	
 	PreviousLocation     = Location;
 	bHasPreviousLocation = true;
 	
@@ -272,7 +275,7 @@ void UYSTraceObject::_ProcessValidHit(const TArray<FHitResult>& InProcessedHits)
 		// 데미지 이벤트 전송
 		UYSBlueprintFunctionLibrary::SendHitEventToTarget(Instigator, HitActor, TraceConfig.DamageRow);
 		
-		UYSBlueprintFunctionLibrary::SpawnEffects(Instigator, TraceConfig.DamageRow, HitResult.ImpactPoint, HitResult.ImpactNormal.ToOrientationRotator());
+		UYSBlueprintFunctionLibrary::SpawnEffects(Instigator, TraceConfig.DamageRow, HitResult.ImpactPoint, EffectRotation);
 		
 		ValidHits.Add(HitResult);
 		

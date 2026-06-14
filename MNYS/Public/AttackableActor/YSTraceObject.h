@@ -76,6 +76,6 @@ private:
 	int32 RemainHitProcessCount;
 	
 	FVector PreviousLocation = FVector::ZeroVector;
-	
+	FRotator EffectRotation = FRotator::ZeroRotator;
 	bool bHasPreviousLocation = false;
 };
