@@ -36,6 +36,7 @@ public:
 	
 protected : 
 	void _Trace(float DeltaTime);
+	virtual void ProcessTelegraph() override;
 
 protected : 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Damagable")

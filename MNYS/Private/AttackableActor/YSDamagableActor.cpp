@@ -5,6 +5,7 @@
 #include "AttackableActor/YSDamagableActor.h"
 
 
+#include "AttackableActor/YSTelegraphActor.h"
 #include "AttackableActor/YSTraceObject.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
 
@@ -44,10 +45,7 @@ void AYSDamagableActor::BeginPlay()
 		DebugSphere->DestroyComponent();
 		DebugCapsule->DestroyComponent();
 	}
-
 #endif
-	
-	OnActivate();
 }
 
 
@@ -100,6 +98,22 @@ void AYSDamagableActor::_Trace(float DeltaTime)
 	if (IsValid(TraceObject))
 	{
 		TraceObject->Tick(DeltaTime);
+	}
+}
+
+void AYSDamagableActor::ProcessTelegraph()
+{
+	AYSTelegraphActor* Telegraph = AYSTelegraphActor::CreateTelegraph(
+		this,
+		TelegraphClass,
+		GetActorTransform(),
+		TraceConfig.Shape,
+		TraceConfig.Extent,
+		ActivateTime);
+	
+	if ( IsValid(Telegraph) )
+	{
+		Telegraph->SetOwner(this);
 	}
 }
 

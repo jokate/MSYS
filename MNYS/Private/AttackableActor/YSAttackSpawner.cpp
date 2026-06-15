@@ -57,60 +57,6 @@ void AYSAttackSpawner::TrySpawnActor()
 	}
 }
 
-void AYSAttackSpawner::ProcessActivationType()
-{
-	switch (ActivationType)
-	{
-	case EYSAttackActivationType::Instant :
-		{
-			OnActivate();
-			break;
-		}
-	case EYSAttackActivationType::TagBased :
-		{
-			UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OwnerActor.Get());
-			
-			if ( IsValid(ASC) )
-			{
-				ASC->GenericGameplayEventCallbacks.FindOrAdd(EventTag).AddUObject(this, &AYSAttackSpawner::OnActivateTagCallback);
-			}
-		}
-	case EYSAttackActivationType::TimeBased :
-		{
-			if ( ActivateTime > 0.f )
-			{
-				GetWorldTimerManager().SetTimer(ActivateTimerHandle, this, &AYSAttackSpawner::OnActivate, ActivateTime, false);	
-			}
-		}
-	}
-}
-
-void AYSAttackSpawner::DeprocessActivationType()
-{
-	switch (ActivationType)
-	{
-	case EYSAttackActivationType::TagBased :
-		{
-			UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OwnerActor.Get());
-			
-			if ( IsValid(ASC) )
-			{
-				ASC->GenericGameplayEventCallbacks.Remove(EventTag);
-			}
-		}
-	case EYSAttackActivationType::TimeBased :
-		{
-			GetWorldTimerManager().ClearTimer(ActivateTimerHandle);	
-		}
-	default : 
-		break;
-	}
-}
-
-void AYSAttackSpawner::OnActivateTagCallback(const FGameplayEventData* GameplayEventData)
-{
-	OnActivate();
-}
 
 #if WITH_EDITOR
 void AYSAttackSpawner::PostEditChangeChainProperty(struct FPropertyChangedChainEvent& PropertyChangedEvent)

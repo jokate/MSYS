@@ -11,6 +11,7 @@
  * 
  */
 
+class AYSTelegraphActor;
 class ULevelSequence;
 class UYSAbilityTriggerPayload;
 class UYSGameplayAbility;
@@ -97,6 +98,7 @@ public :
 	
 	UPROPERTY(EditAnywhere, Category="YS | Sweep | Debug", meta=(DisplayName="디버그 드로우"))
 	bool bDebugDraw = false;
+	
 	// 0이면 단일 프레임, TraceOnce 사용 시 1.0 이상 권장
 	UPROPERTY(EditAnywhere, Category="YS | Sweep | Debug", meta=(DisplayName="드로우 유지 시간(초)", EditCondition="bDebugDraw", EditConditionHides))
 	float DebugDrawDuration = 0.f;

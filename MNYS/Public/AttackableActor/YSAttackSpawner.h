@@ -36,20 +36,8 @@ protected:
 	virtual void OnActivate_Implementation() override;
 	void SpawnActorByConfig(FYSSpawnActorConfig SpawnConfig);
 	virtual void TrySpawnActor();
-	void ProcessActivationType();	
-	void DeprocessActivationType();
-	void OnActivateTagCallback(const FGameplayEventData* GameplayEventData);
 
 protected :
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ActivationType")
-	EYSAttackActivationType ActivationType = EYSAttackActivationType::Instant;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ActiveTime", meta = (DisplayName = "활성 시간", EditCondition = "ActivationType==EYSAttackActivationType::TimeBased", EditConditionHides))
-	float ActivateTime = 0.f;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ActiveCondition", meta = (DisplayName = "태그 이벤트", EditCondition = "ActivationType==EYSAttackActivationType::TagBased", EditConditionHides))
-	FGameplayTag EventTag;
-	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | Spawn", meta = (DisplayName = "스폰 처리 관련"))
 	TArray<FYSSpawnActorConfig> SpawnActorConfigs;
 	
@@ -61,7 +49,7 @@ protected :
 
 	void _RefreshSpawnPreview();
 #endif
-	FTimerHandle ActivateTimerHandle;
+	
 	
 };
 

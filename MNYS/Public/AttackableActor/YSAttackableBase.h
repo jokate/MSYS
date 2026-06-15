@@ -9,6 +9,8 @@
 #include "General/YSEnum.h"
 #include "YSAttackableBase.generated.h"
 
+class AYSTelegraphActor;
+
 UCLASS()
 class MNYS_API AYSAttackableBase : public AActor
 {
@@ -19,10 +21,30 @@ public:
 	AYSAttackableBase();
 	virtual void AllocateInstigator(AActor* InInstigator);
 protected : 
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;;
+	
 	UFUNCTION(BlueprintNativeEvent)
 	void OnActivate();
 	virtual void OnActivate_Implementation() {};
+	
+	void ProcessActivationType();	
+	void DeprocessActivationType();
+	
+	void OnActivateTagCallback(const FGameplayEventData* GameplayEventData);
+	virtual void ProcessTelegraph() {}
+	
 protected : 
+	//2026.06.15 다시 돌리는 이유는 스포너에서 처리하는 것보다 차라리 여기서 처리하는게 맞다고 생각이 드는 중.. (범위나 다양한 정보를 얻을 수 있기 때문임)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ActivationType")
+	EYSAttackActivationType ActivationType = EYSAttackActivationType::Instant;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ActiveTime", meta = (DisplayName = "활성 시간", EditCondition = "ActivationType==EYSAttackActivationType::TimeBased", EditConditionHides))
+	float ActivateTime = 0.f;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ActiveCondition", meta = (DisplayName = "태그 이벤트", EditCondition = "ActivationType==EYSAttackActivationType::TagBased", EditConditionHides))
+	FGameplayTag EventTag;
+	
 	UPROPERTY()
 	TWeakObjectPtr<AActor> OwnerActor;
 	
@@ -35,4 +57,10 @@ protected :
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mesh")
 	TObjectPtr<UStaticMeshComponent> RootMesh;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Telegraph")
+	TSubclassOf<AYSTelegraphActor> TelegraphClass;
+	
+private : 
+	FTimerHandle ActivateTimerHandle;
 };
