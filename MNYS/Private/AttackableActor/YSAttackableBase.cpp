@@ -40,7 +40,10 @@ void AYSAttackableBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void AYSAttackableBase::OnActivate_Implementation()
 {
-	GetWorldTimerManager().SetTimer(DestroyTimerHandle, this, &AYSAttackableBase::DestroyActor, DestroyDelay, false);
+	if ( DestroyDelay > 0.f )
+	{
+		GetWorldTimerManager().SetTimer(DestroyTimerHandle, this, &AYSAttackableBase::DestroyActor, DestroyDelay, false);	
+	}
 }
 
 void AYSAttackableBase::ProcessActivationType()

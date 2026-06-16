@@ -19,6 +19,7 @@ AYSAttackSpawner::AYSAttackSpawner()
 
 void AYSAttackSpawner::OnActivate_Implementation()
 {
+	Super::OnActivate_Implementation();
 	TrySpawnActor();
 }
 

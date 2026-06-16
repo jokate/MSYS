@@ -72,6 +72,7 @@ void AYSDamagableActor::_OnHitCountDepleted()
 
 void AYSDamagableActor::OnActivate_Implementation()
 {
+	Super::OnActivate_Implementation();
 	TraceObject = UYSTraceObject::Create(this, this, OwnerActor.Get(), TraceConfig);
 	TraceObject->OnHitCountDepleted.AddDynamic(this, &AYSDamagableActor::_OnHitCountDepleted);
 	
