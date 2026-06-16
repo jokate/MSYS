@@ -38,6 +38,11 @@ void AYSAttackableBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
+void AYSAttackableBase::OnActivate_Implementation()
+{
+	GetWorldTimerManager().SetTimer(DestroyTimerHandle, this, &AYSAttackableBase::DestroyActor, DestroyDelay, false);
+}
+
 void AYSAttackableBase::ProcessActivationType()
 {
 	switch (ActivationType)
@@ -95,4 +100,9 @@ void AYSAttackableBase::OnActivateTagCallback(const FGameplayEventData* Gameplay
 	//2026.06.15 일단은 태그 이벤트가 들어왔을 때, 공격이 활성화 되는 형태로 만들어 놓긴 했는데,
 	//추후에 태그 이벤트가 들어왔을 때마다 공격이 활성화 되는 형태로 만들 수도 있을 것 같긴 함 ( 그럴 경우에는 ActivateTimeBased 같은 형태로 만들어야 할 듯 )
 	OnActivate();
+}
+
+void AYSAttackableBase::DestroyActor()
+{
+	Destroy();
 }

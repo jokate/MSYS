@@ -26,23 +26,26 @@ protected :
 	
 	UFUNCTION(BlueprintNativeEvent)
 	void OnActivate();
-	virtual void OnActivate_Implementation() {};
+	virtual void OnActivate_Implementation();
 	
 	void ProcessActivationType();	
 	void DeprocessActivationType();
 	
 	void OnActivateTagCallback(const FGameplayEventData* GameplayEventData);
 	virtual void ProcessTelegraph() {}
-	
+	void DestroyActor();
 protected : 
 	//2026.06.15 다시 돌리는 이유는 스포너에서 처리하는 것보다 차라리 여기서 처리하는게 맞다고 생각이 드는 중.. (범위나 다양한 정보를 얻을 수 있기 때문임)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ActivationType")
 	EYSAttackActivationType ActivationType = EYSAttackActivationType::Instant;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ActiveTime", meta = (DisplayName = "활성 시간", EditCondition = "ActivationType==EYSAttackActivationType::TimeBased", EditConditionHides))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | ActiveTime", meta = (DisplayName = "활성 시간", EditCondition = "ActivationType==EYSAttackActivationType::TimeBased", EditConditionHides))
 	float ActivateTime = 0.f;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ActiveCondition", meta = (DisplayName = "태그 이벤트", EditCondition = "ActivationType==EYSAttackActivationType::TagBased", EditConditionHides))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | ActiveTime")
+	float DestroyDelay = 0.f;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | ActiveCondition", meta = (DisplayName = "태그 이벤트", EditCondition = "ActivationType==EYSAttackActivationType::TagBased", EditConditionHides))
 	FGameplayTag EventTag;
 	
 	UPROPERTY()
@@ -63,4 +66,5 @@ protected :
 	
 private : 
 	FTimerHandle ActivateTimerHandle;
+	FTimerHandle DestroyTimerHandle;
 };
