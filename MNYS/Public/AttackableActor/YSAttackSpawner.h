@@ -49,7 +49,5 @@ protected :
 
 	void _RefreshSpawnPreview();
 #endif
-	
-	
 };
 

@@ -8,6 +8,7 @@
 #include "Camera/CameraComponent.h"
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
 #include "Character/Components/YSCharacterMovementComponent.h"
+#include "Framework/YSGameModeBase.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "General/YSDefine.h"
 #include "General/YSGameplayTag.h"
@@ -67,6 +68,25 @@ void AYSCharacterPlayer::BeginPlay()
 
 	// 팀설정.
 	SetGenericTeamId(YS_PLAYER);
+	
+	AYSGameModeBase* GM = GetWorld()->GetAuthGameMode<AYSGameModeBase>();
+	
+	if ( IsValid(GM) )
+	{
+		GM->RegisterTimeDilationActor(this);
+	}
+}
+
+void AYSCharacterPlayer::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	AYSGameModeBase* GM = GetWorld()->GetAuthGameMode<AYSGameModeBase>();
+	
+	if ( IsValid(GM) )
+	{
+		GM->UnregisterTimeDilationActor(this);
+	}
+	
+	Super::EndPlay(EndPlayReason);
 }
 
 // Called every frame

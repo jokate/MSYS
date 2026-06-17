@@ -9,6 +9,7 @@
 #include "LevelSequencePlayer.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Ability/GameplayCueActor/YSGameplayCueNotifyBase.h"
+#include "Framework/YSGameModeBase.h"
 
 void UYSGameplayCueAction_SequencePlay::OnActive(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget,
                                                  const FGameplayCueParameters& Parameters)
@@ -73,12 +74,14 @@ void UYSGameplayCueAction_TimeDilation::OnActive(AYSGameplayCueNotifyBase* Gamep
 	if ( IsValid(World) == false )
 		return;
 	
-	AWorldSettings* WorldSettings = World->GetWorldSettings();
+	AYSGameModeBase* GM = World->GetAuthGameMode<AYSGameModeBase>();
 	
-	if ( IsValid(WorldSettings) == false )
+	if ( IsValid(GM) == false )
+	{
 		return;
+	}
 	
-	WorldSettings->SetTimeDilation(TimeDilation);
+	GM->RegisterTimeDilation(this, TimeDilation);
 }
 
 void UYSGameplayCueAction_TimeDilation::OnRemove(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget,
@@ -86,15 +89,17 @@ void UYSGameplayCueAction_TimeDilation::OnRemove(AYSGameplayCueNotifyBase* Gamep
 {
 	UWorld* World = GetWorld();
 	
-	if ( IsValid(World) )
-	{
-		AWorldSettings* WorldSettings = World->GetWorldSettings();
+	if ( IsValid(World) == false )
+		return;
 	
-		if ( IsValid(WorldSettings) )
-		{
-			WorldSettings->SetTimeDilation(1.f);
-		}
+	AYSGameModeBase* GM = World->GetAuthGameMode<AYSGameModeBase>();
+	
+	if ( IsValid(GM) == false )
+	{
+		return;
 	}
+	
+	GM->RemoveTimeDilation(this);
 	
 	Super::OnRemove(GameplayCueNotify, MyTarget, Parameters);
 	
