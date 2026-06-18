@@ -29,6 +29,10 @@ public:
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 
 	virtual bool HandlePendingLaunch() override;
+	void SetGravityScale(float InGravityScale)
+	{
+		GravityScale = InGravityScale;
+	}
 	
 	void SetMovementBlocked(bool bBlocked) 
 	{ 

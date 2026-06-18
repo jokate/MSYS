@@ -8,6 +8,7 @@
 #include "UObject/Object.h"
 #include "YSAbilityEventAction.generated.h"
 
+class UYSAbilityTriggerPayload_Velocity;
 class UGameplayEffect;
 struct FYSComboTransition;
 struct FGameplayEventData;
@@ -122,7 +123,16 @@ class MNYS_API UYSAbilityEventAction_ApplyVelocity : public UYSAbilityEventActio
 	GENERATED_BODY()
 
 public :
+	UFUNCTION()
+	void OnTimedOut();
 	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
+	
+protected :
+	UPROPERTY()
+	const UYSAbilityTriggerPayload_Velocity* VelocityData = nullptr;
+	
+	UPROPERTY()
+	AActor* OwningActor = nullptr;
 };
 
 UCLASS(DisplayName = "액터 스폰")

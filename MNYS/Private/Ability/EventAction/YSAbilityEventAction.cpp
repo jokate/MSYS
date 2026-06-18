@@ -14,6 +14,7 @@
 #include "AttackableActor/YSDamagableActor.h"
 #include "Character/YSCharacterBase.h"
 #include "Character/YSPlayerController.h"
+#include "Character/Components/YSCharacterMovementComponent.h"
 #include "Character/Components/YSLockOnComponent.h"
 #include "General/YSDefine.h"
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
@@ -173,27 +174,41 @@ bool UYSAbilityEventAction_GameplayEffect::Execute_GameplayEffectFromInstigator(
 	return true;
 }
 
-bool UYSAbilityEventAction_ApplyVelocity::Execute_Implementation(UYSGameplayAbility* OwningAbility,
-	const FGameplayEventData& EventData)
+void UYSAbilityEventAction_ApplyVelocity::OnTimedOut()
 {
-	const UYSAbilityTriggerPayload_Velocity* VelocityData = UYSAbilityTriggerPayload::GetPayload<UYSAbilityTriggerPayload_Velocity>(&EventData);;
+	if (VelocityData->bSetNewMovementMode)
+	{
+		UYSCharacterMovementComponent* CharacterMovement = UYSCharacterMovementComponent::Get(OwningActor);
+		CharacterMovement->SetGravityScale(VelocityData->MoveMode == MOVE_Flying ? 0.f : 1.0f);
+	}
+}
+
+bool UYSAbilityEventAction_ApplyVelocity::Execute_Implementation(UYSGameplayAbility* OwningAbility,
+                                                                 const FGameplayEventData& EventData)
+{
+	VelocityData = UYSAbilityTriggerPayload::GetPayload<UYSAbilityTriggerPayload_Velocity>(&EventData);;
 
 	if ( IsValid(VelocityData) == false)
 		return false;
 	
-	AActor* OwnerActor = OwningAbility->GetOwningActorFromActorInfo();
+	OwningActor = OwningAbility->GetOwningActorFromActorInfo();
 	
-	FRotator DirectionRotation = UYSBlueprintFunctionLibrary::GetAbilityEventRotation(VelocityData->VelocityDirectionPolicy, OwningAbility, NAME_None, FRotator::ZeroRotator);
-	
+	FRotator DirectionRotation = UYSBlueprintFunctionLibrary::GetAbilityEventRotation(VelocityData->VelocityDirectionPolicy, OwningAbility, NAME_None, VelocityData->RelativeRotator);	
 	FVector DirectionVector = DirectionRotation.Vector();
-	const FVector TargetLocation = OwnerActor->GetActorLocation() 
+	const FVector TargetLocation = OwningActor->GetActorLocation() 
 		+ DirectionVector
 		* ( VelocityData->Velocity * VelocityData->Duration );
 	
 	// 뒤로 쭉 밀려서 들어가야 하는 경우라면?
 	if ( VelocityData->bRotateActorToDirection )
 	{
-		OwnerActor->SetActorRotation(DirectionVector.Rotation());	
+		OwningActor->SetActorRotation(DirectionVector.Rotation());	
+	}
+	
+	if (VelocityData->bSetNewMovementMode)
+	{
+		UYSCharacterMovementComponent* CharacterMovement = UYSCharacterMovementComponent::Get(OwningActor);
+		CharacterMovement->SetGravityScale(0.0f);
 	}
 	
 	UAbilityTask_ApplyRootMotionMoveToForce* ApplyVelocityTask = 
@@ -212,7 +227,9 @@ bool UYSAbilityEventAction_ApplyVelocity::Execute_Implementation(UYSGameplayAbil
 		return false;
 	}
 	
+	ApplyVelocityTask->OnTimedOutAndDestinationReached.AddDynamic(this, &UYSAbilityEventAction_ApplyVelocity::OnTimedOut);
 	ApplyVelocityTask->ReadyForActivation();
+	
 	return true;
 }
 
