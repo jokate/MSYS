@@ -5,6 +5,7 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "AttackableActor/YSTelegraphActor.h"
 
 
 // Sets default values
@@ -40,6 +41,11 @@ void AYSAttackableBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void AYSAttackableBase::OnActivate_Implementation()
 {
+	if ( IsValid(TelegraphActor) ) 
+	{
+		TelegraphActor->Destroy();
+	}
+	
 	if ( DestroyDelay > 0.f )
 	{
 		GetWorldTimerManager().SetTimer(DestroyTimerHandle, this, &AYSAttackableBase::DestroyActor, DestroyDelay, false);	
@@ -63,6 +69,7 @@ void AYSAttackableBase::ProcessActivationType()
 			{
 				ASC->GenericGameplayEventCallbacks.FindOrAdd(EventTag).AddUObject(this, &AYSAttackableBase::OnActivateTagCallback);
 			}
+			break;
 		}
 	case EYSAttackActivationType::TimeBased :
 		{
@@ -70,6 +77,7 @@ void AYSAttackableBase::ProcessActivationType()
 			{
 				GetWorldTimerManager().SetTimer(ActivateTimerHandle, this, &AYSAttackableBase::OnActivate, ActivateTime, false);	
 			}
+			break;
 		}
 	}
 	

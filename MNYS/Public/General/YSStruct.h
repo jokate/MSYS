@@ -206,7 +206,7 @@ public:
 
 	// PositionPolicy == UseRelativeOffset 일 때 사용
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn | Position",
-		meta = (DisplayName = "상대 오프셋",	EditCondition = "PositionPolicy == EYSPositionPolicy::UseRelativeOffset", EditConditionHides))
+		meta = (DisplayName = "상대 오프셋",	EditCondition = "PositionPolicy == EYSPositionPolicy::UseRelativeOffset || PositionPolicy == EYSPositionPolicy::RandomizedPosition", EditConditionHides))
 	FVector RelativeOffset = FVector::ZeroVector;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn | Rotation", meta = (DisplayName = "회전 기준 정책"))

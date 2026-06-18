@@ -278,6 +278,19 @@ FVector UYSBlueprintFunctionLibrary::GetEventPosition(EYSPositionPolicy Position
 	case EYSPositionPolicy::UseRelativeOffset:
 		return OwnerActor->GetActorTransform().TransformPosition(RelativeOffset);
 
+	case EYSPositionPolicy::RandomizedPosition :
+		{
+			UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(OwnerActor);
+			if ( IsValid(NavSystem) == false )
+			{
+				return FVector::ZeroVector;
+			}
+			
+			FNavLocation RetLocation;
+			NavSystem->GetRandomPointInNavigableRadius(OwnerActor->GetActorLocation(), RelativeOffset.Size(), RetLocation);
+			return RetLocation;
+		}
+		
 	case EYSPositionPolicy::UseActorLocation:
 	default:
 		return OwnerActor->GetActorLocation();

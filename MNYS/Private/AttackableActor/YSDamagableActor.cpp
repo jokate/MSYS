@@ -104,17 +104,17 @@ void AYSDamagableActor::_Trace(float DeltaTime)
 
 void AYSDamagableActor::ProcessTelegraph()
 {
-	AYSTelegraphActor* Telegraph = AYSTelegraphActor::CreateTelegraph(
+	TelegraphActor = AYSTelegraphActor::CreateTelegraph(
 		this,
 		TelegraphClass,
 		GetActorTransform(),
 		TraceConfig.Shape,
 		TraceConfig.Extent,
-		ActivateTime);
+		ActivationType == EYSAttackActivationType::TimeBased ? ActivateTime : 0.f);
 	
-	if ( IsValid(Telegraph) )
+	if ( IsValid(TelegraphActor) )
 	{
-		Telegraph->SetOwner(this);
+		TelegraphActor->SetOwner(this);
 	}
 }
 

@@ -64,6 +64,8 @@ protected :
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Telegraph")
 	TSubclassOf<AYSTelegraphActor> TelegraphClass;
 	
+	UPROPERTY()
+	TObjectPtr<AYSTelegraphActor> TelegraphActor;	
 private : 
 	FTimerHandle ActivateTimerHandle;
 	FTimerHandle DestroyTimerHandle;

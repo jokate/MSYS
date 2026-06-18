@@ -33,4 +33,5 @@ namespace YSTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_OnDead);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_DeathComplete);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_JustAvoid);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Attack_Activate);
 };
