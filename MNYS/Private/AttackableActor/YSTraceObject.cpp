@@ -252,7 +252,7 @@ void UYSTraceObject::_ProcessValidHit(const TArray<FHitResult>& InProcessedHits)
 		if (!IsValid(TargetAttribute))
 			continue;
 
-		// JustAvoid 윈도우 처리
+		// JustAvoid 윈도우 처리 -> 여기서는 그냥 Effect를 부여하는게 좋을까?
 		if (TargetASC->HasMatchingGameplayTag(YSTags::JustAvoid_Window))
 		{
 			FGameplayEventData EventData;

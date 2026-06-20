@@ -19,8 +19,12 @@ class MNYS_API UYSDeveloperSettings : public UDeveloperSettings
 public :
 	static const FYSCommandSequence* GetCommandSequence(const FName& RowName);
 	static const FYSDamageInfo* GetDamageInfo(const FName& RowName);
-	
+
 	static TArray<const FYSCommandSequence*> GetAllCommandSequences();
+
+	// 에디터 전용 : 데미지 레지스트리에 등록된 모든 Row 이름을 반환합니다. (FName 프로퍼티의 meta=GetOptions 드롭다운 소스)
+	UFUNCTION()
+	static TArray<FName> GetDamageRowOptions();
 		
 private : 
 	template <class T>

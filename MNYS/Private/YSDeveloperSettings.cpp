@@ -3,6 +3,7 @@
 
 #include "YSDeveloperSettings.h"
 
+#include "DataRegistry.h"
 #include "DataRegistryId.h"
 #include "DataRegistrySubsystem.h"
 
@@ -75,4 +76,39 @@ TArray<const FYSCommandSequence*> UYSDeveloperSettings::GetAllCommandSequences()
 	}
 	
 	return GetAllRegistryData<FYSCommandSequence>(Settings->CommandRegistryName);
+}
+
+TArray<FName> UYSDeveloperSettings::GetDamageRowOptions()
+{
+	TArray<FName> RowNames;
+
+	const UYSDeveloperSettings* Settings = GetDefault<UYSDeveloperSettings>();
+	if (IsValid(Settings) == false || Settings->DamageRegistryName.IsNone())
+	{
+		return RowNames;
+	}
+
+	UDataRegistrySubsystem* DataRegistrySubsystem = UDataRegistrySubsystem::Get();
+	if (IsValid(DataRegistrySubsystem) == false)
+	{
+		return RowNames;
+	}
+
+	UDataRegistry* Registry = DataRegistrySubsystem->GetRegistryForType(Settings->DamageRegistryName);
+	if (IsValid(Registry) == false)
+	{
+		return RowNames;
+	}
+
+	// 아이템 캐싱(Acquire) 없이 소스(DataTable 등)에서 가능한 ID를 그대로 열거 → 에디터에서도 안전.
+	TArray<FDataRegistryId> RegistryIds;
+	Registry->GetPossibleRegistryIds(RegistryIds);
+
+	RowNames.Reserve(RegistryIds.Num());
+	for (const FDataRegistryId& RegistryId : RegistryIds)
+	{
+		RowNames.Add(RegistryId.ItemName);
+	}
+
+	return RowNames;
 }

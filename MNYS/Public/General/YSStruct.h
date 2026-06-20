@@ -64,7 +64,7 @@ struct FYSTraceConfig
 	GENERATED_BODY()
 
 public :
-	UPROPERTY(EditAnywhere, Category="YS | Sweep", meta=(DisplayName="데미지 정보"))
+	UPROPERTY(EditAnywhere, Category="YS | Sweep", meta=(DisplayName="데미지 정보", GetOptions="MNYS.YSDeveloperSettings.GetDamageRowOptions"))
 	FName DamageRow;
 	
 	UPROPERTY(EditAnywhere, Category="YS | Sweep", meta=(DisplayName="트레이스 형태"))
