@@ -136,6 +136,7 @@ bool UYSAbilityEventAction_GameplayEffect::Execute_GameplayEffectToSelf(UYSGamep
 	
 	FGameplayEffectContextHandle EffectContextHandle;
 	EffectContextHandle.SetAbility(OwningAbility);
+	EffectContextHandle.AddInstigator(OwningAbility->GetAvatarActorFromActorInfo(), OwningAbility->GetOwningActorFromActorInfo());
 	FGameplayEffectSpec Spec(GameplayEffect.GetDefaultObject(), EffectContextHandle);	
 	
 	if ( bRemoveWhenFinished )
@@ -164,6 +165,7 @@ bool UYSAbilityEventAction_GameplayEffect::Execute_GameplayEffectFromInstigator(
 	
 	FGameplayEffectContextHandle EffectContextHandle;
 	EffectContextHandle.SetAbility(OwningAbility);
+	EffectContextHandle.AddInstigator(OwningAbility->GetAvatarActorFromActorInfo(), OwningAbility->GetOwningActorFromActorInfo());
 	FGameplayEffectSpec Spec(GameplayEffect.GetDefaultObject(), EffectContextHandle);	
 	
 	if (bRemoveWhenFinished)
