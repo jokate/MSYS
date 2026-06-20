@@ -29,6 +29,10 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void ForceSetLockOn(AActor* TargetToLockOn);
+	virtual void ReleaseLockOn()
+	{
+		CurrentLockedTarget = nullptr;
+	}
 	
 	virtual AActor* GetCurrentTarget() { return CurrentLockedTarget.Get(); }
 protected :
@@ -36,7 +40,9 @@ protected :
 	void ProcessLockOnFunction(float DeltaTime);
 	virtual void FindTarget();
 	void ChaseCamera(float DeltaTime);
-	bool IsLockOnableTarget(AActor* Target);      
+	bool IsLockOnableTarget(AActor* Target);  
+	
+	// 락온 타겟에 대해서는 차후 지정하도록 합시다.
 	void TryReleaseLockOn();
 	
 public : 

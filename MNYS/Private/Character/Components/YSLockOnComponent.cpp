@@ -68,16 +68,14 @@ void UYSLockOnComponent::ProcessLockOnFunction(float DeltaTime)
 	if ( OwnerPlayer.IsValid() == false )
 		return;
 	
-	// 락온 잡혀있으면 락온 X
-	TryReleaseLockOn();
-	
 	if ( CurrentLockedTarget.IsValid() )
 	{
 		ChaseCamera(DeltaTime);
 		return;
 	}
 	
-	FindTarget();
+	// 타겟 체이싱 하지말자.
+	//FindTarget();
 }
 
 void UYSLockOnComponent::FindTarget()
