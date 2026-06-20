@@ -8,6 +8,7 @@
 #include "DrawDebugHelpers.h"
 #include "GenericTeamAgentInterface.h"
 #include "YSBattleActor.h"
+#include "YSDeveloperSettings.h"
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
 #include "Character/Components/YSLockOnComponent.h"
 #include "General/YSGameplayTag.h"
@@ -228,7 +229,12 @@ void UYSTraceObject::_ProcessValidHit(const TArray<FHitResult>& InProcessedHits)
 	IGenericTeamAgentInterface* TeamAgent = Cast<IGenericTeamAgentInterface>(Instigator);
 	if (TeamAgent == nullptr)
 		return;
-
+	
+	const UYSDeveloperSettings* DevSetting = GetDefault<UYSDeveloperSettings>();
+	
+	if ( IsValid(DevSetting) == false )
+		return;
+	
 	TArray<FHitResult> ValidHits;
 
 	for (const FHitResult& HitResult : InProcessedHits)
@@ -253,18 +259,15 @@ void UYSTraceObject::_ProcessValidHit(const TArray<FHitResult>& InProcessedHits)
 			continue;
 
 		// JustAvoid 윈도우 처리 -> 여기서는 그냥 Effect를 부여하는게 좋을까?
+		// 버프를 부여한다. 이 시점에 버프의 경우에는 이펙트 출력을 담당하기로 합시당
 		if (TargetASC->HasMatchingGameplayTag(YSTags::JustAvoid_Window))
 		{
-			FGameplayEventData EventData;
-			EventData.Instigator = Instigator;
-			EventData.ContextHandle.AddHitResult(HitResult);
-
-			if (UYSLockOnComponent* LockOn = UYSLockOnComponent::Get(HitActor))
-			{
-				LockOn->ForceSetLockOn(Instigator);
-			}
-
-			TargetASC->HandleGameplayEvent(YSTags::Event_JustAvoid, &EventData);
+			FGameplayEffectContextHandle EffectContextHandle = OwnerASC->MakeEffectContext();
+			EffectContextHandle.AddInstigator(Instigator, Instigator);
+			FGameplayEffectSpec Spec(DevSetting->JustAvoidGameplayEffect.GetDefaultObject(), EffectContextHandle);	
+			Spec.AddDynamicAssetTag(YSTags::Event_JustAvoid);
+			
+			OwnerASC->ApplyGameplayEffectSpecToTarget(Spec, TargetASC);
 			continue;
 		}
 

@@ -127,3 +127,16 @@ protected :
 	virtual void ProcessContextBeforePlay() override;
 };
 
+
+UCLASS(DisplayName = "플레이 백 시작 시, 버프 해제 / 버프 추가")
+class MNYS_API UYSAbilityPlayback_ReleaseBuff : public UYSAbilityPlaybackBase
+{
+	GENERATED_BODY()
+	
+public : 
+	UPROPERTY(EditAnywhere, Category = "YS | ReleaseBuff")
+	FGameplayTagContainer BuffTags;
+	
+protected :  
+	virtual void ProcessContextBeforePlay() override;
+};
