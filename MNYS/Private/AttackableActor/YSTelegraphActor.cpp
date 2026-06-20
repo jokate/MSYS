@@ -60,7 +60,7 @@ void AYSTelegraphActor::BeginPlay()
 	
 	if ( ShapeInfo == EYSTraceShape::Box )
 	{
-		FloorDecal->DecalSize = FloorDecal->GetComponentRotation().RotateVector(Extent);
+		FloorDecal->DecalSize = FloorDecal->GetRelativeRotation().RotateVector(Extent);
 	}
 	else
 	{
