@@ -238,6 +238,14 @@ void UYSAbilityPlayback_FirstHitTarget::ProcessContextBeforePlay()
 	CapturedContext.Target = CapturedContext.HitResults[0].GetActor();;
 }
 
+void UYSAbilityPlayback_ReleaseBuff::ProcessContextBeforePlay()
+{
+	if (UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(CapturedContext.Instigator))
+	{
+		ASC->RemoveActiveEffectsWithTags(BuffTags);
+	}
+}
+
 bool UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackEvent Event, bool bIsEvaluate)
 {
 	FYSPlaybackContext NextContext = CapturedContext;

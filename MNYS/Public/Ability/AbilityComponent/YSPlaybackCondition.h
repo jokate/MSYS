@@ -35,3 +35,15 @@ struct FYSPlaybackCondition_ContextTag : public FYSPlaybackCondition
 		return Context.ContextTags.HasTagExact(RequiredTag);
 	}
 };
+
+USTRUCT(DisplayName = "버프 존재 여부")
+struct FYSPlaybackCondition_HasGameplayEffect : public FYSPlaybackCondition
+{
+	GENERATED_BODY()
+	
+public : 
+	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = "체크할 GE 클래스"))
+	TSubclassOf<class UGameplayEffect> GameplayEffect;
+	
+	virtual bool Evaluate(const FYSPlaybackContext& Context) const override;
+};
