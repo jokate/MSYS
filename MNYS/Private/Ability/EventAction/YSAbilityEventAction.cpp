@@ -227,6 +227,7 @@ bool UYSAbilityEventAction_ApplyVelocity::Execute_Implementation(UYSGameplayAbil
 		return false;
 	}
 	
+	ApplyVelocityTask->OnTimedOut.AddDynamic(this, &UYSAbilityEventAction_ApplyVelocity::OnTimedOut);
 	ApplyVelocityTask->OnTimedOutAndDestinationReached.AddDynamic(this, &UYSAbilityEventAction_ApplyVelocity::OnTimedOut);
 	ApplyVelocityTask->ReadyForActivation();
 	
