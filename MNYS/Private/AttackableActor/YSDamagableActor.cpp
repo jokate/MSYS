@@ -136,6 +136,10 @@ void AYSDamagableActor::_RefreshDebugVisualization()
 	DebugBox->SetBoxExtent(TraceConfig.Extent);
 	DebugSphere->SetSphereRadius(TraceConfig.Extent.X);
 	DebugCapsule->SetCapsuleSize(TraceConfig.Extent.X, TraceConfig.Extent.Y);
+	
+	DebugBox->SetRelativeLocation(TraceConfig.RelativeLocation);
+	DebugSphere->SetRelativeLocation(TraceConfig.RelativeLocation);
+	DebugCapsule->SetRelativeLocation(TraceConfig.RelativeLocation);
 }
 
 #endif

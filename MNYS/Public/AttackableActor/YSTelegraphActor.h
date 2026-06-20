@@ -31,6 +31,9 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	
 public : 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<USceneComponent> SceneRoot;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UDecalComponent> FloorDecal;
 	

@@ -53,7 +53,8 @@ enum class EYSTraceShape : uint8
 	Box,
 	Sphere,
 	Capsule,
-	Line
+	Line,
+	Cylinder
 };
 
 UENUM(BlueprintType)

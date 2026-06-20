@@ -10,7 +10,12 @@
 AYSTelegraphActor::AYSTelegraphActor()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
+	SetRootComponent(SceneRoot);
+	
 	FloorDecal = CreateDefaultSubobject<UDecalComponent>(TEXT("Decal"));
+	FloorDecal->SetupAttachment(SceneRoot);
+	FloorDecal->SetRelativeRotation(FRotator(-90.0f, 0.0f, 0.0f));
 }
 
 AYSTelegraphActor* AYSTelegraphActor::CreateTelegraph(const UObject* WorldContextObject, TSubclassOf<AYSTelegraphActor> ActorClass, 
@@ -47,12 +52,20 @@ void AYSTelegraphActor::BeginPlay()
 	
 	if ( IsValid(MID) == true )
 	{
-		MID->SetScalarParameterValue(TEXT("ShapeType"), static_cast<float>(ShapeInfo));
+		MID->SetScalarParameterValue(TEXT("ShapeType"), ShapeInfo == EYSTraceShape::Box ? 0 : 1);
 		MID->SetScalarParameterValue(TEXT("Duration"), Duration);
 		MID->SetScalarParameterValue(TEXT("StartTime"), GetWorld()->GetTimeSeconds());
 	}
 	
-	FloorDecal->DecalSize = Extent;
+	
+	if ( ShapeInfo == EYSTraceShape::Box )
+	{
+		FloorDecal->DecalSize = FloorDecal->GetComponentRotation().RotateVector(Extent);
+	}
+	else
+	{
+		FloorDecal->DecalSize = FVector(Extent.X, Extent.X, Extent.X);
+	}
 	
 	SetLifeSpan(Duration);
 }
