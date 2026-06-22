@@ -144,6 +144,8 @@ protected :
 	UPROPERTY(VisibleAnywhere)
 	TWeakObjectPtr<UYSAbilityPlaybackBase> CurrentPlayback = nullptr;
 	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Buff", meta = (Categories = "Buff"))
+	FGameplayTagContainer BuffTags;
 	
 private:
 	FYSGameplayAbility_RuntimeData RuntimeData;

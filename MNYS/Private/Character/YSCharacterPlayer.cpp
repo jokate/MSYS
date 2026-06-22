@@ -68,24 +68,10 @@ void AYSCharacterPlayer::BeginPlay()
 
 	// 팀설정.
 	SetGenericTeamId(YS_PLAYER);
-	
-	AYSGameModeBase* GM = GetWorld()->GetAuthGameMode<AYSGameModeBase>();
-	
-	if ( IsValid(GM) )
-	{
-		GM->RegisterTimeDilationActor(this);
-	}
 }
 
 void AYSCharacterPlayer::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	AYSGameModeBase* GM = GetWorld()->GetAuthGameMode<AYSGameModeBase>();
-	
-	if ( IsValid(GM) )
-	{
-		GM->UnregisterTimeDilationActor(this);
-	}
-	
 	Super::EndPlay(EndPlayReason);
 }
 

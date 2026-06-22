@@ -27,4 +27,7 @@ namespace YSTags
 	
 	UE_DEFINE_GAMEPLAY_TAG(JustAvoid_Window, "JustAvoid.Window");
 	UE_DEFINE_GAMEPLAY_TAG(Invincible, "Invincible");
+	
+	
+	UE_DEFINE_GAMEPLAY_TAG(Buff_JustAvoid, "Buff.JustAvoid");
 }

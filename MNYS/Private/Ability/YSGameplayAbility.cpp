@@ -119,6 +119,8 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 		{
 			YSASC->RemoveActiveGameplayEffect(RuntimeHandle);	
 		}
+		
+		YSASC->RemoveActiveEffectsWithTags(BuffTags);
 	}
 
 	if ( IsValid(CurrentPlayback.Get()) )

@@ -20,4 +20,7 @@ protected :
 protected : 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<class UYSGameplayEffect> TargetToAdd;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	FGameplayTagContainer TargetToAddTag;
 };

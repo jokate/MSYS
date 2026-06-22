@@ -5,6 +5,7 @@
 #include "YSAbilitySystemComponent.h"
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
 #include "Character/Components/YSCharacterMovementComponent.h"
+#include "Framework/YSGameModeBase.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "General/YSDefine.h"
 #include "MotionWarp/UYSMotionWarpingComponent.h"
@@ -33,6 +34,24 @@ void AYSCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	AYSGameModeBase* GM = GetWorld()->GetAuthGameMode<AYSGameModeBase>();
+	
+	if ( IsValid(GM) )
+	{
+		GM->RegisterTimeDilationActor(this);
+	}
+}
+
+void AYSCharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	AYSGameModeBase* GM = GetWorld()->GetAuthGameMode<AYSGameModeBase>();
+	
+	if ( IsValid(GM) )
+	{
+		GM->UnregisterTimeDilationActor(this);
+	}
+	
+	Super::EndPlay(EndPlayReason);
 }
 
 void AYSCharacterBase::PostInitializeComponents()

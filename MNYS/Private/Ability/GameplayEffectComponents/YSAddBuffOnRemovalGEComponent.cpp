@@ -16,8 +16,9 @@ void UYSAddBuffOnRemovalGEComponent::OnActiveGameplayEffectRemoved(
 	FGameplayEffectContextHandle EffectContextHandle = GEContextHandle.GetInstigatorAbilitySystemComponent()->MakeEffectContext();
 	EffectContextHandle.SetAbility(GEContextHandle.GetAbility());
 	EffectContextHandle.AddInstigator(GEContextHandle.GetInstigator(), GEContextHandle.GetInstigator());
-
 	SpecHandle.Data->Initialize(TargetToAdd.GetDefaultObject(), EffectContextHandle, 1);
+	
+	SpecHandle.Data->DynamicAssetTags.AppendTags(TargetToAddTag);
 	
 	UAbilitySystemComponent* AppliedToASC = ActiveGEContainer->Owner;;
 	
