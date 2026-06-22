@@ -232,3 +232,27 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn", meta = (DisplayName = "땅에 붙어서 스폰해야 하는 경우"))
 	bool bStickGround = false;
 };
+
+USTRUCT(BlueprintType)
+struct FYSCameraEffectParams
+{
+	GENERATED_BODY()
+    
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "목표 암 길이 (줌인)"))
+	float TargetArmLength = 250.f;
+    
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "소켓 오프셋 Z (로우앵글)"))
+	FVector SocketOffset = FVector( 0, 0, -80.f);
+    
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "목표 FOV"))
+	float FieldOfView = 70.f;
+    
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "진입 보간 속도"))
+	float InterpInSpeed = 10.f;
+    
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "복귀 보간 속도"))
+	float InterpOutSpeed = 5.f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "복귀 보간 속도"))
+	FRotator RelativeRotator = FRotator::ZeroRotator;
+};

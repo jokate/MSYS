@@ -21,7 +21,7 @@ void UYSAddBuffOnRemovalGEComponent::OnActiveGameplayEffectRemoved(
 	
 	UAbilitySystemComponent* AppliedToASC = ActiveGEContainer->Owner;;
 	
-	if ( AppliedToASC )
+	if ( IsValid(AppliedToASC)  )
 	{
 		AppliedToASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 	}

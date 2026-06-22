@@ -9,7 +9,9 @@
 #include "General/YSEnum.h"
 #include "YSCharacterPlayer.generated.h"
 
+class UCameraComponent;
 class UInputMappingContext;
+class USpringArmComponent;
 class UYSInputConfig;
 class UYSInputStateMachineComponent;
 
@@ -47,6 +49,9 @@ public:
 	void OnMovementComplete();
 	virtual void PossessedBy(AController* NewController) override;
 	void SetMovementBlocked(bool bBlocked);
+
+	FORCEINLINE USpringArmComponent* GetCameraBoom()  const { return CameraBoom; }
+	FORCEINLINE UCameraComponent*    GetFollowCamera() const { return FollowCamera; }
 	
 private : 
 	void ProcessMovementInput(const FVector2D& InputDir);

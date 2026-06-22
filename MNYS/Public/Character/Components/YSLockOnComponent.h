@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "General/YSStruct.h"
 #include "YSLockOnComponent.generated.h"
 
 
@@ -60,8 +61,24 @@ public :
 	
 	UPROPERTY()
 	TWeakObjectPtr<AYSPlayerController> OwnerPlayerController;
-	
+
 	UPROPERTY()
 	TWeakObjectPtr<AYSCharacterPlayer> OwnerPlayer;
-	
+
+public:
+	void StartCameraEffect(const FYSCameraEffectParams& Params);
+	void StopCameraEffect();
+
+private:
+	void TickCameraEffect(float DeltaTime);
+
+	FYSCameraEffectParams ActiveCameraParams;
+
+	bool bCameraEffectActive = false;
+	bool bCameraRestoring    = false;
+
+	float DefaultArmLength    = 600.f;
+	FVector DefaultSocketOffset = FVector::ZeroVector;
+	float DefaultFOV          = 90.f;
+	FRotator DefaultRotation = FRotator::ZeroRotator;
 };

@@ -9,6 +9,7 @@
 #include "LevelSequencePlayer.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Ability/GameplayCueActor/YSGameplayCueNotifyBase.h"
+#include "Character/Components/YSLockOnComponent.h"
 #include "Framework/YSGameModeBase.h"
 
 void UYSGameplayCueAction_SequencePlay::OnActive(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget,
@@ -88,19 +89,40 @@ void UYSGameplayCueAction_TimeDilation::OnRemove(AYSGameplayCueNotifyBase* Gamep
 	const FGameplayCueParameters& Parameters)
 {
 	UWorld* World = GetWorld();
-	
+
 	if ( IsValid(World) == false )
 		return;
-	
+
 	AYSGameModeBase* GM = World->GetAuthGameMode<AYSGameModeBase>();
-	
+
 	if ( IsValid(GM) == false )
 	{
 		return;
 	}
-	
+
 	GM->RemoveTimeDilation(this);
-	
+
 	Super::OnRemove(GameplayCueNotify, MyTarget, Parameters);
-	
+}
+
+void UYSGameplayCueAction_CameraEffect::OnActive(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget,
+	const FGameplayCueParameters& Parameters)
+{
+	Super::OnActive(GameplayCueNotify, MyTarget, Parameters);
+
+	if ( UYSLockOnComponent* LockOn = UYSLockOnComponent::Get(MyTarget) )
+	{
+		LockOn->StartCameraEffect(CameraParams);
+	}
+}
+
+void UYSGameplayCueAction_CameraEffect::OnRemove(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget,
+	const FGameplayCueParameters& Parameters)
+{
+	if ( UYSLockOnComponent* LockOn = UYSLockOnComponent::Get(MyTarget) )
+	{
+		LockOn->StopCameraEffect();
+	}
+
+	Super::OnRemove(GameplayCueNotify, MyTarget, Parameters);
 }

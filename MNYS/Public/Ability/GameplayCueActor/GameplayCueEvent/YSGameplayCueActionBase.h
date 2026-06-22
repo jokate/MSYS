@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
+#include "General/YSStruct.h"
 #include "YSGameplayCueActionBase.generated.h"
 
 class UNiagaraSystem;
@@ -62,12 +63,26 @@ UCLASS(DisplayName = "타임 딜레이션 적용")
 class MNYS_API UYSGameplayCueAction_TimeDilation : public UYSGameplayCueActionBase
 {
 	GENERATED_BODY()
-	
-public : 
+
+public :
 	virtual void OnActive(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget, const FGameplayCueParameters& Parameters) override;
 	virtual void OnRemove(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget, const FGameplayCueParameters& Parameters) override;
 
 protected :
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | GameplayCue", meta = (DisplayName = "딜레이 비율"))
 	float TimeDilation = 1.0f;
+};
+
+UCLASS(DisplayName = "카메라 다이나믹 효과")
+class MNYS_API UYSGameplayCueAction_CameraEffect : public UYSGameplayCueActionBase
+{
+	GENERATED_BODY()
+
+public:
+	virtual void OnActive(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget, const FGameplayCueParameters& Parameters) override;
+	virtual void OnRemove(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget, const FGameplayCueParameters& Parameters) override;
+
+protected:
+	UPROPERTY(EditAnywhere, Category = "YS | GameplayCue", meta = (DisplayName = "카메라 효과 파라미터"))
+	FYSCameraEffectParams CameraParams;
 };
