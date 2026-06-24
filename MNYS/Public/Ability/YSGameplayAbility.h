@@ -26,6 +26,56 @@ enum class EYSAbilityType : uint8
 	Dash UMETA(Displayname = "속도 적용"),
 };
 
+struct FYSAbilityHitContext
+{
+	void AddHitActor(AActor* HitActor) { HitActors.Add(HitActor); }
+	void UpdateHitResult(UObject* HitObject, const FHitResult& HitResult)
+	{
+		for (auto It = RecentHitResults.CreateIterator(); It; ++It)
+		{
+			if (!It.Key().IsValid()) { It.RemoveCurrent(); }  // 유령 엔트리 정리
+		}
+		
+		RecentHitResults.FindOrAdd(HitObject).Add(HitResult);
+	}
+	void RemoveTraceEntry(UObject* HitObject)
+	{
+		for (auto It = RecentHitResults.CreateIterator(); It; ++It)
+		{
+			if (!It.Key().IsValid()) { It.RemoveCurrent(); }  // 유령 엔트리 정리
+		}
+		
+		RecentHitResults.Remove(HitObject);
+	}
+	
+	const TArray<FHitResult>* GetHitResultsForObject(UObject* HitObject) const
+	{
+		if (const TArray<FHitResult>* FoundResults = RecentHitResults.Find(HitObject))
+		{
+			return FoundResults;
+		}
+		
+		return nullptr;
+	}
+	
+	TArray<AActor*> GetAllHitActors() const
+	{
+		TArray<AActor*> ValidHitActors;
+		for (const TWeakObjectPtr<AActor>& WeakActor : HitActors)
+		{
+			if (AActor* Actor = WeakActor.Get())
+			{
+				ValidHitActors.Add(Actor);
+			}
+		}
+		return ValidHitActors;
+	}
+
+private : 
+	TSet<TWeakObjectPtr<AActor>> HitActors;
+	TMap<TWeakObjectPtr<UObject>, TArray<FHitResult>> RecentHitResults;
+};
+
 USTRUCT()
 struct FYSGameplayAbility_RuntimeData
 {
@@ -34,7 +84,6 @@ struct FYSGameplayAbility_RuntimeData
 public:
 	// ── Accessors ─────────────────────────────────────────────────────────
 	YS_GETTER_REF(TArray<FActiveGameplayEffectHandle>, ActiveGameplayEffectHandle)
-	YS_BOOL_ACCESSOR(bIsInputAcceptable, InputAcceptable)
 	
 	void AddEffectSpecHandle(const FActiveGameplayEffectHandle& Handle)
 	{
@@ -48,14 +97,10 @@ public:
 	
 	void ResetData()
 	{
-		bIsInputAcceptable = false;
 		ActiveGameplayEffectHandle.Empty();
 	}
 
 private:
-
-	// 인풋에 대한 어셉팅 여부
-	bool bIsInputAcceptable = false;
 	
 	UPROPERTY()
 	TArray<FActiveGameplayEffectHandle> ActiveGameplayEffectHandle;
@@ -99,6 +144,10 @@ public:
 	void ActivePlayback(int32 Index, const FYSPlaybackContext& Context);
 	
 	UYSAbilityPlaybackBase* GetCurrentPlayback() const { return CurrentPlayback.Get(); }
+	
+	YS_BOOL_ACCESSOR(bIsInputAcceptable, InputAcceptable)
+	
+	TSharedPtr<FYSAbilityHitContext> GetHitContext() const { return HitContext; }
 	
 protected:
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
@@ -150,8 +199,13 @@ protected :
 private:
 	FYSGameplayAbility_RuntimeData RuntimeData;
 	
+	TSharedPtr<FYSAbilityHitContext> HitContext;
+	
 	UPROPERTY()
 	TObjectPtr<ALevelSequenceActor> ActiveSequenceActor = nullptr;
+	
+	// 인풋에 대한 어셉팅 여부
+	bool bIsInputAcceptable = false;
 
 	UPROPERTY()
 	UYSAT_Trace* TraceTask = nullptr;

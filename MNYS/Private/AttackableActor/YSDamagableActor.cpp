@@ -5,6 +5,7 @@
 #include "AttackableActor/YSDamagableActor.h"
 
 
+#include "Ability/YSGameplayAbility.h"
 #include "AttackableActor/YSTelegraphActor.h"
 #include "AttackableActor/YSTraceObject.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
@@ -53,6 +54,8 @@ void AYSDamagableActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	if (IsValid(TraceObject))
 	{
+		HitContext->RemoveTraceEntry(TraceObject);
+		TraceObject->OnHitCountDepleted.RemoveAll(this);
 		TraceObject->OnTraceHit.RemoveAll(this);
 		TraceObject = nullptr;
 	}
@@ -70,11 +73,24 @@ void AYSDamagableActor::_OnHitCountDepleted()
 	Destroy();
 }
 
+void AYSDamagableActor::_OnTraceHit(const TArray<FHitResult>& HitResults, const FName& DamageRow)
+{
+	if ( HitContext.IsValid() )
+	{
+		for ( const FHitResult& HitResult : HitResults)
+		{
+			HitContext->AddHitActor(HitResult.GetActor());
+			HitContext->UpdateHitResult(TraceObject, HitResult);
+		}
+	}
+}
+
 void AYSDamagableActor::OnActivate_Implementation()
 {
 	Super::OnActivate_Implementation();
 	TraceObject = UYSTraceObject::Create(this, this, OwnerActor.Get(), TraceConfig);
 	TraceObject->OnHitCountDepleted.AddDynamic(this, &AYSDamagableActor::_OnHitCountDepleted);
+	TraceObject->OnTraceHit.AddDynamic(this, &AYSDamagableActor::_OnTraceHit);
 	
 	if ( IsValid(TraceObject) )
 	{

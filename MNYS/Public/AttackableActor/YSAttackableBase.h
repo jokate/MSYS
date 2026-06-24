@@ -9,6 +9,7 @@
 #include "General/YSEnum.h"
 #include "YSAttackableBase.generated.h"
 
+struct FYSAbilityHitContext;
 class AYSTelegraphActor;
 
 UCLASS()
@@ -20,6 +21,11 @@ public:
 	// Sets default values for this actor's properties
 	AYSAttackableBase();
 	virtual void AllocateInstigator(AActor* InInstigator);
+	
+	void InitializeHitContext(const TSharedPtr<FYSAbilityHitContext>& InHitContext)
+	{
+		HitContext = InHitContext;
+	}
 protected : 
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;;
@@ -66,6 +72,9 @@ protected :
 	
 	UPROPERTY()
 	TObjectPtr<AYSTelegraphActor> TelegraphActor;	
+	
+protected : 
+	TSharedPtr<FYSAbilityHitContext> HitContext;
 private : 
 	FTimerHandle ActivateTimerHandle;
 	FTimerHandle DestroyTimerHandle;

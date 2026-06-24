@@ -22,7 +22,7 @@ void UYSGameplayAbility::OnGameplayTagChanged(const FGameplayTag& Tag, bool bInI
 {
 	if ( Tag == YSTags::AcceptAbilityInput )
 	{
-		RuntimeData.SetInputAcceptable(bInIsActive);
+		SetInputAcceptable(bInIsActive);
 		
 		UYSAbilityPlaybackBase* PlaybackBase = CurrentPlayback.Get();
 	
@@ -78,7 +78,7 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 			Character->AddStateToStateMachine(ChangeInputStateType);
 		}
 	}
-
+	
 	if ( bBlockMovementDuringAbility )
 	{
 		UYSCharacterMovementComponent* MovementComponent = UYSCharacterMovementComponent::Get(OwnerActor);
@@ -88,6 +88,8 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 			MovementComponent->SetMovementBlocked(true);
 		}
 	}
+
+	HitContext = MakeShared<FYSAbilityHitContext>();
 	
 	_PrepareForAbilityEvent();
 }
@@ -127,8 +129,6 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 	{
 		CurrentPlayback.Get()->ReleaseMotionWarp();
 	}
-
-	RuntimeData.ResetData();
 	
 	if ( bBlockMovementDuringAbility )
 	{
@@ -139,11 +139,13 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 			MovementComponent->SetMovementBlocked(false);
 		}
 	}
+	
+	HitContext = nullptr;
 }
 
 bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag) 
 {
-	if ( RuntimeData.IsInputAcceptable() == false )
+	if ( IsInputAcceptable() == false )
 	{
 		return false;
 	}
@@ -187,7 +189,7 @@ void UYSGameplayAbility::_ProcessEvent(FGameplayEventData Payload)
 	{
 		if ( IsValid(Action) )
 		{
-			Action->Execute(this, Payload);;
+			Action->Execute(this, Payload);
 		}
 	}
 }

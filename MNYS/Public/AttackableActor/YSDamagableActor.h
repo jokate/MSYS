@@ -27,7 +27,9 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	UFUNCTION()
 	virtual void _OnHitCountDepleted();
-	
+
+	UFUNCTION()
+	void _OnTraceHit(const TArray<FHitResult>& HitResults, const FName& DamageRow);
 	virtual void OnActivate_Implementation() override;
 	
 public:

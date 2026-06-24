@@ -7,6 +7,7 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "YSBlueprintFunctionLibrary.generated.h"
 
+struct FYSAbilityHitContext;
 struct FYSSpawnActorConfig;
 class UYSGameplayAbility;
 class UAbilitySystemComponent;
@@ -39,7 +40,7 @@ public :
 	static FVector GetAbilityEventPosition(EYSPositionPolicy PositionPolicy, UYSGameplayAbility* OwningAbility,
 		const FName& SocketName, const FVector& RelativeOffset);
 	
-	static AActor* SpawnByConfig(UObject* WorldContext, const FYSSpawnActorConfig& Config, AActor* OwnerActor, AActor* TargetActor, AActor* AttachParent = nullptr);
+	static AActor* SpawnByConfig(UObject* WorldContext, const FYSSpawnActorConfig& Config, AActor* OwnerActor, AActor* TargetActor, AActor* AttachParent = nullptr, const TSharedPtr<FYSAbilityHitContext>& HitContext = nullptr);
 	static FTransform CalculateSpawnTransform(UObject* WorldContext, const FYSSpawnActorConfig& Config, AActor* OwnerActor, AActor* TargetActor);
 
 };

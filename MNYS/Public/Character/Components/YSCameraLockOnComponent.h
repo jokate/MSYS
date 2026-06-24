@@ -5,21 +5,21 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "General/YSStruct.h"
-#include "YSLockOnComponent.generated.h"
+#include "YSCameraLockOnComponent.generated.h"
 
 
 class AYSCharacterPlayer;
 class AYSPlayerController;
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class MNYS_API UYSLockOnComponent : public UActorComponent
+class MNYS_API UYSCameraLockOnComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this component's properties
-	UYSLockOnComponent();
-	static UYSLockOnComponent* Get(const AActor* Character);
+	UYSCameraLockOnComponent();
+	static UYSCameraLockOnComponent* Get(const AActor* Character);
 
 protected:
 	// Called when the game starts
@@ -37,22 +37,10 @@ public:
 	
 	virtual AActor* GetCurrentTarget() { return CurrentLockedTarget.Get(); }
 protected :
-	
 	void ProcessLockOnFunction(float DeltaTime);
-	virtual void FindTarget();
 	void ChaseCamera(float DeltaTime);
-	bool IsLockOnableTarget(AActor* Target);  
-	
-	// 락온 타겟에 대해서는 차후 지정하도록 합시다.
-	void TryReleaseLockOn();
-	
+
 public : 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "잠금 대상이 될 수 있는 최대 거리"))
-	float MaxLockOnDistance = 500.0f;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "잠금 대상이 될 수 있는 최대 각도"))
-	float MaxLockOnAngle = 45.0f;
-	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (DisplayName = "현재 잠금된 대상"))
 	TWeakObjectPtr<AActor> CurrentLockedTarget;
 	

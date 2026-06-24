@@ -178,9 +178,6 @@ struct FYSPlaybackContext
 	TObjectPtr<AActor> Target;
 
 	EYSPlaybackEvent PreviousResult = EYSPlaybackEvent::None;
-
-	// 히트 발생 시 채워짐 (OnTraceComplete에서)
-	TArray<FHitResult> HitResults;
 	
 	// 들어온 태그들에 대한 설정.
 	UPROPERTY()

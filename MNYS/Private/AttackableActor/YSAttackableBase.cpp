@@ -35,6 +35,7 @@ void AYSAttackableBase::BeginPlay()
 
 void AYSAttackableBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	HitContext = nullptr;
 	DeprocessActivationType();
 	Super::EndPlay(EndPlayReason);
 }

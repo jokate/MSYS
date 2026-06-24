@@ -14,7 +14,7 @@
 #include "Ability/YSGameplayAbility.h"
 #include "Ability/MontageSelector/YSMontageSelector.h"
 #include "Ability/AbilityComponent/YSPlaybackCondition.h"
-#include "Character/Components/YSLockOnComponent.h"
+#include "Character/Components/YSCameraLockOnComponent.h"
 
 void UYSAbilityPlaybackBase::SetPlayback(const FYSPlaybackContext& Context)
 {
@@ -35,7 +35,6 @@ void UYSAbilityPlaybackBase::SetPlayback(const FYSPlaybackContext& Context)
 	}
 	
 	// 기존에 받은 정보들은 그냥 없앰 처리.
-	CapturedContext.HitResults.Reset(); 
 	CapturedContext.ContextTags.Reset();
 }
 
@@ -216,26 +215,30 @@ void UYSAbilityPlaybackBase::SetupSequence(const FYSPlaybackContext& Context)
 	LevelSequencePlayer->Play();
 }
 
-void UYSAbilityPlayback_LockonTarget::ProcessContextBeforePlay()
-{
-	AActor* ContextInstigator = CapturedContext.Instigator;
-	if (IsValid(ContextInstigator))
-	{
-		if (UYSLockOnComponent* LockOnComponent = UYSLockOnComponent::Get(ContextInstigator))
-		{
-			CapturedContext.Target = LockOnComponent->GetCurrentTarget();
-		}
-	}
-}
-
 void UYSAbilityPlayback_FirstHitTarget::ProcessContextBeforePlay()
 {
-	if ( CapturedContext.HitResults.IsEmpty() )
+	UYSGameplayAbility* OwnerAbility = CapturedContext.OwnerAbility;
+	 
+	if ( IsValid(OwnerAbility) == false )
 	{
 		return;
 	}
 	
-	CapturedContext.Target = CapturedContext.HitResults[0].GetActor();;
+	TSharedPtr<FYSAbilityHitContext> HitContext = OwnerAbility->GetHitContext();
+
+	if ( HitContext == nullptr )
+	{
+		return;
+	}
+	
+	const TArray<AActor*>& HitActors = HitContext.Get()->GetAllHitActors();
+	
+	if ( HitActors.Num() == 0 )
+	{
+		return;
+	}
+	
+	CapturedContext.Target = HitActors[0];
 }
 
 void UYSAbilityPlayback_ReleaseBuff::ProcessContextBeforePlay()
@@ -303,6 +306,5 @@ bool UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackEvent Event, bool bIsEvalua
 
 void UYSAbilityPlaybackBase::OnHit(const TArray<FHitResult>& HitResults)
 {	
-	CapturedContext.HitResults = HitResults;
 	DispatchNext(EYSPlaybackEvent::OnHitTarget, true);
 }

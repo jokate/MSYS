@@ -15,7 +15,7 @@
 #include "Character/YSCharacterBase.h"
 #include "Character/YSPlayerController.h"
 #include "Character/Components/YSCharacterMovementComponent.h"
-#include "Character/Components/YSLockOnComponent.h"
+#include "Character/Components/YSCameraLockOnComponent.h"
 #include "General/YSDefine.h"
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
@@ -257,7 +257,7 @@ bool UYSAbilityEventAction_SpawnActor::Execute_Implementation(UYSGameplayAbility
 
 	for (const FYSSpawnActorConfig& SpawnActorConfig : SpawnActorPayload->SpawnActorConfigs)
 	{
-		UYSBlueprintFunctionLibrary::SpawnByConfig(OwningAbility, SpawnActorConfig,	OwningActor, PlaybackTarget,OwningActor);
+		UYSBlueprintFunctionLibrary::SpawnByConfig(OwningAbility, SpawnActorConfig,	OwningActor, PlaybackTarget,OwningActor, OwningAbility->GetHitContext());
 	}
 
 	return true;

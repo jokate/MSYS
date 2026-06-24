@@ -109,15 +109,6 @@ private :
 	
 };
 
-UCLASS(DisplayName = "(플레이어 한정) 락온 된 대상 타겟기준 플레이 백")
-class MNYS_API UYSAbilityPlayback_LockonTarget : public UYSAbilityPlaybackBase
-{
-	GENERATED_BODY()
-
-protected : 
-	virtual void ProcessContextBeforePlay() override;
-};
-
 UCLASS(DisplayName = "히트 첫번째 타겟 기준 플레이 백")
 class MNYS_API UYSAbilityPlayback_FirstHitTarget : public UYSAbilityPlaybackBase
 {

@@ -15,7 +15,7 @@
 #include "AttackableActor/YSAttackableBase.h"
 #include "Character/YSCharacterBase.h"
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
-#include "Character/Components/YSLockOnComponent.h"
+#include "Character/Components/YSCameraLockOnComponent.h"
 #include "General/YSDefine.h"
 #include "General/YSGameplayTag.h"
 
@@ -128,7 +128,7 @@ FRotator UYSBlueprintFunctionLibrary::GetEventRotation(EYSDirectionPolicy Direct
 
 	case EYSDirectionPolicy::UseTowardLockOnTarget:
 		{
-			if (UYSLockOnComponent* LockOn = UYSLockOnComponent::Get(OwnerActor))
+			if (UYSCameraLockOnComponent* LockOn = UYSCameraLockOnComponent::Get(OwnerActor))
 			{
 				if (AActor* Target = LockOn->GetCurrentTarget())
 				{
@@ -222,7 +222,7 @@ FVector UYSBlueprintFunctionLibrary::GetAbilityEventPosition(EYSPositionPolicy P
 }
 
 AActor* UYSBlueprintFunctionLibrary::SpawnByConfig(UObject* WorldContext, const FYSSpawnActorConfig& Config,
-	AActor* OwnerActor, AActor* TargetActor, AActor* AttachParent)
+	AActor* OwnerActor, AActor* TargetActor, AActor* AttachParent, const TSharedPtr<FYSAbilityHitContext>& HitContext)
 {
 	if (IsValid(WorldContext) == false)
 		return nullptr;
@@ -243,6 +243,10 @@ AActor* UYSBlueprintFunctionLibrary::SpawnByConfig(UObject* WorldContext, const 
 	if (AYSAttackableBase* AttackableActor = Cast<AYSAttackableBase>(SpawnedActor))
 	{
 		AttackableActor->AllocateInstigator(OwnerActor);
+		if (HitContext.IsValid())
+		{
+			AttackableActor->InitializeHitContext(HitContext);	
+		}
 	}
 
 	if (Config.bAttachToActor && IsValid(AttachParent))

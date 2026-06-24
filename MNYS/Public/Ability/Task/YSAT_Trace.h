@@ -25,6 +25,7 @@ public:
 
 	virtual void TickTask(float DeltaTime) override;
 	virtual void Activate() override;
+	virtual void OnDestroy(bool bInOwnerFinished) override;
 private:
 	UFUNCTION()
 	void _OnTraceObjectHit(const TArray<FHitResult>& HitResults, const FName& DamageRow);

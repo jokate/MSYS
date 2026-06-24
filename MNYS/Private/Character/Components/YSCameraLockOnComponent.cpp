@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Character/Components/YSLockOnComponent.h"
+#include "Character/Components/YSCameraLockOnComponent.h"
 
 #include "YSAbilitySystemComponent.h"
 #include "Camera/CameraComponent.h"
@@ -14,16 +14,12 @@
 
 
 // Sets default values for this component's properties
-UYSLockOnComponent::UYSLockOnComponent()
+UYSCameraLockOnComponent::UYSCameraLockOnComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
-	// ...
 }
 
-UYSLockOnComponent* UYSLockOnComponent::Get(const AActor* Character)
+UYSCameraLockOnComponent* UYSCameraLockOnComponent::Get(const AActor* Character)
 {	
 	if ( IsValid(Character) == false )
 		return nullptr;
@@ -38,7 +34,7 @@ UYSLockOnComponent* UYSLockOnComponent::Get(const AActor* Character)
 
 
 // Called when the game starts
-void UYSLockOnComponent::BeginPlay()
+void UYSCameraLockOnComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -67,7 +63,7 @@ void UYSLockOnComponent::BeginPlay()
 
 
 // Called every frame
-void UYSLockOnComponent::TickComponent(float DeltaTime, ELevelTick TickType,
+void UYSCameraLockOnComponent::TickComponent(float DeltaTime, ELevelTick TickType,
                                        FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
@@ -76,7 +72,7 @@ void UYSLockOnComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	TickCameraEffect(DeltaTime);
 }
 
-void UYSLockOnComponent::ForceSetLockOn(AActor* TargetToLockOn)
+void UYSCameraLockOnComponent::ForceSetLockOn(AActor* TargetToLockOn)
 {
 	CurrentLockedTarget = TargetToLockOn;
 
@@ -84,7 +80,7 @@ void UYSLockOnComponent::ForceSetLockOn(AActor* TargetToLockOn)
 	OwnerPlayer->SetActorRotation(CharacterRotation);
 }
 
-void UYSLockOnComponent::ProcessLockOnFunction(float DeltaTime)
+void UYSCameraLockOnComponent::ProcessLockOnFunction(float DeltaTime)
 {
 	if ( OwnerPlayer.IsValid() == false )
 		return;
@@ -94,41 +90,9 @@ void UYSLockOnComponent::ProcessLockOnFunction(float DeltaTime)
 		ChaseCamera(DeltaTime);
 		return;
 	}
-	
-	// 타겟 체이싱 하지말자.
-	//FindTarget();
 }
 
-void UYSLockOnComponent::FindTarget()
-{
-	if ( OwnerPlayer.IsValid() == false )
-		return;
-	
-	
-	AYSCharacterPlayer* Player = OwnerPlayer.Get();
-	TArray<AActor*> OverlappedActors;
-	if ( UKismetSystemLibrary::SphereOverlapActors(GetWorld(), OwnerPlayer->GetActorLocation(), MaxLockOnDistance, 
-		{}, nullptr, {GetOwner()}, OverlappedActors))
-	{
-		double Distance = MaxLockOnDistance * MaxLockOnDistance;
-		for ( AActor* Actor : OverlappedActors )
-		{
-			double TempDistance = (Player->GetActorLocation() - Actor->GetActorLocation()).SizeSquared();
-			
-			if ( IsLockOnableTarget(Actor) == false )
-				continue;
-
-			// 각도 기준으로 탐색하되, 가장 가까운 대상을 선택한다.
-			if ( TempDistance < Distance )
-			{
-				CurrentLockedTarget = Actor;
-				Distance = TempDistance;
-			}
-		}
-	}
-}
-
-void UYSLockOnComponent::ChaseCamera(float DeltaTime)
+void UYSCameraLockOnComponent::ChaseCamera(float DeltaTime)
 {
 	if ( OwnerPlayerController.IsValid() == false || CurrentLockedTarget.IsValid() == false )
 		return;
@@ -141,81 +105,20 @@ void UYSLockOnComponent::ChaseCamera(float DeltaTime)
 	OwnerPlayerController->SetControlRotation(
 		FMath::RInterpTo(CurrentRot, TargetRot, DeltaTime, CameraInterpSpeed));
 }
-
-bool UYSLockOnComponent::IsLockOnableTarget(AActor* Target)
-{
-	AYSCharacterPlayer* Player = OwnerPlayer.Get();
-	
-	if ( IsValid(Player) == false )
-		return false;
-	
-	if (Player->GetTeamAttitudeTowards(*Target) != ETeamAttitude::Hostile )
-		return false;
-			
-	IYSBattleActor* BattleActor = Cast<IYSBattleActor>(Target);
-	if ( BattleActor == nullptr || BattleActor->IsDead() )
-		return false;
-			
-	FVector DirectionToActor = Target->GetActorLocation() - OwnerPlayer->GetActorLocation();
-	
-	if ( DirectionToActor.Size() >= MaxLockOnDistance )
-		return false;
-	
-	DirectionToActor.Z = 0.0f; // 수평면에서의 방향만 고려
-			
-	DirectionToActor.Normalize();
-
-	FVector ForwardVector = OwnerPlayerController->GetControlRotation().Vector();
-	ForwardVector.Z = 0.0f;
-	ForwardVector.Normalize();
-
-	float AngleToActor = FMath::Acos(FVector::DotProduct(ForwardVector, DirectionToActor));
-	AngleToActor = FMath::RadiansToDegrees(AngleToActor);
-	
-	return AngleToActor <= MaxLockOnAngle;
-}
-
-void UYSLockOnComponent::TryReleaseLockOn()
-{
-	AYSCharacterPlayer* Player = OwnerPlayer.Get();
-	
-	if ( IsValid(Player) == false )
-		return;
-	
-	UAbilitySystemComponent* ASC = Player->GetAbilitySystemComponent();
-	
-	if ( IsValid(ASC) == false )
-		return;
-	
-	if ( CurrentLockedTarget.IsValid() )
-	{
-		if (ASC->HasMatchingGameplayTag(YSTags::BlockLockOn))
-		{
-			return;
-		}
-		
-		if ( IsLockOnableTarget(CurrentLockedTarget.Get()) == false )
-		{
-			UE_LOG(LogTemp, Log, TEXT("Release Lock On"))
-			CurrentLockedTarget = nullptr;	
-		}
-	}
-}
-
-void UYSLockOnComponent::StartCameraEffect(const FYSCameraEffectParams& Params)
+void UYSCameraLockOnComponent::StartCameraEffect(const FYSCameraEffectParams& Params)
 {
 	ActiveCameraParams  = Params;
 	bCameraEffectActive = true;
 	bCameraRestoring    = false;
 }
 
-void UYSLockOnComponent::StopCameraEffect()
+void UYSCameraLockOnComponent::StopCameraEffect()
 {
 	bCameraEffectActive = false;
 	bCameraRestoring    = true;
 }
 
-void UYSLockOnComponent::TickCameraEffect(float DeltaTime)
+void UYSCameraLockOnComponent::TickCameraEffect(float DeltaTime)
 {
 	if ( !bCameraEffectActive && !bCameraRestoring )
 		return;

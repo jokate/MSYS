@@ -6,7 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "YSPlayerController.generated.h"
 
-class UYSLockOnComponent;
+class UYSCameraLockOnComponent;
 class UInputMappingContext;
 /**
  * 
@@ -28,7 +28,7 @@ public :
 	TObjectPtr<UInputMappingContext> UIInputMappingContext;
 	
 	UPROPERTY(EditDefaultsOnly, Category="YS | Lock On")
-	TObjectPtr<UYSLockOnComponent> LockOnComponent;
+	TObjectPtr<UYSCameraLockOnComponent> LockOnComponent;
 	
 protected : 
 	UPROPERTY(EditDefaultsOnly)

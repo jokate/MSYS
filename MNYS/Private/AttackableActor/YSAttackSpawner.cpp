@@ -34,7 +34,7 @@ void AYSAttackSpawner::SpawnActorByConfig(FYSSpawnActorConfig SpawnConfig)
 		SpawnConfig,
 		OwnerForPolicy,
 		TargetActor.Get(),
-		/*AttachParent*/ this);
+		/*AttachParent*/ this, HitContext);
 
 	if ( SpawnCount >= SpawnActorConfigs.Num() )
 	{

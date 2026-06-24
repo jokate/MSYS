@@ -49,6 +49,23 @@ void UYSAT_Trace::Activate()
 	}
 }
 
+void UYSAT_Trace::OnDestroy(bool bInOwnerFinished)
+{
+	UYSGameplayAbility* OwningAbility = Cast<UYSGameplayAbility>(Ability);
+	
+	if ( IsValid(OwningAbility))
+	{
+		FYSAbilityHitContext* HitContext = OwningAbility->GetHitContext().Get();
+		if ( HitContext != nullptr )
+		{
+			HitContext->RemoveTraceEntry(TraceObject);
+		}
+	} 
+	
+	TraceObject = nullptr;
+	Super::OnDestroy(bInOwnerFinished);
+}
+
 void UYSAT_Trace::TickTask(float DeltaTime)
 {
 	Super::TickTask(DeltaTime);
@@ -66,6 +83,17 @@ void UYSAT_Trace::_OnTraceObjectHit(const TArray<FHitResult>& HitResults, const 
 	if ( IsValid(OwningAbility) == false )
 	{
 		return;
+	}
+	
+	FYSAbilityHitContext* HitContext = OwningAbility->GetHitContext().Get();
+	
+	if ( HitContext != nullptr )
+	{
+		for ( const FHitResult& HitResult : HitResults)
+		{
+			HitContext->AddHitActor(HitResult.GetActor());
+			HitContext->UpdateHitResult(TraceObject, HitResult);
+		}
 	}
 	
 	UYSAbilityPlaybackBase* AbilityPlaybackBase = OwningAbility->GetCurrentPlayback();
