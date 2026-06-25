@@ -65,19 +65,15 @@ FMotionWarpingTarget FYSMotionWarpParam_Target::GetWarpTargetData(const UYSGamep
 	if ( IsValid(InAbility) == false )
 		return Target;
 	
-	const UYSAbilityPlaybackBase* CurrentPlayback = InAbility->GetCurrentPlayback();
-	
-	if ( IsValid(CurrentPlayback) == false )
-		return Target;
 	
 	AActor* OwnerActor = InAbility->GetOwningActorFromActorInfo();
 	if ( IsValid(OwnerActor) == false )
 	{
 		return Target;
 	}
-	const FYSPlaybackContext& Context = CurrentPlayback->GetCurrentPlaybackContext();
+	const TSharedPtr<FYSPlaybackContext>& PlaybackContext = InAbility->GetAbilityPlaybackContext();
 	
-	AActor* TargetActor = Context.Target;
+	AActor* TargetActor = PlaybackContext->Target;
 	if ( IsValid(TargetActor) == false )
 	{
 		return Target;

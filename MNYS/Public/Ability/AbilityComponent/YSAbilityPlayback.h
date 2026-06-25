@@ -49,13 +49,40 @@ class MNYS_API UYSAbilityPlaybackBase : public UObject
 	GENERATED_BODY()
 	
 public : 
-	void Play(const FYSPlaybackContext& Context);
+	void Play(const TSharedPtr<FYSPlaybackContext>& Context);
 	void ReleaseMotionWarp();
 	bool DispatchNext(EYSPlaybackEvent Event, bool bIsEvaluate = false);
 	void OnHit(const TArray<FHitResult>& HitResults);
 	
-	const FYSPlaybackContext& GetCurrentPlaybackContext() const { return CapturedContext; }
-	AActor* GetCurrentPlaybackTarget() const { return CapturedContext.Target; }
+	AActor* GetCurrentPlaybackTarget() const
+	{
+		if ( CapturedContext.IsValid() == false )
+		{
+			return nullptr;
+		}
+		return CapturedContext->Target;
+	}
+	
+	UYSGameplayAbility* GetCurrentPlaybackOwningAbility() const
+	{
+		if ( CapturedContext.IsValid() == false )
+		{
+			return nullptr; 
+		}
+		
+		return CapturedContext->OwnerAbility;
+	}
+	
+	AActor* GetCurrentPlaybackInstigator() const
+	{
+		if ( CapturedContext.IsValid() == false )
+		{
+			return nullptr;
+		}
+		
+		return CapturedContext->Instigator;
+	}
+	
 	virtual void EndPlay();
 	
 	bool TryAcceptContextTag(const FGameplayTag& InputTag);
@@ -67,14 +94,14 @@ protected :
 	UFUNCTION()
 	void OnMontageInterrupted();
 	
-	virtual void SetupMontage(const FYSPlaybackContext& Context);
+	virtual void SetupMontage();
 	
-	virtual void SetPlayback(const FYSPlaybackContext& Context);
+	virtual void SetPlayback(TSharedPtr<FYSPlaybackContext> Context);
 	
 	UFUNCTION()
 	void OnSequencePlayed();
 	
-	virtual void SetupSequence(const FYSPlaybackContext& Context);
+	virtual void SetupSequence();
 
 	virtual void ProcessContextBeforePlay() {};
 	
@@ -96,7 +123,8 @@ public :
 
 protected : 
 	// Play() 시점에 캡처 — 콜백에서 컨텍스트 참조용
-	FYSPlaybackContext CapturedContext;
+	TSharedPtr<FYSPlaybackContext> CapturedContext;
+	
 private :
 	UPROPERTY()
 	TObjectPtr<ALevelSequenceActor> ActiveSequenceActor = nullptr;

@@ -16,26 +16,25 @@
 #include "Ability/AbilityComponent/YSPlaybackCondition.h"
 #include "Character/Components/YSCameraLockOnComponent.h"
 
-void UYSAbilityPlaybackBase::SetPlayback(const FYSPlaybackContext& Context)
+void UYSAbilityPlaybackBase::SetPlayback(TSharedPtr<FYSPlaybackContext> Context)
 {
 	CapturedContext = Context;
-	
 	ProcessContextBeforePlay();
 	
 	switch ( PlaybackType )
 	{
 	case EYSAbilityPlaybackType::Montage :
-		SetupMontage(Context);
+		SetupMontage();
 		break;
 	case EYSAbilityPlaybackType::Sequence :
-		SetupSequence(Context);
+		SetupSequence();
 		break;
 	default :
 		break;
 	}
 	
 	// 기존에 받은 정보들은 그냥 없앰 처리.
-	CapturedContext.ContextTags.Reset();
+	CapturedContext->ContextTags.Reset();
 }
 
 void UYSAbilityPlaybackBase::OnSequencePlayed()
@@ -43,7 +42,7 @@ void UYSAbilityPlaybackBase::OnSequencePlayed()
 	DispatchNext(EYSPlaybackEvent::Completed);
 }
 
-void UYSAbilityPlaybackBase::Play(const FYSPlaybackContext& Context)
+void UYSAbilityPlaybackBase::Play(const TSharedPtr<FYSPlaybackContext>& Context)
 {
 	SetPlayback(Context);
 }
@@ -57,7 +56,7 @@ void UYSAbilityPlaybackBase::ReleaseMotionWarp()
 		return;
 	};
 
-	CurMontageSelector->SetMotionWarp(CapturedContext.OwnerAbility, false);
+	CurMontageSelector->SetMotionWarp(CapturedContext->OwnerAbility, false);
 }
 
 void UYSAbilityPlaybackBase::EndPlay()
@@ -72,12 +71,14 @@ void UYSAbilityPlaybackBase::EndPlay()
 		LevelSequencePlayer->OnFinished.RemoveAll(this);
 		LevelSequencePlayer->Stop();
 	}
+	
+	CapturedContext = nullptr;
 }
 
 bool UYSAbilityPlaybackBase::TryAcceptContextTag(const FGameplayTag& InputTag)
 {
 	// 1단계: 입력 태그 추가
-	CapturedContext.ContextTags.AddTag(InputTag);
+	CapturedContext->ContextTags.AddTag(InputTag);
 	
 	// 2단계: 즉시 전환이 활성화된 경우, 실제로 전환 가능한지 평가
 	if ( bImmediateTransition )
@@ -86,7 +87,7 @@ bool UYSAbilityPlaybackBase::TryAcceptContextTag(const FGameplayTag& InputTag)
 		return DispatchNext(EYSPlaybackEvent::OnCheckContextTag, false);
 	}
 	
-	// 3단계: 즉시 전환 미활성화 상태 → 조건만 평가
+	// 3단계: 즉시 전환 미활성화 상태 조건만 평가
 	// 나중에 실제 전환이 필요할 때를 위해 평가만 수행
 	for (const FYSPlaybackEdge& Edge : Transitions)
 	{
@@ -110,7 +111,7 @@ bool UYSAbilityPlaybackBase::TryAcceptContextTag(const FGameplayTag& InputTag)
 				}
 			}
 			
-			if (bConditionPassed && CapturedContext.OwnerAbility->GetPlaybackNode(Edge.NextNodeIndex) != nullptr)
+			if (bConditionPassed && CapturedContext->OwnerAbility->GetPlaybackNode(Edge.NextNodeIndex) != nullptr)
 			{
 				return true;
 			}
@@ -130,7 +131,7 @@ void UYSAbilityPlaybackBase::OnMontageInterrupted()
 	DispatchNext(EYSPlaybackEvent::Interrupted);
 }
 
-void UYSAbilityPlaybackBase::SetupMontage(const FYSPlaybackContext& Context)
+void UYSAbilityPlaybackBase::SetupMontage()
 {
 	const FYSMontageSelector* CurMontageSelector = MontageSelector.GetPtr<FYSMontageSelector>();
 
@@ -139,11 +140,18 @@ void UYSAbilityPlaybackBase::SetupMontage(const FYSPlaybackContext& Context)
 		return;
 	};
 
-	UAnimMontage* TargetToPlayMontage = CurMontageSelector->SelectMontage(CapturedContext.OwnerAbility);
+	UYSGameplayAbility* OwningAbility = GetCurrentPlaybackOwningAbility();
+	
+	if ( IsValid(OwningAbility) == false )
+	{
+		return;
+	}
+ 	
+	UAnimMontage* TargetToPlayMontage = CurMontageSelector->SelectMontage(OwningAbility);
 	
 	if ( IsValid(TargetToPlayMontage) ) 
 	{
-		PlayMontageAndWaitTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(CapturedContext.OwnerAbility, 
+		PlayMontageAndWaitTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(OwningAbility, 
 			TEXT("PlayMontage"), TargetToPlayMontage);
 		if ( IsValid(PlayMontageAndWaitTask))
 		{
@@ -155,16 +163,23 @@ void UYSAbilityPlaybackBase::SetupMontage(const FYSPlaybackContext& Context)
 		}
 	}
 
-	CurMontageSelector->SetMotionWarp(CapturedContext.OwnerAbility, true);
+	CurMontageSelector->SetMotionWarp(OwningAbility, true);
 }
 
-void UYSAbilityPlaybackBase::SetupSequence(const FYSPlaybackContext& Context)
+void UYSAbilityPlaybackBase::SetupSequence()
 {		
 	// Sequencer가 SkeletalMesh 애니메이션의 완전한 제어권을 갖도록,
 	// 진입 전에 AnimInstance 슬롯을 점유 중인 선행 몽타주를 명시적으로 정지한다.
 	// CancelAbilitiesWithTags 대신 CurrentMontageStop을 사용하는 이유:
 	// 어빌리티 라이프사이클을 건드리지 않고 슬롯 레이어만 클리어하기 위함.
-	if (UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Context.Instigator))
+	AActor* Instigator = GetCurrentPlaybackInstigator();
+	
+	if ( IsValid(Instigator) == false )
+	{
+		return;
+	}
+	
+	if (UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Instigator))
 	{
 		ASC->CurrentMontageStop(SequenceSettings.MontageBlendOutTime);
 	}
@@ -188,20 +203,21 @@ void UYSAbilityPlaybackBase::SetupSequence(const FYSPlaybackContext& Context)
 	
 	ActiveSequenceActor = SequenceActor;
 
-	ActiveSequenceActor->SetBindingByTag(TEXT("Player"), { Context.Instigator });
+	ActiveSequenceActor->SetBindingByTag(TEXT("Player"), { Instigator });
 	
 	if (ActiveSequenceActor->FindNamedBinding(TEXT("Enemy")).IsValid())	
 	{
-		if ( IsValid(Context.Target) )
+		AActor* CapturedTarget = GetCurrentPlaybackTarget();
+		if ( IsValid(CapturedTarget) )
 		{
-			UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Context.Target);
+			UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(CapturedTarget);
 			
 			if (IsValid(TargetASC) )
 			{
 				TargetASC->CurrentMontageStop(SequenceSettings.MontageBlendOutTime);
 			}
 			
-        	ActiveSequenceActor->SetBindingByTag(TEXT("Enemy"), { Context.Target });	
+        	ActiveSequenceActor->SetBindingByTag(TEXT("Enemy"), { CapturedTarget });	
 		}
 	}
 	
@@ -217,7 +233,7 @@ void UYSAbilityPlaybackBase::SetupSequence(const FYSPlaybackContext& Context)
 
 void UYSAbilityPlayback_FirstHitTarget::ProcessContextBeforePlay()
 {
-	UYSGameplayAbility* OwnerAbility = CapturedContext.OwnerAbility;
+	UYSGameplayAbility* OwnerAbility = CapturedContext->OwnerAbility;
 	 
 	if ( IsValid(OwnerAbility) == false )
 	{
@@ -238,12 +254,12 @@ void UYSAbilityPlayback_FirstHitTarget::ProcessContextBeforePlay()
 		return;
 	}
 	
-	CapturedContext.Target = HitActors[0];
+	CapturedContext->Target = HitActors[0];
 }
 
 void UYSAbilityPlayback_ReleaseBuff::ProcessContextBeforePlay()
 {
-	if (UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(CapturedContext.Instigator))
+	if (UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(CapturedContext->Instigator))
 	{
 		ASC->RemoveActiveEffectsWithTags(BuffTags);
 	}
@@ -251,10 +267,7 @@ void UYSAbilityPlayback_ReleaseBuff::ProcessContextBeforePlay()
 
 bool UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackEvent Event, bool bIsEvaluate)
 {
-	FYSPlaybackContext NextContext = CapturedContext;
-	NextContext.PreviousResult = Event;
-
-	UYSGameplayAbility* Ability = CapturedContext.OwnerAbility.Get();
+	UYSGameplayAbility* Ability = GetCurrentPlaybackOwningAbility();
 	if (!IsValid(Ability))
 	{
 		return true;
@@ -289,7 +302,7 @@ bool UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackEvent Event, bool bIsEvalua
 		
 		if (bConditionPassed && IsValid(Next))
 		{
-			Ability->ActivePlayback(Edge.NextNodeIndex, NextContext);
+			Ability->ActivePlayback(Edge.NextNodeIndex);
 			return true;
 		}
 	}

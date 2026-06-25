@@ -33,7 +33,7 @@ void UYSGameplayAbility::OnGameplayTagChanged(const FGameplayTag& Tag, bool bInI
 	}
 }
 
-void UYSGameplayAbility::ActivePlayback(int32 Index, const FYSPlaybackContext& Context)
+void UYSGameplayAbility::ActivePlayback(int32 Index)
 {	
 	if ( Playbacks.IsValidIndex(Index) == false )
 		return;
@@ -49,7 +49,7 @@ void UYSGameplayAbility::ActivePlayback(int32 Index, const FYSPlaybackContext& C
 		return;
 
 	CurrentPlayback = Playback;
-	CurrentPlayback->Play(Context);
+	CurrentPlayback->Play(PlaybackContext);
 }
 
 void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
@@ -65,8 +65,6 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 		YSASC->OnGameplayTagStateChanged.AddDynamic(this, &UYSGameplayAbility::OnGameplayTagChanged);
 	}
 	
-	SetupPlayBack(TriggerEventData);
-
 	AActor* OwnerActor = GetOwningActorFromActorInfo();
 
 	if ( IsValid(OwnerActor) )
@@ -90,7 +88,9 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 	}
 
 	HitContext = MakeShared<FYSAbilityHitContext>();
-	
+	PlaybackContext = MakeShared<FYSPlaybackContext>();
+	SetupPlayBack(TriggerEventData);
+
 	_PrepareForAbilityEvent();
 }
 
@@ -141,6 +141,7 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 	}
 	
 	HitContext = nullptr;
+	PlaybackContext = nullptr;
 }
 
 bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag) 
@@ -229,11 +230,10 @@ void UYSGameplayAbility::SetupPlayBack(const FGameplayEventData* TriggerEventDat
 		return;
 	}
 
-	FYSPlaybackContext Context;
-	Context.OwnerAbility = this;
-	Context.Instigator   = GetOwningActorFromActorInfo();
+	PlaybackContext->OwnerAbility = this;
+	PlaybackContext->Instigator = GetOwningActorFromActorInfo();
 
-	ActivePlayback(0, Context);
+	ActivePlayback(0);
 }
 
 #if UE_EDITOR

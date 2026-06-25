@@ -141,13 +141,14 @@ public:
 	
 	void AddRuntimeEffectSpecHandle(const FActiveGameplayEffectHandle& Handle) { RuntimeData.AddEffectSpecHandle(Handle); }
 	
-	void ActivePlayback(int32 Index, const FYSPlaybackContext& Context);
+	void ActivePlayback(int32 Index);
 	
 	UYSAbilityPlaybackBase* GetCurrentPlayback() const { return CurrentPlayback.Get(); }
 	
 	YS_BOOL_ACCESSOR(bIsInputAcceptable, InputAcceptable)
 	
-	TSharedPtr<FYSAbilityHitContext> GetHitContext() const { return HitContext; }
+	const TSharedPtr<FYSAbilityHitContext>& GetHitContext() const { return HitContext; }
+	const TSharedPtr<FYSPlaybackContext>& GetAbilityPlaybackContext() const { return PlaybackContext; }
 	
 protected:
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
@@ -200,6 +201,7 @@ private:
 	FYSGameplayAbility_RuntimeData RuntimeData;
 	
 	TSharedPtr<FYSAbilityHitContext> HitContext;
+	TSharedPtr<FYSPlaybackContext> PlaybackContext;
 	
 	UPROPERTY()
 	TObjectPtr<ALevelSequenceActor> ActiveSequenceActor = nullptr;

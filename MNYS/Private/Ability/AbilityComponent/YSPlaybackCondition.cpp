@@ -7,9 +7,9 @@
 #include "GameplayEffect.h"
 #include "Ability/YSGameplayAbility.h"
 
-bool FYSPlaybackCondition_HasGameplayEffect::Evaluate(const FYSPlaybackContext& Context) const
+bool FYSPlaybackCondition_HasGameplayEffect::Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const
 {
-	UYSGameplayAbility* Ability = Context.OwnerAbility;
+	UYSGameplayAbility* Ability = Context->OwnerAbility;
 	
 	if (IsValid(Ability) == false)
 	{

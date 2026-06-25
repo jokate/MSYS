@@ -18,7 +18,7 @@ struct FYSPlaybackCondition
 	GENERATED_BODY()
 	virtual ~FYSPlaybackCondition() = default;
 	
-	virtual bool Evaluate(const FYSPlaybackContext& Context) const { return true; }
+	virtual bool Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const { return true; }
 };
 
 // 태그 체크 조건
@@ -30,9 +30,9 @@ struct FYSPlaybackCondition_ContextTag : public FYSPlaybackCondition
 	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = "체크할 태그"))
 	FGameplayTag RequiredTag;
 
-	virtual bool Evaluate(const FYSPlaybackContext& Context) const override
+	virtual bool Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const override
 	{
-		return Context.ContextTags.HasTagExact(RequiredTag);
+		return Context->ContextTags.HasTagExact(RequiredTag);
 	}
 };
 
@@ -45,5 +45,5 @@ public :
 	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = "체크할 GE 클래스"))
 	TSubclassOf<class UGameplayEffect> GameplayEffect;
 	
-	virtual bool Evaluate(const FYSPlaybackContext& Context) const override;
+	virtual bool Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const override;
 };
