@@ -10,10 +10,10 @@ public class MNYS : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", 
 			"GameplayAbilities", "AIModule", "MotionWarping", "GameplayTags", "GameplayTasks", "DataRegistry", "DeveloperSettings", 
-			"UMG", "Kismet", "AnimGraphRuntime", "Niagara", "LevelSequence", "MovieScene", "NavigationSystem"
+			"UMG", "Kismet", "AnimGraphRuntime", "Niagara", "LevelSequence", "MovieScene", "NavigationSystem", "StateTreeModule"
 		});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "AnimationLocomotionLibraryRuntime" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "AnimationLocomotionLibraryRuntime", "GameplayStateTreeModule" });
 		
 		PublicDependencyModuleNames.AddRange(
 			new string[]
