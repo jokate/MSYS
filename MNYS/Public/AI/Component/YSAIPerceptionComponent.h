@@ -22,14 +22,27 @@ public:
 	// Sets default values for this component's properties
 	UYSAIPerceptionComponent();
 
-protected:
+public:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-
-public:
+	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 	
+	virtual void HandleExpiredStimulus(FAIStimulus& StimulusStore) override;
+	
+
+protected:
+	UFUNCTION()
+	void OnPerceptionUpdated_Callback(AActor* Actor, FAIStimulus Stimulus);
+
+	UFUNCTION()
+	void OnTargetPerceptionInfoUpdated_Callback(const FActorPerceptionUpdateInfo& UpdateInfo);
+	
+	UFUNCTION()
+	void OnActorForgotten(AActor* Actor);
+	
+public : 
 	
 };

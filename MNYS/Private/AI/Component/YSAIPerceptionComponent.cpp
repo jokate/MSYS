@@ -3,6 +3,9 @@
 
 #include "AI/Component/YSAIPerceptionComponent.h"
 
+#include "Perception/AISense_Hearing.h"
+#include "Perception/AISense_Sight.h"
+
 
 // Sets default values for this component's properties
 UYSAIPerceptionComponent::UYSAIPerceptionComponent()
@@ -20,8 +23,9 @@ void UYSAIPerceptionComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
-	
+	OnTargetPerceptionUpdated.AddDynamic(this, &UYSAIPerceptionComponent::OnPerceptionUpdated_Callback);
+	OnTargetPerceptionInfoUpdated.AddDynamic(this, &UYSAIPerceptionComponent::OnTargetPerceptionInfoUpdated_Callback);
+	OnTargetPerceptionForgotten.AddDynamic(this, &UYSAIPerceptionComponent::OnActorForgotten);
 }
 
 
@@ -32,5 +36,19 @@ void UYSAIPerceptionComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// ...
+}
+
+void UYSAIPerceptionComponent::OnPerceptionUpdated_Callback(AActor* Actor, FAIStimulus Stimulus)
+{
+	// 본 경우..
+	if (Stimulus.Type == UAISense::GetSenseID<UAISense_Sight>())
+	{
+		
+	}
+	
+	if ( Stimulus.Type == UAISense::GetSenseID<UAISense_Hearing>())
+	{
+		
+	}
 }
 
