@@ -36,9 +36,6 @@ public:
 protected:
 	UFUNCTION()
 	void OnPerceptionUpdated_Callback(AActor* Actor, FAIStimulus Stimulus);
-
-	UFUNCTION()
-	void OnTargetPerceptionInfoUpdated_Callback(const FActorPerceptionUpdateInfo& UpdateInfo);
 	
 	UFUNCTION()
 	void OnActorForgotten(AActor* Actor);

@@ -59,6 +59,11 @@ protected :
 	UPROPERTY(EditAnywhere, Category = "Input")
 	EYSTargetingPolicy Policy = EYSTargetingPolicy::Dynamic;
 	
+	UPROPERTY(EditAnywhere, Category = "Input", meta = (EditCondition = "Policy == EYSTargetingPolicy::Dynamic", EditConditionHides))
+	float SearchInterval = 0.5f;
+	
 private : 
 	void _SearchBestTarget(const FStateTreeExecutionContext& Context) const;
-};
+	
+	mutable float CurrentSearchTime = 0.f;
+};	

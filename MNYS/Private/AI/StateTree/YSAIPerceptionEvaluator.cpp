@@ -25,7 +25,13 @@ void FYSAIFindTargetEvaluator::Tick(FStateTreeExecutionContext& Context, const f
 		return;
 	} 
 	
-	_SearchBestTarget(Context);
+	CurrentSearchTime += DeltaTime;
+	
+	if ( CurrentSearchTime > SearchInterval )
+	{
+		_SearchBestTarget(Context);
+		CurrentSearchTime = 0.f;
+	}
 }
 
 void FYSAIFindTargetEvaluator::_SearchBestTarget(const FStateTreeExecutionContext& Context) const

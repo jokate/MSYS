@@ -24,7 +24,6 @@ void UYSAIPerceptionComponent::BeginPlay()
 	Super::BeginPlay();
 
 	OnTargetPerceptionUpdated.AddDynamic(this, &UYSAIPerceptionComponent::OnPerceptionUpdated_Callback);
-	OnTargetPerceptionInfoUpdated.AddDynamic(this, &UYSAIPerceptionComponent::OnTargetPerceptionInfoUpdated_Callback);
 	OnTargetPerceptionForgotten.AddDynamic(this, &UYSAIPerceptionComponent::OnActorForgotten);
 }
 
@@ -38,17 +37,17 @@ void UYSAIPerceptionComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	// ...
 }
 
+void UYSAIPerceptionComponent::HandleExpiredStimulus(FAIStimulus& StimulusStore)
+{
+	Super::HandleExpiredStimulus(StimulusStore);
+}
+
 void UYSAIPerceptionComponent::OnPerceptionUpdated_Callback(AActor* Actor, FAIStimulus Stimulus)
 {
-	// 본 경우..
-	if (Stimulus.Type == UAISense::GetSenseID<UAISense_Sight>())
-	{
-		
-	}
-	
-	if ( Stimulus.Type == UAISense::GetSenseID<UAISense_Hearing>())
-	{
-		
-	}
+	// 여기서 외적인 연출이나 그런거 해도 될듯?
+
+}
+void UYSAIPerceptionComponent::OnActorForgotten(AActor* Actor)
+{
 }
 
