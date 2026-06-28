@@ -6,16 +6,14 @@
 #include "EnvironmentQuery/Items/EnvQueryItemType_Point.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AIPerceptionListenerInterface.h"
-#include "Perception/AISense.h"
 #include "Perception/AISense_Hearing.h"
 #include "GameFramework/Pawn.h"
-#include "Engine/Engine.h"
-#include "VisualLogger/VisualLogger.h"
+#include "EnvironmentQuery/Contexts/EnvQueryContext_Querier.h"
 
 UYSEQG_PerceivedLocations::UYSEQG_PerceivedLocations()
 {
 	ItemType = UEnvQueryItemType_Point::StaticClass();
-	
+	ListenerContext = UEnvQueryContext_Querier::StaticClass();
 	SenseToUse = UAISense_Hearing::StaticClass();
 }
 

@@ -96,3 +96,13 @@ enum class EYSAttackActivationType : uint8
 	TimeBased		UMETA(DisplayName = "시간 기반"),
 	TagBased		UMETA(DisplayName = "태그 기반"),
 };
+
+
+UENUM()
+enum class EYSPerceptionAffiliation : uint8
+{
+	Any,       // 전부
+	Hostile,   // 적만 (적이 낸 소리/움직임만)
+	Friendly,  // 아군만
+	Neutral,   // 중립만
+};

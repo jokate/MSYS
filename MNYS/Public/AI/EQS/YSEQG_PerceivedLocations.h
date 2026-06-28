@@ -4,16 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "YSEnvQueryGeneratorBase.h"
+#include "General/YSEnum.h"
 #include "YSEQG_PerceivedLocations.generated.h"
-
-UENUM()
-enum class EYSPerceptionAffiliation : uint8
-{
-	Any,       // 전부
-	Hostile,   // 적만 (적이 낸 소리/움직임만)
-	Friendly,  // 아군만
-	Neutral,   // 중립만
-};
 
 /**
  * 퍼셉션으로 감지된 '자극 위치'를 Point 아이템으로 생성한다.
