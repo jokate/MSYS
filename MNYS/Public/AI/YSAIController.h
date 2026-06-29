@@ -25,6 +25,9 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	virtual void OnPossess(APawn* InPawn) override;
+	void StartLogic() const;
+	void StopLogic() const;
 	
 public : 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | Perception")

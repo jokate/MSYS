@@ -7,15 +7,21 @@
 #include "AI/YSAIController.h"
 #include "EnvironmentQuery/EnvQueryManager.h"
 
+FYSAIFindTargetEvaluator::FYSAIFindTargetEvaluator()
+{
+}
+
 // 베스트 타겟 고정화.
 void FYSAIFindTargetEvaluator::TreeStart(FStateTreeExecutionContext& Context) const
 {
-	if ( Policy != EYSTargetingPolicy::Fixed )
+	if ( Policy == EYSTargetingPolicy::Fixed )
 	{
+		_SearchBestTarget(Context);
 		return;
 	}
 	
-	_SearchBestTarget(Context);
+	
+	Context.AddScheduledTickRequest(FStateTreeScheduledTick::MakeCustomTickRate(SearchInterval));
 }
 
 void FYSAIFindTargetEvaluator::Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const

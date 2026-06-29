@@ -15,18 +15,35 @@ AYSAIController::AYSAIController()
 	
 	MainPerceptionComponent = CreateDefaultSubobject<UYSAIPerceptionComponent>("PerceptionComponent");
 	StateTreeComponent = CreateDefaultSubobject<UStateTreeAIComponent>("StateTreeComponent");
+	
 }
 
 // Called when the game starts or when spawned
 void AYSAIController::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 // Called every frame
 void AYSAIController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+void AYSAIController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+	
+	StartLogic();
+}
+
+void AYSAIController::StartLogic() const
+{
+	StateTreeComponent->StartLogic();
+}
+
+void AYSAIController::StopLogic() const
+{
+	StateTreeComponent->StopLogic(TEXT("Stopped"));
 }
 

@@ -34,10 +34,8 @@ public :
 	UPROPERTY(VisibleAnywhere, Category = "Output")
 	TObjectPtr<AActor> TargetActor;
 	
-	UPROPERTY(EditAnywhere, Category = "Input")
+	UPROPERTY(EditAnywhere, Category = "Input | Parameters")
 	TObjectPtr<UEnvQuery> TargetingEQS;
-	
-	
 };
 
 USTRUCT(DisplayName = "타겟팅 될 액터 찾기.")
@@ -46,6 +44,8 @@ struct MNYS_API FYSAIFindTargetEvaluator :  public FStateTreeEvaluatorCommonBase
 	
 	GENERATED_BODY()
 	
+public : 
+	FYSAIFindTargetEvaluator();
 	using FInstanceDataType = FYSAITargetInstancedData;
 	virtual const UStruct* GetInstanceDataType() const override { return FInstanceDataType::StaticStruct(); }
 	virtual void TreeStart(FStateTreeExecutionContext& Context) const override;
@@ -53,13 +53,13 @@ struct MNYS_API FYSAIFindTargetEvaluator :  public FStateTreeEvaluatorCommonBase
 
 protected : 
 	// Invalid 한 경우 ( 실패 한 경우에 타겟을 놓을 것인가? 예를 들어서 퍼셉션 된 타겟이 없다면의 가정 조치. )
-	UPROPERTY(EditAnywhere, Category = "Input")
+	UPROPERTY(EditAnywhere, Category = "Input | Parameters")
 	bool NeedToReleaseInvalidResult = false;
 	
-	UPROPERTY(EditAnywhere, Category = "Input")
+	UPROPERTY(EditAnywhere, Category = "Input | Parameters")
 	EYSTargetingPolicy Policy = EYSTargetingPolicy::Dynamic;
 	
-	UPROPERTY(EditAnywhere, Category = "Input", meta = (EditCondition = "Policy == EYSTargetingPolicy::Dynamic", EditConditionHides))
+	UPROPERTY(EditAnywhere, Category = "Input | Parameters", meta = (EditCondition = "Policy == EYSTargetingPolicy::Dynamic", EditConditionHides))
 	float SearchInterval = 0.5f;
 	
 private : 

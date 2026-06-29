@@ -3,6 +3,7 @@
 #include "Character/YSMonster.h"
 
 #include "YSAbilitySystemComponent.h"
+#include "AI/YSAIController.h"
 #include "General/YSDefine.h"
 
 // Sets default values
