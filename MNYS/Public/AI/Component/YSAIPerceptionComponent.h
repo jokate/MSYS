@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "General/YSStruct.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "YSAIPerceptionComponent.generated.h"
 
@@ -13,6 +14,9 @@
  * 잡몹의 경우에는 사용 가능하되, 보스의 경우 ( 필드에 깔린 경우 예외 ) 강제적으로 선제 타겟팅을 걸도록 해야 한다.
  * 사실상 솔로플레이기 때문에, 만약에 소환수를 까는 경우 대비
  */
+
+struct FYSTargetingActorCollections;
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class MNYS_API UYSAIPerceptionComponent : public UAIPerceptionComponent
 {
@@ -25,13 +29,12 @@ public:
 public:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
-	
-	virtual void HandleExpiredStimulus(FAIStimulus& StimulusStore) override;
-	
+
 
 protected:
 	UFUNCTION()
@@ -42,4 +45,21 @@ protected:
 	
 public : 
 	
+	const TSharedPtr<FYSTargetingActorCollections>& GetTargetingActorCollections() const
+	{
+		return TargetingActorCollections;
+	}
+	
+	void SetTargetActorCollections(const TSharedPtr<FYSTargetingActorCollections>& InTargetingActorCollections)
+	{
+		TargetingActorCollections = InTargetingActorCollections;
+	}
+	
+	AActor* GetBestTargetActor() const
+	{
+		return TargetingActorCollections->GetBestTargetActor();
+	}
+
+private : 
+	TSharedPtr<FYSTargetingActorCollections> TargetingActorCollections;
 };

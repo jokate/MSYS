@@ -253,3 +253,54 @@ struct FYSCameraEffectParams
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "복귀 보간 속도"))
 	FRotator RelativeRotator = FRotator::ZeroRotator;
 };
+
+USTRUCT(BlueprintType)
+struct FYSTargetingActorCollections 
+{
+	GENERATED_BODY()
+	
+public : 
+	FYSTargetingActorCollections() {}
+	FYSTargetingActorCollections(AActor* Owner) : OwnerActor(Owner) {}
+	
+	AActor* GetOwnerActor() const { return OwnerActor.Get(); }
+	AActor* GetBestTargetActor() const { return BestTargetActor.Get(); }
+	void ResetBestTargetActor() { BestTargetActor.Reset(); }
+	TArray<AActor*> GetSkillTargetActors() const
+	{
+		TArray<AActor*> TargetActors;
+		for ( TWeakObjectPtr<AActor> SkillTargetActor : SkillTargetActors )
+		{
+			AActor* TempSkillTarget = SkillTargetActor.Get();
+			
+			if ( IsValid(TempSkillTarget) == false )
+			{
+				continue;
+			}
+			
+			TargetActors.Emplace(TempSkillTarget);
+		}
+		
+		return TargetActors;
+	}
+	
+	void SetBestTargetActor(AActor* TargetActor)
+	{
+		BestTargetActor = TargetActor;
+	}
+	
+	void AddSkillTargetActor(AActor* SkillTargetActor)
+	{
+		SkillTargetActors.AddUnique(SkillTargetActor);
+	}
+	
+private :
+	// 해당 데이터를 누가 소유할 것인가?
+	TWeakObjectPtr<AActor> OwnerActor;
+	
+	// 타겟 추적시 사용 (최고의 타겟팅 액터)
+	TWeakObjectPtr<AActor> BestTargetActor;
+	
+	// 스킬에 대한 타겟팅 지정이 완료되었다면 해당 부분에 대해서 활용.
+	TArray<TWeakObjectPtr<AActor>> SkillTargetActors;
+};

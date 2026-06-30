@@ -13,8 +13,6 @@ UYSAIPerceptionComponent::UYSAIPerceptionComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
-	// ...
 }
 
 
@@ -27,20 +25,20 @@ void UYSAIPerceptionComponent::BeginPlay()
 	OnTargetPerceptionForgotten.AddDynamic(this, &UYSAIPerceptionComponent::OnActorForgotten);
 }
 
+void UYSAIPerceptionComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	TargetingActorCollections = nullptr;
+	Super::EndPlay(EndPlayReason);
+}
+
 
 // Called every frame
 void UYSAIPerceptionComponent::TickComponent(float DeltaTime, ELevelTick TickType,
                                              FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// ...
 }
 
-void UYSAIPerceptionComponent::HandleExpiredStimulus(FAIStimulus& StimulusStore)
-{
-	Super::HandleExpiredStimulus(StimulusStore);
-}
 
 void UYSAIPerceptionComponent::OnPerceptionUpdated_Callback(AActor* Actor, FAIStimulus Stimulus)
 {

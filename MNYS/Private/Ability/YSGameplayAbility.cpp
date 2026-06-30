@@ -87,7 +87,7 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 		}
 	}
 
-	HitContext = MakeShared<FYSAbilityHitContext>();
+	HitContext = MakeShared<FYSAbilityHitContext>(GetOwningActorFromActorInfo());
 	PlaybackContext = MakeShared<FYSPlaybackContext>();
 	SetupPlayBack(TriggerEventData);
 

@@ -28,6 +28,9 @@ enum class EYSAbilityType : uint8
 
 struct FYSAbilityHitContext
 {
+	FYSAbilityHitContext() {};
+	FYSAbilityHitContext(AActor* Instigator) : InstigatorActor(Instigator) {}
+	
 	void AddHitActor(AActor* HitActor) { HitActors.Add(HitActor); }
 	void UpdateHitResult(UObject* HitObject, const FHitResult& HitResult)
 	{
@@ -72,6 +75,7 @@ struct FYSAbilityHitContext
 	}
 
 private : 
+	TWeakObjectPtr<AActor> InstigatorActor;
 	TSet<TWeakObjectPtr<AActor>> HitActors;
 	TMap<TWeakObjectPtr<UObject>, TArray<FHitResult>> RecentHitResults;
 };

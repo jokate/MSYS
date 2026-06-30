@@ -5,6 +5,7 @@
 
 #include "AI/Component/YSAIPerceptionComponent.h"
 #include "Components/StateTreeAIComponent.h"
+#include "General/YSStruct.h"
 
 
 // Sets default values
@@ -35,6 +36,8 @@ void AYSAIController::OnPossess(APawn* InPawn)
 	Super::OnPossess(InPawn);
 	
 	StartLogic();
+	
+	MainPerceptionComponent->SetTargetActorCollections(MakeShared<FYSTargetingActorCollections>(InPawn));
 }
 
 void AYSAIController::StartLogic() const

@@ -106,3 +106,10 @@ enum class EYSPerceptionAffiliation : uint8
 	Friendly,  // 아군만
 	Neutral,   // 중립만
 };
+
+UENUM(BlueprintType)
+enum class EYSTargetingPolicy : uint8
+{
+	Fixed,
+	Dynamic,
+};
