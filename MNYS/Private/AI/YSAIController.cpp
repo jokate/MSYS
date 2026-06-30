@@ -35,9 +35,8 @@ void AYSAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 	
-	StartLogic();
-	
 	MainPerceptionComponent->SetTargetActorCollections(MakeShared<FYSTargetingActorCollections>(InPawn));
+	StartLogic();
 }
 
 void AYSAIController::StartLogic() const

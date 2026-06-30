@@ -27,8 +27,8 @@ public :
 	virtual void ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
 };
 
-USTRUCT()
-struct MNYS_API FYSTargetingTask : public FStateTreeTaskBase
+USTRUCT(DisplayName = "타겟팅 처리")
+struct MNYS_API FYSTargetingTask : public FYSStateTreeTaskBase
 {
 	GENERATED_BODY()
 	
