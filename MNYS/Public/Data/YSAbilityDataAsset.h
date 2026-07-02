@@ -7,6 +7,7 @@
 #include "General/YSStruct.h"
 #include "YSAbilityDataAsset.generated.h"
 
+class UYSAbilitySystemComponent;
 /**
  * 
  */
@@ -16,6 +17,7 @@ class MNYS_API UYSAbilityDataAsset : public UDataAsset
 	GENERATED_BODY()
 	
 public : 
+	static UYSAbilityDataAsset* GetDataAssetFromAbilitySystemComponent(UYSAbilitySystemComponent* InASC);
 	TArray<FYSGrantedAbilityData> GetAllAbilities() const;
 	
 protected : 

@@ -5,6 +5,7 @@
 
 #include "StateTreeExecutionContext.h"
 #include "AI/YSAIController.h"
+#include "AI/AITask/YSAIUseAbilityTask.h"
 #include "AI/Component/YSAIPerceptionComponent.h"
 #include "EnvironmentQuery/EnvQueryManager.h"
 #include "General/YSStruct.h"
@@ -106,4 +107,55 @@ void UYSAIStateTreeTask_TargetActor::_SearchBestTarget(const FStateTreeExecution
 	}
 	
 	TargetingActorCollections->SetBestTargetActor(Result->GetItemAsActor(0));
+}
+
+EStateTreeRunStatus UYSAIStateTreeTask_UseAbility::EnterState(FStateTreeExecutionContext& Context,
+	const FStateTreeTransitionResult& Transition)
+{
+	AYSAIController* Controller = GetAIControllerFromContext(Context);
+
+	if ( IsValid(Controller) == false )
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	UseAbilityTask = UYSAIUseAbilityTask::CreateTask(Controller);
+
+	if ( IsValid(UseAbilityTask) == false )
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	UseAbilityTask->ReadyForActivation();
+
+	return EStateTreeRunStatus::Running;
+}
+
+EStateTreeRunStatus UYSAIStateTreeTask_UseAbility::Tick(FStateTreeExecutionContext& Context, const float DeltaTime)
+{
+	if ( IsValid(UseAbilityTask) == false )
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	if ( UseAbilityTask->IsFinished() )
+	{
+		return EStateTreeRunStatus::Succeeded;
+	}
+
+	return Super::Tick(Context, DeltaTime);
+}
+
+void UYSAIStateTreeTask_UseAbility::ExitState(FStateTreeExecutionContext& Context,
+	const FStateTreeTransitionResult& Transition)
+{
+	// 상위 State 전이 등으로 어빌리티 종료 전에 State가 빠져나가는 경우 AITask 정리
+	if ( IsValid(UseAbilityTask) && UseAbilityTask->IsFinished() == false )
+	{
+		UseAbilityTask->ExternalCancel();
+	}
+
+	UseAbilityTask = nullptr;
+
+	Super::ExitState(Context, Transition);
 }

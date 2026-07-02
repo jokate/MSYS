@@ -84,9 +84,10 @@ enum class EYSPositionPolicy : uint8
 UENUM(BlueprintType)
 enum class EYSSkillType : uint8
 {
-	Basic,
-	Special,
-	JustAvoid,
+	Basic		UMETA(DisplayName = "기본"),
+	Special		UMETA(DisplayName = "특수"),
+	JustAvoid	UMETA(DisplayName = "회피"),
+	Movement	UMETA(DisplayName = "이동")
 };
 
 UENUM(BlueprintType)

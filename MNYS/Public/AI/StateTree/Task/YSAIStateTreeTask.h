@@ -36,3 +36,13 @@ public :
 	using UInstanceDataType = UYSAIStateTreeTask_TargetActor;
 	virtual const UStruct* GetInstanceDataType() const override { return UInstanceDataType::StaticClass(); }
 };
+
+USTRUCT(DisplayName = "어빌리티 사용")
+struct MNYS_API FYSUseAbilityTask : public FYSStateTreeTaskBase
+{
+	GENERATED_BODY()
+	
+public : 
+	using UInstanceDataType = UYSAIStateTreeTask_UseAbility;
+	virtual const UStruct* GetInstanceDataType() const override { return UInstanceDataType::StaticClass(); }
+};

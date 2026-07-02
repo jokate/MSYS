@@ -201,7 +201,7 @@ protected :
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Buff", meta = (Categories = "Buff"))
 	FGameplayTagContainer BuffTags;
 	
-private:
+protected :
 	FYSGameplayAbility_RuntimeData RuntimeData;
 	
 	TSharedPtr<FYSAbilityHitContext> HitContext;

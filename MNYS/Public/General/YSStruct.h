@@ -16,6 +16,8 @@ class ULevelSequence;
 class UYSAbilityTriggerPayload;
 class UYSGameplayAbility;
 
+
+
 USTRUCT(BlueprintType)
 struct FYSGrantedAbilityData
 {
@@ -27,6 +29,9 @@ public :
 	
 	UPROPERTY(EditDefaultsOnly)
 	FGameplayTagContainer InputTag;        // 인풋 바인딩
+	
+	UPROPERTY(EditDefaultsOnly)
+	EYSSkillType SkillType = EYSSkillType::Basic;
 
 	UPROPERTY(EditDefaultsOnly)
 	int32 Level = 1;

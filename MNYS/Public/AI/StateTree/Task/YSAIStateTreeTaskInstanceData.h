@@ -9,6 +9,7 @@
 #include "YSAIStateTreeTaskInstanceData.generated.h"
 
 class AYSAIController;
+class UYSAIUseAbilityTask;
 struct FYSTargetingActorCollections;
 class UEnvQuery;
 struct FStateTreeExecutionContext;
@@ -65,7 +66,23 @@ public :
 	UPROPERTY(EditAnywhere, Category = "Input | Parameters")
 	TObjectPtr<UEnvQuery> TargetingEQS;
 	
-private : 
+private :
 	TSharedPtr<FYSTargetingActorCollections> TargetingActorCollections;
 	float CurrentSearchTime = 0.f;
+};
+
+
+UCLASS()
+class MNYS_API UYSAIStateTreeTask_UseAbility : public UYSAIStateTreeTaskInstanceData
+{
+	GENERATED_BODY()
+
+public :
+	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) override;
+	virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context, const float DeltaTime) override;
+	virtual void ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) override;
+
+private :
+	UPROPERTY(Transient)
+	TObjectPtr<UYSAIUseAbilityTask> UseAbilityTask;
 };

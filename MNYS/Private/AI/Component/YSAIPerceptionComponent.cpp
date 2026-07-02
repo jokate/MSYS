@@ -3,6 +3,7 @@
 
 #include "AI/Component/YSAIPerceptionComponent.h"
 
+#include "AI/YSAIController.h"
 #include "Perception/AISense_Hearing.h"
 #include "Perception/AISense_Sight.h"
 
@@ -13,6 +14,23 @@ UYSAIPerceptionComponent::UYSAIPerceptionComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
+}
+
+TSharedPtr<FYSTargetingActorCollections> UYSAIPerceptionComponent::GetTargetingCollection(AActor* Actor)
+{
+	if (IsValid(Actor) == false )
+	{
+		return nullptr;
+	}
+	
+	AYSAIController* AIController = Actor->GetInstigatorController<AYSAIController>();
+	
+	if (IsValid(AIController) == false )
+	{
+		return nullptr;
+	}
+	
+	return AIController->MainPerceptionComponent->GetTargetingActorCollections();
 }
 
 

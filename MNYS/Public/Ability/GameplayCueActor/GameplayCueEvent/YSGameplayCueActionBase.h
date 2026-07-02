@@ -20,7 +20,7 @@ class MNYS_API UYSGameplayCueActionBase : public UObject
 	GENERATED_BODY()
 	
 public : 
-	virtual void OnActive(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget, const FGameplayCueParameters& Parameters) { OwningGameplayCueNotify = GameplayCueNotify; }
+	virtual void OnActive(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget, const FGameplayCueParameters& Parameters);
 	virtual void OnRemove(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget, const FGameplayCueParameters& Parameters) { OwningGameplayCueNotify = nullptr; }
 
 protected : 

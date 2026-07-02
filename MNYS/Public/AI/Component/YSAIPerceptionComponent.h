@@ -25,6 +25,7 @@ class MNYS_API UYSAIPerceptionComponent : public UAIPerceptionComponent
 public:
 	// Sets default values for this component's properties
 	UYSAIPerceptionComponent();
+	static TSharedPtr<FYSTargetingActorCollections> GetTargetingCollection(AActor* Actor);
 
 public:
 	// Called when the game starts

@@ -12,6 +12,12 @@
 #include "Character/Components/YSCameraLockOnComponent.h"
 #include "Framework/YSGameModeBase.h"
 
+void UYSGameplayCueActionBase::OnActive(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget,
+	const FGameplayCueParameters& Parameters)
+{
+	OwningGameplayCueNotify = GameplayCueNotify; 
+}
+
 void UYSGameplayCueAction_SequencePlay::OnActive(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget,
                                                  const FGameplayCueParameters& Parameters)
 {
