@@ -109,7 +109,7 @@ void UYSAIUseAbilityTask::Activate()
 			continue;
 		}
 
-		const float UtilityScore = AIAbility->GetAbilityUtilityScore(AbilitySpec->Handle, ActorInfo, TargetingActorCollections.Get());
+		const float UtilityScore = AIAbility->GetAbilityUtilityScore(AbilitySpec->Handle, ActorInfo);
 
 		if ( UtilityScore > BestScore )
 		{

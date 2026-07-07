@@ -19,10 +19,10 @@ struct FYSStateTree_TargetInstancedData
 	GENERATED_BODY()
 	
 public : 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Targeting")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Output")
 	TObjectPtr<AActor> BestTarget = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Targeting")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Output")
 	TArray<TObjectPtr<AActor>> SkillTargets;
 	
 	TSharedPtr<FYSTargetingActorCollections> TargetingActorCollections;

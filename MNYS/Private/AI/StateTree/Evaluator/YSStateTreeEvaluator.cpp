@@ -41,7 +41,7 @@ void FYSStateTreeEvaluatorTarget::Tick(FStateTreeExecutionContext& Context, floa
 	
 	const TSharedPtr<FYSTargetingActorCollections>& Targeting = InstanceData.TargetingActorCollections;
 
-	if (Targeting.IsValid() == false )
+	if (Targeting.IsValid() == false)
 	{
 		InstanceData.BestTarget = nullptr;
 		InstanceData.SkillTargets.Reset();
