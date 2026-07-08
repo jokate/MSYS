@@ -20,10 +20,9 @@ public :
 	virtual float GetAbilityUtilityScore(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo) const;
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
-	virtual bool CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags = nullptr, const FGameplayTagContainer* TargetTags = nullptr, FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
-public : 
+public :
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Instanced, Category = "YS | Condition", meta = (DisplayName = "AI용 Utility Score"))
-	TArray<UYSAIAbilityScoreFunctionBase*> UtilityScore;
+	TArray<TObjectPtr<UYSAIAbilityScoreFunctionBase>> UtilityScore;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | Condition", meta = (DisplayName = "AI용 Utility Score Weight"))
 	float BaseUtilityScore = 100.f;

@@ -23,9 +23,14 @@ float UYSGameplayAbility_AIBase::GetAbilityUtilityScore(const FGameplayAbilitySp
 	float TempScore = BaseUtilityScore;
 	for (const UYSAIAbilityScoreFunctionBase* Function : UtilityScore )
 	{
+		if (IsValid(Function) == false)
+		{
+			continue;
+		}
+
 		TempScore *= Function->GetScoreFactor(ActorInfo, OwnerTargetingActorCollections.Get());
 	}
-	
+
 	return TempScore;
 }
 
@@ -43,18 +48,6 @@ void UYSGameplayAbility_AIBase::EndAbility(const FGameplayAbilitySpecHandle Hand
 	bool bReplicateEndAbility, bool bWasCancelled)
 {
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
-	
-	TargetingActorCollections = nullptr;
-}
 
-bool UYSGameplayAbility_AIBase::CanActivateAbility(const FGameplayAbilitySpecHandle Handle,
-	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags,
-	const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const
-{
-	if ( GetAbilityUtilityScore(Handle, ActorInfo) <= UtilityScoreThreshold )
-	{
-		return false;
-	}
-	
-	return Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags);
+	TargetingActorCollections = nullptr;
 }

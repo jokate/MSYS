@@ -102,14 +102,18 @@ void UYSAIUseAbilityTask::Activate()
 		{
 			continue;
 		}
-
-		// 하드 필터 : 쿨다운 / 코스트 / 태그 블로킹 등 활성화 불가능한 어빌리티는 스코어 계산 전에 제외
+		
 		if ( AIAbility->CanActivateAbility(AbilitySpec->Handle, ActorInfo) == false )
 		{
 			continue;
 		}
-
+		
 		const float UtilityScore = AIAbility->GetAbilityUtilityScore(AbilitySpec->Handle, ActorInfo);
+
+		if ( UtilityScore <= AIAbility->UtilityScoreThreshold )
+		{
+			continue;
+		}
 
 		if ( UtilityScore > BestScore )
 		{
