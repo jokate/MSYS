@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Curves/CurveFloat.h"
+#include "General/YSEnum.h"
 #include "UObject/Object.h"
 #include "YSAIAbilityScoreFunction.generated.h"
 
@@ -45,4 +46,18 @@ class MNYS_API UYSAIAbilityScoreFunction_Distance : public UYSAIAbilityScoreFunc
 
 protected:
 	virtual bool GetInputValue(const FGameplayAbilityActorInfo* ActorInfo, const FYSTargetingActorCollections* TargetingActorCollections, float& OutRawInput) const override;
+};
+
+
+UCLASS(DisplayName = "Hp 대조")
+class MNYS_API UYSAIAbilityScoreFunction_Hp : public UYSAIAbilityScoreFunctionBase
+{
+	GENERATED_BODY()
+
+protected : 
+	virtual bool GetInputValue(const FGameplayAbilityActorInfo* ActorInfo, const FYSTargetingActorCollections* TargetingActorCollections, float& OutRawInput) const override;
+	
+public : 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | AI")
+	EYSScoreObjectType Subject = EYSScoreObjectType::Owner;
 };

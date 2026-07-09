@@ -11,6 +11,12 @@
 #include "Data/YSAbilityDataAsset.h"
 #include "General/YSStruct.h"
 
+UYSAIUseAbilityTask::UYSAIUseAbilityTask(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+	bTickingTask = true;
+}
+
 UYSAIUseAbilityTask* UYSAIUseAbilityTask::CreateTask(AAIController* Controller)
 {
 	UYSAIUseAbilityTask* Task = Controller ? UAITask::NewAITask<UYSAIUseAbilityTask>(*Controller, EAITaskPriority::High) : nullptr;
@@ -39,8 +45,21 @@ void UYSAIUseAbilityTask::OnAbilityEnded(const FAbilityEndedData& AbilityEndedDa
 void UYSAIUseAbilityTask::Activate()
 {
 	Super::Activate();
+}
 
-	if ( IsValid( OwnerController ) == false || IsValid(OwnerController->GetPawn()) == false )
+void UYSAIUseAbilityTask::TickTask(float DeltaTime)
+{
+	Super::TickTask(DeltaTime);
+	
+	if ( bIsActiveAbil == false )
+	{
+		_TryActivateAbility();
+	}
+}
+
+void UYSAIUseAbilityTask::_TryActivateAbility()
+{
+		if ( IsValid( OwnerController ) == false || IsValid(OwnerController->GetPawn()) == false )
 	{
 		EndTask();
 		return;
@@ -129,4 +148,6 @@ void UYSAIUseAbilityTask::Activate()
 
 	YSASC->OnAbilityEnded.AddUObject(this, &ThisClass::OnAbilityEnded);
 	YSASC->TryActivateAbility(BestAbilityHandle);
+	
+	bIsActiveAbil = true;
 }

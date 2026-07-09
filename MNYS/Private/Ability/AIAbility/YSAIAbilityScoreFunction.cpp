@@ -3,6 +3,7 @@
 
 #include "Ability/AIAbility/YSAIAbilityScoreFunction.h"
 
+#include "YSBattleActor.h"
 #include "Abilities/GameplayAbilityTypes.h"
 #include "General/YSStruct.h"
 
@@ -44,5 +45,44 @@ bool UYSAIAbilityScoreFunction_Distance::GetInputValue(const FGameplayAbilityAct
 	}
 
 	OutRawInput = FVector::Dist(OwnerActor->GetActorLocation(), BestTargetActor->GetActorLocation());
+	return true;
+}
+
+bool UYSAIAbilityScoreFunction_Hp::GetInputValue(const FGameplayAbilityActorInfo* ActorInfo,
+	const FYSTargetingActorCollections* TargetingActorCollections, float& OutRawInput) const
+{
+	if (ActorInfo == nullptr || TargetingActorCollections == nullptr)
+	{
+		return false;
+	}
+
+	// 내꺼면 내꺼 가져오기
+	if ( Subject == EYSScoreObjectType::Owner )
+	{
+		IYSBattleActor* BattleActor = Cast<IYSBattleActor>(ActorInfo->OwnerActor);
+	
+		if ( BattleActor == nullptr )
+		{
+			return false;
+		}	
+		
+		OutRawInput = BattleActor->GetHpRatio();
+		return true;
+	}
+ 	
+	AActor* BestTargetActor = TargetingActorCollections->GetBestTargetActor();
+
+	if (IsValid(BestTargetActor) == false)
+	{
+		return false;
+	}
+	
+	IYSBattleActor* TargetBattleActor = Cast<IYSBattleActor>(BestTargetActor);
+	if (TargetBattleActor == nullptr)
+	{
+		return false;
+	}
+
+	OutRawInput = TargetBattleActor->GetHpRatio();
 	return true;
 }

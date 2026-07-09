@@ -38,9 +38,9 @@ void UYSGameplayAbility_AIBase::ActivateAbility(const FGameplayAbilitySpecHandle
                                                 const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
                                                 const FGameplayEventData* TriggerEventData)
 {
-	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
-	
+		
 	TargetingActorCollections = UYSAIPerceptionComponent::GetTargetingCollection(ActorInfo->OwnerActor.Get());
+	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 }
 
 void UYSGameplayAbility_AIBase::EndAbility(const FGameplayAbilitySpecHandle Handle,
@@ -50,4 +50,18 @@ void UYSGameplayAbility_AIBase::EndAbility(const FGameplayAbilitySpecHandle Hand
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 
 	TargetingActorCollections = nullptr;
+}
+
+void UYSGameplayAbility_AIBase::SetupPlayBack(const FGameplayEventData* TriggerEventData)
+{
+	if (!Playbacks.IsValidIndex(0) || TargetingActorCollections.IsValid() == false )
+	{
+		return;
+	}
+
+	PlaybackContext->OwnerAbility = this;
+	PlaybackContext->Instigator = GetOwningActorFromActorInfo();
+	PlaybackContext->Target = TargetingActorCollections->GetBestTargetActor();
+
+	ActivePlayback(0);
 }

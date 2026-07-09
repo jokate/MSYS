@@ -47,3 +47,32 @@ public :
 	
 	virtual bool Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const override;
 };
+
+USTRUCT(DisplayName = "타겟 액터가 각도 내에 있는지 여부")
+struct FYSPlaybackCondition_ActorInArc : public FYSPlaybackCondition
+{
+	GENERATED_BODY()
+
+public : 
+	virtual bool Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const override;
+	
+public : 
+	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = "체크할 각도"))
+	float ArcAngle = 90.f;
+};
+
+USTRUCT(DisplayName = "타겟 액터에 대한 거리 체크")
+struct FYSPlaybackCondition_ActorInDistance : public FYSPlaybackCondition
+{
+	GENERATED_BODY()
+	
+public : 
+	virtual bool Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const override;
+	
+public : 
+	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = "체크할 거리"))
+	float CheckDistance = 1000.f;
+	
+	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = "거리 내?"))
+	bool bIsInRange = false;
+};

@@ -157,7 +157,7 @@ void UYSAbilityPlaybackBase::SetupMontage()
 		{
 			PlayMontageAndWaitTask->OnCompleted.AddDynamic(this, &ThisClass::OnMontagePlayed);
 			PlayMontageAndWaitTask->OnInterrupted.AddDynamic(this, &ThisClass::OnMontageInterrupted);
-			PlayMontageAndWaitTask->OnBlendOut.AddDynamic(this, &ThisClass::OnMontageInterrupted);
+			PlayMontageAndWaitTask->OnBlendOut.AddDynamic(this, &ThisClass::OnMontagePlayed);
 			PlayMontageAndWaitTask->OnCancelled.AddDynamic(this, &ThisClass::OnMontageInterrupted);
 			PlayMontageAndWaitTask->ReadyForActivation();	
 		}

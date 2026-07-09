@@ -114,3 +114,10 @@ enum class EYSTargetingPolicy : uint8
 	Fixed,
 	Dynamic,
 };
+
+UENUM(BlueprintType)
+enum class EYSScoreObjectType : uint8
+{
+	Owner,
+	Target
+};

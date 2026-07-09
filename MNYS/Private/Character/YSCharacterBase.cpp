@@ -72,6 +72,18 @@ bool AYSCharacterBase::IsDead() const
 	return AttributeSet->GetHp() <= 0.f;
 }
 
+float AYSCharacterBase::GetHpRatio() const
+{
+	if (IsValid(AbilitySystemComponent) == false)
+		return true;
+
+	const UYSCharacterAttributeSetBase* AttributeSet = AbilitySystemComponent->GetSet<UYSCharacterAttributeSetBase>();
+	if (AttributeSet == nullptr)
+		return true;
+
+	return AttributeSet->GetHp() / AttributeSet->GetMaxHp();
+}
+
 // Called every frame
 void AYSCharacterBase::Tick(float DeltaTime)
 {

@@ -29,7 +29,8 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void PostInitializeComponents() override;
-	virtual bool IsDead() const;
+	virtual bool IsDead() const override;
+	virtual float GetHpRatio() const override;
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

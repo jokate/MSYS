@@ -16,10 +16,15 @@ class MNYS_API UYSAIUseAbilityTask : public UAITask
 	GENERATED_BODY()
 	
 public :
+	UYSAIUseAbilityTask(const FObjectInitializer& ObjectInitializer);
 	static UYSAIUseAbilityTask* CreateTask(AAIController* Controller);
 	void OnAbilityEnded(const FAbilityEndedData& AbilityEndedData);
 	virtual void Activate() override;
+	virtual void TickTask(float DeltaTime) override;
+	
+private : 
+	void _TryActivateAbility();
 	
 public : 
-	
+	bool bIsActiveAbil = false;
 };
