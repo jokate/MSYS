@@ -121,3 +121,12 @@ enum class EYSScoreObjectType : uint8
 	Owner,
 	Target
 };
+
+UENUM(BlueprintType)
+enum class EYSIAUSType : uint8
+{	
+	LinearQuadratic	UMETA(DisplayName = "선형/이차"),
+	Logistic UMETA(DisplayName = "로지스틱"),
+	Logit	UMETA(DisplayName = "로짓"),
+	Gaussian UMETA(DisplayName = "가우시안")
+};

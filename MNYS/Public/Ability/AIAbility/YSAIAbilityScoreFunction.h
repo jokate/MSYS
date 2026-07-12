@@ -23,6 +23,7 @@ class MNYS_API UYSAIAbilityScoreFunctionBase : public UObject
 public :
 	float GetScoreFactor(const FGameplayAbilityActorInfo* ActorInfo, const FYSTargetingActorCollections* TargetingActorCollections) const;
 
+	float ProcessIAUSFunction(float NormalizedInput) const;
 protected :
 	// 측정값을 OutRawInput에 담아 반환. false 반환 = 측정 불가 = 거부권(팩터 0)
 	virtual bool GetInputValue(const FGameplayAbilityActorInfo* ActorInfo, const FYSTargetingActorCollections* TargetingActorCollections, float& OutRawInput) const
@@ -30,13 +31,28 @@ protected :
 		OutRawInput = InputRange.Max;
 		return true;
 	}
+	
+private : 
 
 public :
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | AI", meta = (DisplayName = "입력 범위 (이 구간을 0~1로 정규화)"))
 	FFloatInterval InputRange = FFloatInterval(0.f, 1.f);
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | AI", meta = (DisplayName = "응답 커브 (입력 0~1 → 점수 0~1, 비어있으면 선형)"))
-	FRuntimeFloatCurve ResponseCurve;
+	//IAUS 적용.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | AI")
+	EYSIAUSType IAUSType = EYSIAUSType::LinearQuadratic;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | AI")
+	float Slope = 1.f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | AI")
+	int32 Exponential = 1;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | AI", meta = (ClampMax = 1.f, ClampMin = 0.f))
+	float VerticalShift = 0.f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | AI", meta = (ClampMax = 1.f, ClampMin = 0.f))
+	float HorizontalShift = 0.f;
 };
 
 UCLASS(DisplayName = "거리 대조")

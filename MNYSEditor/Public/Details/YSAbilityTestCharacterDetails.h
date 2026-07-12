@@ -20,6 +20,4 @@ private:
 	void GenerateAbilityButtons(IDetailCategoryBuilder& CategoryBuilder, const AYSCharacterBase* TestCharacter);
     
 	FReply OnAbilityButtonClicked(TWeakObjectPtr<AYSCharacterBase> TestCharacter, TSubclassOf<UGameplayAbility> AbilityClass);
-
-	
 };

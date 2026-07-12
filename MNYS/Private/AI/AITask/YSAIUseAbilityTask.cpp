@@ -110,7 +110,7 @@ void UYSAIUseAbilityTask::_TryActivateAbility()
 
 		// NonInstanced 어빌리티는 인스턴스가 없으므로 CDO로 폴백
 		const UGameplayAbility* AbilityObject = AbilitySpec->GetPrimaryInstance();
-		if ( AbilityObject == nullptr )
+		if ( IsValid(AbilityObject) == false )
 		{
 			AbilityObject = AbilitySpec->Ability;
 		}
