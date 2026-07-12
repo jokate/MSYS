@@ -33,13 +33,17 @@ float UYSAIAbilityScoreFunctionBase::ProcessIAUSFunction(float NormalizedInput) 
 		}
 	case EYSIAUSType::Logistic:
 		{
-			// (1000e)^(-x+c) : 밑이 1000e여야 0~1 입력에서 S-커브가 나온다 (1000·e^(-x+c)는 전 구간 ≈0)
-			RetVal =  Exponential * (1.0f / (1.0f + FMath::Pow(1000.0f * UE_EULERS_NUMBER, -NormalizedInput + HorizontalShift))) + VerticalShift;
+			// Curvature(IAUS) 원전식. 중간점 = 0.5 + HorizontalShift, 가파름 = 10·Exponential
+			RetVal = (Slope / (1.0f + FMath::Exp(-10.0f * Exponential * (NormalizedInput - 0.5f - HorizontalShift)))) + VerticalShift;
 			break;
 		}
 	case EYSIAUSType::Logit:
-		RetVal =  FMath::Loge((NormalizedInput + UE_EULERS_NUMBER) / (1.0f - NormalizedInput + UE_EULERS_NUMBER)) / Slope + VerticalShift;
-		break;
+		{
+			// Curvature(IAUS) 원전식. log 발산을 막기 위해 입력을 (0,1) 내부로 조여서 사용한다
+			const float ShiftedInput = FMath::Clamp(NormalizedInput - HorizontalShift, KINDA_SMALL_NUMBER, 1.0f - KINDA_SMALL_NUMBER);
+			RetVal = Slope * FMath::Loge(ShiftedInput / (1.0f - ShiftedInput)) / 5.0f + 0.5f + VerticalShift;
+			break;
+		}
 	case EYSIAUSType::Gaussian:
 		RetVal =  FMath::Pow(UE_EULERS_NUMBER / (Slope * FMath::Sqrt(2.f * UE_PI)), -0.5f * FMath::Square((NormalizedInput - HorizontalShift) / Slope)) * Exponential + VerticalShift;
 		break;

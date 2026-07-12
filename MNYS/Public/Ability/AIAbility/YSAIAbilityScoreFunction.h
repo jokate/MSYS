@@ -48,10 +48,10 @@ public :
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | AI")
 	int32 Exponential = 1;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | AI", meta = (ClampMax = 1.f, ClampMin = 0.f))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | AI", meta = (ClampMax = 1.f, ClampMin = -1.f))
 	float VerticalShift = 0.f;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | AI", meta = (ClampMax = 1.f, ClampMin = 0.f))
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | AI", meta = (ClampMax = 1.f, ClampMin = -1.f))
 	float HorizontalShift = 0.f;
 };
 
