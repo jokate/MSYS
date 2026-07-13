@@ -114,12 +114,12 @@ EStateTreeRunStatus UYSAIStateTreeTask_UseAbility::EnterState(FStateTreeExecutio
 {
 	AYSAIController* Controller = GetAIControllerFromContext(Context);
 
-	if ( IsValid(Controller) == false )
+	if ( IsValid(Controller) == false || AbilityToUse.IsValid() == false )
 	{
 		return EStateTreeRunStatus::Failed;
 	}
 
-	UseAbilityTask = UYSAIUseAbilityTask::CreateTask(Controller);
+	UseAbilityTask = UYSAIUseAbilityTask::CreateTask(Controller, AbilityToUse);
 
 	if ( IsValid(UseAbilityTask) == false )
 	{

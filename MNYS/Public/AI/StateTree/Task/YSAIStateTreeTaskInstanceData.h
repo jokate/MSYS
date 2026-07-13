@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayAbilitySpecHandle.h"
 #include "StateTreeExecutionTypes.h"
 #include "General/YSEnum.h"
 #include "UObject/Object.h"
@@ -82,6 +83,10 @@ public :
 	virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context, const float DeltaTime) override;
 	virtual void ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) override;
 
+protected : 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Parameter)
+	FGameplayAbilitySpecHandle AbilityToUse;
+	
 private :
 	UPROPERTY(Transient)
 	TObjectPtr<UYSAIUseAbilityTask> UseAbilityTask;

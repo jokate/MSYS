@@ -6,6 +6,7 @@
 #include "Ability/YSGameplayAbility.h"
 #include "YSGameplayAbility_AIBase.generated.h"
 
+class UEnvQuery;
 class UYSAIAbilityScoreFunctionBase;
 struct FYSTargetingActorCollections;
 /**
@@ -22,6 +23,9 @@ public :
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
 	virtual void SetupPlayBack(const FGameplayEventData* TriggerEventData) override;
+	virtual float GetUtilityScoreFactor(const FGameplayAbilityActorInfo* ActorInfo, const FYSTargetingActorCollections* TargetingCollections) const;
+	
+	UEnvQuery* GetQueryToReposition() const;
 public :
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Instanced, Category = "YS | Condition", meta = (DisplayName = "AI용 Utility Score"))
 	TArray<TObjectPtr<UYSAIAbilityScoreFunctionBase>> UtilityScore;
@@ -31,6 +35,9 @@ public :
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | Condition", meta = (DisplayName = "AI용 Utility Score Threshold"))
 	float UtilityScoreThreshold = 50.f;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | EQS", meta = (DisplayName = "EQS Query"))
+	TSoftObjectPtr<UEnvQuery> QueryToReposition;
 	
 private : 
 	TSharedPtr<FYSTargetingActorCollections> TargetingActorCollections;

@@ -6,6 +6,7 @@
 #include "Ability/AIAbility/YSAIAbilityScoreFunction.h"
 #include "AI/YSAIController.h"
 #include "AI/Component/YSAIPerceptionComponent.h"
+#include "EnvironmentQuery/EnvQuery.h"
 #include "General/YSStruct.h"
 
 float UYSGameplayAbility_AIBase::GetAbilityUtilityScore(const FGameplayAbilitySpecHandle Handle,
@@ -21,15 +22,7 @@ float UYSGameplayAbility_AIBase::GetAbilityUtilityScore(const FGameplayAbilitySp
 	const TSharedPtr<FYSTargetingActorCollections> OwnerTargetingActorCollections = UYSAIPerceptionComponent::GetTargetingCollection(OwnerActor);
 	
 	float TempScore = BaseUtilityScore;
-	for (const UYSAIAbilityScoreFunctionBase* Function : UtilityScore )
-	{
-		if (IsValid(Function) == false)
-		{
-			continue;
-		}
-
-		TempScore *= Function->GetScoreFactor(ActorInfo, OwnerTargetingActorCollections.Get());
-	}
+	TempScore *= GetUtilityScoreFactor(ActorInfo, OwnerTargetingActorCollections.Get());
 
 	return TempScore;
 }
@@ -64,4 +57,31 @@ void UYSGameplayAbility_AIBase::SetupPlayBack(const FGameplayEventData* TriggerE
 	PlaybackContext->Target = TargetingActorCollections->GetBestTargetActor();
 
 	ActivePlayback(0);
+}
+
+float UYSGameplayAbility_AIBase::GetUtilityScoreFactor(const FGameplayAbilityActorInfo* ActorInfo,
+	const FYSTargetingActorCollections* TargetingCollections) const
+{
+	float Origin = 1.f;
+	for (const UYSAIAbilityScoreFunctionBase* Function : UtilityScore )
+	{
+		if (IsValid(Function) == false)
+		{
+			continue;
+		}
+
+		Origin *= Function->GetScoreFactor(ActorInfo, TargetingCollections);
+	}
+
+	return Origin;
+}
+
+UEnvQuery* UYSGameplayAbility_AIBase::GetQueryToReposition() const
+{
+	if ( QueryToReposition.IsValid() == false )
+	{
+		return nullptr;
+	}
+	
+	return QueryToReposition.IsPending() ? QueryToReposition.LoadSynchronous() : QueryToReposition.Get();
 }

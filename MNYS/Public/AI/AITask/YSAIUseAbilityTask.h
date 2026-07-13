@@ -17,14 +17,12 @@ class MNYS_API UYSAIUseAbilityTask : public UAITask
 	
 public :
 	UYSAIUseAbilityTask(const FObjectInitializer& ObjectInitializer);
-	static UYSAIUseAbilityTask* CreateTask(AAIController* Controller);
+	static UYSAIUseAbilityTask* CreateTask(AAIController* Controller, const FGameplayAbilitySpecHandle& AbilityHandle);
 	void OnAbilityEnded(const FAbilityEndedData& AbilityEndedData);
+
+protected : 
 	virtual void Activate() override;
-	virtual void TickTask(float DeltaTime) override;
-	
-private : 
-	void _TryActivateAbility();
 	
 public : 
-	bool bIsActiveAbil = false;
+	FGameplayAbilitySpecHandle TargetToActivateAbilityHandle;
 };
