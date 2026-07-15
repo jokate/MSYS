@@ -192,6 +192,21 @@ bool UYSAbilitySystemComponent::ProcessAlreadyActiveAbility(const FGameplayTag& 
 	return false;
 }
 
+void UYSAbilitySystemComponent::StartCoolDown(TSubclassOf<UGameplayAbility> Ability, float TargetToCooldownTime)
+{
+	FYSCooldownEntry* Entry = CooldownEntries.FindByPredicate([Ability](const FYSCooldownEntry& Entry)
+	{
+		return Entry.AbilityClass == Ability;
+	});
+	
+	if ( Entry == nullptr )
+	{
+		CooldownEntries.Add(FYSCooldownEntry{ Ability, TargetToCooldownTime });
+		return;
+	}
+	
+	Entry->EndTime = TargetToCooldownTime;
+}
 
 void UYSAbilitySystemComponent::ProcessAbilityByInputPass(const FGameplayTag& InputTag)
 {

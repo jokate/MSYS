@@ -52,6 +52,45 @@ void UYSGameplayAbility::ActivePlayback(int32 Index)
 	CurrentPlayback->Play(PlaybackContext);
 }
 
+bool UYSGameplayAbility::CheckCooldown(const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo, FGameplayTagContainer* OptionalRelevantTags) const
+{
+	UYSAbilitySystemComponent* YSASC = Cast<UYSAbilitySystemComponent>(ActorInfo->AbilitySystemComponent);
+	
+	const FYSSkillInfo* SkillInfo = GetSkillInfo();
+	
+	if ( IsValid(YSASC) == false || SkillInfo == nullptr )
+	{
+		return true;
+	}
+
+	if ( SkillInfo->bHasCooldown == false )
+	{
+		return true;
+	}
+	
+	return !YSASC->IsOnCooldown(GetClass());
+}
+
+void UYSGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const
+{
+	UYSAbilitySystemComponent* YSASC = Cast<UYSAbilitySystemComponent>(ActorInfo->AbilitySystemComponent);
+	const FYSSkillInfo* SkillInfo = GetSkillInfo();
+	
+	if ( IsValid(YSASC) == false || SkillInfo == nullptr )
+	{
+		return;
+	}
+
+	if ( SkillInfo->bHasCooldown == false )
+	{
+		return;
+	}
+	
+	YSASC->StartCoolDown(GetClass(), GetWorld()->GetTimeSeconds() + SkillInfo->Cooldown);
+}
+
 void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
                                          const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
                                          const FGameplayEventData* TriggerEventData)
@@ -91,6 +130,7 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 	PlaybackContext = MakeShared<FYSPlaybackContext>();
 	SetupPlayBack(TriggerEventData);
 
+	CommitAbility(Handle, ActorInfo, ActivationInfo);
 	_PrepareForAbilityEvent();
 }
 
@@ -234,6 +274,16 @@ void UYSGameplayAbility::SetupPlayBack(const FGameplayEventData* TriggerEventDat
 	PlaybackContext->Instigator = GetOwningActorFromActorInfo();
 
 	ActivePlayback(0);
+}
+
+const FYSSkillInfo* UYSGameplayAbility::GetSkillInfo() const
+{
+	if ( SkillRow.IsNull() )
+	{
+		return nullptr;
+	}
+	
+	return SkillRow.GetRow<FYSSkillInfo>(TEXT("context"));
 }
 
 #if UE_EDITOR

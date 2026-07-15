@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Abilities/GameplayAbility.h"
+#include "Data/YSDataStruct.h"
 #include "General/YSEnum.h"
 #include "General/YSMacros.h"
 #include "Input/Combo/YSComboData.h"
@@ -154,6 +155,8 @@ public:
 	const TSharedPtr<FYSAbilityHitContext>& GetHitContext() const { return HitContext; }
 	const TSharedPtr<FYSPlaybackContext>& GetAbilityPlaybackContext() const { return PlaybackContext; }
 	
+	virtual bool CheckCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
+	virtual void ApplyCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const override;
 protected:
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
@@ -166,6 +169,8 @@ protected:
 	
 	virtual void SetupPlayBack(const FGameplayEventData* TriggerEventData);
 	
+	const FYSSkillInfo* GetSkillInfo() const;
+	
 public :
 #if UE_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
@@ -176,6 +181,8 @@ private :
 	void _ProcessEvent(FGameplayEventData Payload);
 	
 	void _PrepareForAbilityEvent();
+	
+	
 
 public:
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Input Related", meta = (DisplayName = "바뀔 State"))
@@ -200,6 +207,9 @@ protected :
 	
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Buff", meta = (Categories = "Buff"))
 	FGameplayTagContainer BuffTags;
+
+	UPROPERTY(EditAnywhere, meta = (RowType = "/Script/MNYS.YSSkillInfo"))
+	FDataTableRowHandle SkillRow;
 	
 protected :
 	FYSGameplayAbility_RuntimeData RuntimeData;

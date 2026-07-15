@@ -10,6 +10,18 @@
 struct FYSGrantedAbilityData;
 class UYSGameplayAbility;
 
+USTRUCT()
+struct FYSCooldownEntry
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TSubclassOf<UGameplayAbility> AbilityClass;
+
+	UPROPERTY()
+	float EndTime = 0.f;
+};
+
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnGameplayTagStateChanged, const FGameplayTag&, Tag, bool, IsActive);
 
@@ -30,6 +42,25 @@ public:
 	virtual void OnTagUpdated(const FGameplayTag& Tag, bool TagExists) override;
 	void AllocateSkillToAbilityTag(const FGameplayTag& SkillTag, const TSubclassOf<UGameplayAbility> AbilityClass);
 	
+	bool IsOnCooldown(TSubclassOf<UGameplayAbility> Ability) const
+	{
+		return GetRemaining(Ability) > 0.f;
+	}
+
+	float GetRemaining(TSubclassOf<UGameplayAbility> Ability) const
+	{
+		for (const FYSCooldownEntry& Entry : CooldownEntries)
+		{
+			if (Entry.AbilityClass == Ability)
+			{
+				return FMath::Max(0.f, Entry.EndTime - GetWorld()->GetTimeSeconds());
+			}
+		}
+		return 0.f;
+	}
+	
+	void StartCoolDown(TSubclassOf<UGameplayAbility> Ability, float TargetToCooldownTime);
+	
 protected:
 	virtual void OnGiveAbility(FGameplayAbilitySpec& AbilitySpec) override;
 	virtual void OnRemoveAbility(FGameplayAbilitySpec& AbilitySpec) override;
@@ -45,4 +76,7 @@ public :
 	TObjectPtr<class UYSAbilityDataAsset> GrantAbilityData;
 
 	FOnGameplayTagStateChanged OnGameplayTagStateChanged;
+	
+	UPROPERTY()
+	TArray<FYSCooldownEntry> CooldownEntries;
 };

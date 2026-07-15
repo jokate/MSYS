@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "General/YSEnum.h"
 #include "YSDataStruct.generated.h"
 
 /**
@@ -45,4 +46,21 @@ public :
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSubclassOf<UCameraShakeBase> HitCameraShake;
+};
+
+
+USTRUCT()
+struct FYSSkillInfo : public FTableRowBase
+{
+	GENERATED_BODY()
+	
+public : 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Cooldown")
+	bool bHasCooldown = false;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float Cooldown = 0.f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Type")
+	EYSSkillType SkillType = EYSSkillType::Basic;
 };
