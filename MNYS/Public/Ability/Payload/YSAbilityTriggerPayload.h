@@ -9,6 +9,7 @@
 #include "UObject/Object.h"
 #include "YSAbilityTriggerPayload.generated.h"
 
+class UEnvQuery;
 struct FGameplayEventData;
 /**
  * Trigger Payload로 보내고자 하는 경우에 대해서 전제 처리.
@@ -96,4 +97,14 @@ class MNYS_API UYSAbilityTriggerPayload_SpawnActor : public UYSAbilityTriggerPay
 public : 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "스폰 관련 파라미터 세팅")
 	TArray<FYSSpawnActorConfig> SpawnActorConfigs;
+};
+
+UCLASS(BlueprintType, EditInlineNew, DisplayName = "EQS 쿼리	")
+class MNYS_API UYSAbilityTriggerPayload_EQS : public UYSAbilityTriggerPayload
+{
+	GENERATED_BODY()
+	
+public : 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "EQS")
+	TObjectPtr<UEnvQuery> TargetToRun;
 };

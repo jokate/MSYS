@@ -10,6 +10,7 @@
 #include "Ability/YSGameplayAbility.h"
 #include "Ability/AbilityComponent/YSAbilityPlayback.h"
 #include "Ability/Payload/YSAbilityTriggerPayload.h"
+#include "Ability/Task/YSAT_RunEQSQuery.h"
 #include "Ability/Task/YSAT_Trace.h"
 #include "AttackableActor/YSDamagableActor.h"
 #include "Character/YSCharacterBase.h"
@@ -277,5 +278,33 @@ bool UYSAbilityEventAction_CheckContextTag::Execute_Implementation(UYSGameplayAb
 	PlaybackBase->DispatchNext(EYSPlaybackEvent::OnCheckContextTag, true);
 	
 	return true;
+}
+
+bool UYSAbilityEventAction_RunEQS::Execute_Implementation(UYSGameplayAbility* OwningAbility,
+	const FGameplayEventData& EventData)
+{
+	const UYSAbilityTriggerPayload_EQS* AbilityTrigger = UYSAbilityTriggerPayload::GetPayload<UYSAbilityTriggerPayload_EQS>(&EventData);
+	
+	if ( IsValid(AbilityTrigger) == false )
+	{
+		return false;
+	}
+	
+	UYSAT_RunEQSQuery* EQSTask = UYSAT_RunEQSQuery::CreateTask(OwningAbility, AbilityTrigger->TargetToRun);
+	
+	if ( IsValid(EQSTask) == false )
+	{
+		return false;
+	}
+	
+	EQSTask->OnSucceeded.BindUObject(this, &UYSAbilityEventAction_RunEQS::OnEQSQueryFinished);
+	EQSTask->Activate();
+	return true;
+}
+
+void UYSAbilityEventAction_RunEQS::OnEQSQueryFinished_Implementation(UYSGameplayAbility* OwningAbility,
+	FVector Location)
+{
+	UE_LOG(LogTemp, Log, TEXT("EQS Query Completed"));
 }
 

@@ -152,3 +152,17 @@ class MNYS_API UYSAbilityEventAction_CheckContextTag : public UYSAbilityEventAct
 public : 
 	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
 };
+
+UCLASS(Abstract, DisplayName = "EQS 쿼리 실행 / 상속 필요")
+class MNYS_API UYSAbilityEventAction_RunEQS : public UYSAbilityEventAction
+{
+	GENERATED_BODY()
+	
+public :
+
+	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
+	
+	UFUNCTION(BlueprintNativeEvent)
+	void OnEQSQueryFinished(UYSGameplayAbility* OwningAbility, FVector Location);
+	virtual void OnEQSQueryFinished_Implementation(UYSGameplayAbility* OwningAbility, FVector Location);
+};
