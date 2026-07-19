@@ -175,6 +175,8 @@ void FYSStateTreeEvaluatorAbilityActivation::Tick(FStateTreeExecutionContext& Co
 			BestAbilityHandle = AbilitySpec->Handle;
 			QueryToReposition = AIAbility->GetQueryToReposition();
 			
+			UE_LOG(LogTemp, Log, TEXT("Best UtilityScore: %f / %s"), UtilityScoreFactor, *AIAbility->GetName());
+			
 		}
 		// 가중치에 의해서 동작.
 		else if ( UtilityScoreFactor == BestScoreFactor)

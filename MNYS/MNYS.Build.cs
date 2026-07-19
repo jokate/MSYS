@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// Copyright Epic Games, Inc. All Rights Reserved.
 
 using UnrealBuildTool;
 
@@ -49,6 +49,9 @@ public class MNYS : ModuleRules
 		);
 
 		PublicIncludePaths.AddRange(new string[] {"MNYS"});
+
+		// GameplayDebugger (Shipping/Test 제외 자동 처리 + WITH_GAMEPLAY_DEBUGGER* define 세팅)
+		SetupGameplayDebuggerSupport(Target);
 		// Uncomment if you are using Slate UI
 		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 		
@@ -58,3 +61,4 @@ public class MNYS : ModuleRules
 		// To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
 	}
 }
+
