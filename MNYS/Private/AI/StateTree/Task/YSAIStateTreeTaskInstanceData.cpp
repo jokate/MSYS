@@ -106,7 +106,9 @@ void UYSAIStateTreeTask_TargetActor::_SearchBestTarget(const FStateTreeExecution
 		return;
 	}
 	
-	TargetingActorCollections->SetBestTargetActor(Result->GetItemAsActor(0));
+	AActor* BestTargetActor = Result->GetItemAsActor(0);
+	TargetingActorCollections->SetBestTargetActor(BestTargetActor);
+	Controller->SetFocus(BestTargetActor);
 }
 
 EStateTreeRunStatus UYSAIStateTreeTask_UseAbility::EnterState(FStateTreeExecutionContext& Context,

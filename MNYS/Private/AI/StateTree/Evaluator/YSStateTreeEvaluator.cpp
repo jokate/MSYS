@@ -180,11 +180,11 @@ void FYSStateTreeEvaluatorAbilityActivation::Tick(FStateTreeExecutionContext& Co
 			BestScoreFactor = UtilityScoreFactor;
 			BestAbilityHandle = AbilitySpec->Handle;
 			QueryToReposition = AIAbility->GetQueryToReposition();
-			
+			s
 			UE_LOG(LogTemp, Log, TEXT("Best UtilityScore: %f / %s"), UtilityScoreFactor, *AIAbility->GetName());
 			
 		}
-		// 가중치에 의해서 동작.
+		// 가중치에 의해서 동작.s
 		else if ( UtilityScoreFactor == BestScoreFactor)
 		{
 			if ( UtilityScore > BestUtilityScore )
@@ -195,11 +195,6 @@ void FYSStateTreeEvaluatorAbilityActivation::Tick(FStateTreeExecutionContext& Co
 		}
 	}
 
-	if ( BestAbilityHandle.IsValid() == false )
-	{
-		return;
-	}
-	
 	InstanceData.bIsEnableActivateAbility = bCanActiveAbility;
 	InstanceData.BestAbilitySpecHandle = BestAbilityHandle;
 	InstanceData.EnvQueryInstance = QueryToReposition;
