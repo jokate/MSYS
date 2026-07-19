@@ -298,7 +298,7 @@ bool UYSAbilityEventAction_RunEQS::Execute_Implementation(UYSGameplayAbility* Ow
 	}
 	
 	EQSTask->OnSucceeded.BindUObject(this, &UYSAbilityEventAction_RunEQS::OnEQSQueryFinished);
-	EQSTask->Activate();
+	EQSTask->ReadyForActivation();
 	return true;
 }
 

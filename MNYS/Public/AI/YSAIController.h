@@ -15,6 +15,7 @@ class MNYS_API AYSAIController : public AAIController
 	GENERATED_BODY()
 
 public:
+	static AYSAIController* Get(AActor* InActor);
 	// Sets default values for this actor's properties
 	AYSAIController();
 

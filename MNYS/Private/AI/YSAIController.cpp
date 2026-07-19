@@ -8,6 +8,18 @@
 #include "General/YSStruct.h"
 
 
+AYSAIController* AYSAIController::Get(AActor* InActor)
+{
+	AController* Controller = InActor->GetInstigatorController();
+	
+	if ( IsValid(Controller) == false)
+	{
+		return nullptr;
+	}
+	
+	return Cast<AYSAIController>(Controller);
+}
+
 // Sets default values
 AYSAIController::AYSAIController()
 {

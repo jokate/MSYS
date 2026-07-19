@@ -4,6 +4,7 @@
 #include "Ability/Task/YSAT_RunEQSQuery.h"
 
 #include "Ability/YSGameplayAbility.h"
+#include "AI/YSAIController.h"
 #include "EnvironmentQuery/EnvQuery.h"
 #include "EnvironmentQuery/EnvQueryManager.h"
 
@@ -27,7 +28,22 @@ void UYSAT_RunEQSQuery::Activate()
 		return;
 	}
 	
-	TSharedPtr<FEnvQueryResult> QueryResult = EQS->RunInstantQuery(FEnvQueryRequest(QueryToActive, this), EEnvQueryRunMode::AllMatching);
+	AActor* OwnerActor = YSAbility->GetCurrentActorInfo()->OwnerActor.Get();
+	
+	if ( IsValid(OwnerActor) == false )
+	{
+		EndTask();
+		return;
+	}
+	
+	AYSAIController* AIController = AYSAIController::Get(OwnerActor);
+	if ( IsValid(AIController) == false )
+	{
+		EndTask();
+		return;
+	}
+	
+	TSharedPtr<FEnvQueryResult> QueryResult = EQS->RunInstantQuery(FEnvQueryRequest(QueryToActive, AIController), EEnvQueryRunMode::AllMatching);
 	
 	if (QueryResult.IsValid() == false || QueryResult->IsAborted() || QueryResult->Items.Num() == 0 )
 	{

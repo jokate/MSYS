@@ -126,12 +126,13 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 		}
 	}
 
+	_PrepareForAbilityEvent();
+	
 	HitContext = MakeShared<FYSAbilityHitContext>(GetOwningActorFromActorInfo());
 	PlaybackContext = MakeShared<FYSPlaybackContext>();
 	SetupPlayBack(TriggerEventData);
 
 	CommitAbility(Handle, ActorInfo, ActivationInfo);
-	_PrepareForAbilityEvent();
 }
 
 void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
