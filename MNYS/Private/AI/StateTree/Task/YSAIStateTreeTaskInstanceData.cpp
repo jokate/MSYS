@@ -97,7 +97,7 @@ void UYSAIStateTreeTask_TargetActor::_SearchBestTarget(const FStateTreeExecution
 
 	TSharedPtr<FEnvQueryResult> Result = QueryManager->RunInstantQuery(Request, EEnvQueryRunMode::Type::SingleResult);
 
-	if ( Result.IsValid() == false )
+	if ( Result.IsValid() == false || Result->IsAborted() || Result->Items.Num() == 0 )
 	{
 		if ( NeedToReleaseInvalidResult )
 		{

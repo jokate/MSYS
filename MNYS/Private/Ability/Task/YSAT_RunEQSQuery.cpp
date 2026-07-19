@@ -29,7 +29,7 @@ void UYSAT_RunEQSQuery::Activate()
 	
 	TSharedPtr<FEnvQueryResult> QueryResult = EQS->RunInstantQuery(FEnvQueryRequest(QueryToActive, this), EEnvQueryRunMode::AllMatching);
 	
-	if (QueryResult.IsValid() == false || QueryResult->IsAborted() )
+	if (QueryResult.IsValid() == false || QueryResult->IsAborted() || QueryResult->Items.Num() == 0 )
 	{
 		UE_LOG(LogTemp, Log, TEXT("EQS Aborted"));
 		EndTask();

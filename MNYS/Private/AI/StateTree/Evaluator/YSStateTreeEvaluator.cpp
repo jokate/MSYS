@@ -165,9 +165,15 @@ void FYSStateTreeEvaluatorAbilityActivation::Tick(FStateTreeExecutionContext& Co
 		const float UtilityScoreFactor = AIAbility->GetUtilityScoreFactor(ActorInfo, TargetingActorCollections.Get());
 		
 		// 사용 여부
-		bCanActiveAbility |= AIAbility->CanActivateAbility(AbilitySpec->Handle, ActorInfo) && UtilityScore > AIAbility->UtilityScoreThreshold;
+		bool bCurrentlyActivatable =  AIAbility->CanActivateAbility(AbilitySpec->Handle, ActorInfo) && UtilityScore > AIAbility->UtilityScoreThreshold;
 		
 		// 확률이 같은 경우
+		if ( bCurrentlyActivatable == false )
+		{
+			continue;
+		}
+		
+		bCanActiveAbility = true;
 		if ( UtilityScoreFactor > BestScoreFactor )
 		{
 			BestUtilityScore = UtilityScoreFactor;
