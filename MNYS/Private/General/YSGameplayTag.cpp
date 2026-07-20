@@ -31,4 +31,11 @@ namespace YSTags
 	
 	
 	UE_DEFINE_GAMEPLAY_TAG(Buff_JustAvoid, "Buff.JustAvoid");
+
+	UE_DEFINE_GAMEPLAY_TAG(AISuppress, "AI.Suppress");
+	UE_DEFINE_GAMEPLAY_TAG(AISuppress_HitReact, "AI.Suppress.HitReact");
+	UE_DEFINE_GAMEPLAY_TAG(AISuppress_Skill, "AI.Suppress.Skill");
+
+	UE_DEFINE_GAMEPLAY_TAG(World_AISuppress, "World.AI.Suppress");
+	UE_DEFINE_GAMEPLAY_TAG(World_AISuppress_Cinematic, "World.AI.Suppress.Cinematic");
 }

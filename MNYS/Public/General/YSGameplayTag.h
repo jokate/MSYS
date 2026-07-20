@@ -36,4 +36,13 @@ namespace YSTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Attack_Activate);
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Buff_JustAvoid);
+
+	// AI 억제 — 캐릭터 고유 (ASC에 부여, ActivationOwnedTags/루즈 태그)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AISuppress);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AISuppress_HitReact);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AISuppress_Skill);
+
+	// AI 억제 — 월드 전역 (UYSWorldTagSubsystem에 부여)
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(World_AISuppress);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(World_AISuppress_Cinematic);
 };
