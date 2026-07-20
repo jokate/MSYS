@@ -12,6 +12,7 @@
 #include "Character/Components/YSCharacterMovementComponent.h"
 #include "General/YSGameplayTag.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
+#include "Subsystem/YSWorldTagSubsystem.h"
 
 UYSGameplayAbility::UYSGameplayAbility()
 {
@@ -133,6 +134,8 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 	SetupPlayBack(TriggerEventData);
 
 	CommitAbility(Handle, ActorInfo, ActivationInfo);
+	
+	_AddWorldTag();
 }
 
 void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
@@ -180,6 +183,8 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 			MovementComponent->SetMovementBlocked(false);
 		}
 	}
+	
+	_RemoveWorldTag();
 	
 	HitContext = nullptr;
 	PlaybackContext = nullptr;
@@ -246,6 +251,30 @@ void UYSGameplayAbility::_PrepareForAbilityEvent()
 		{
 			Task->EventReceived.AddDynamic(this, &UYSGameplayAbility::_ProcessEvent);
 			Task->ReadyForActivation();
+		}
+	}
+}
+
+void UYSGameplayAbility::_AddWorldTag()
+{
+	UYSWorldTagSubsystem* WorldTagSubsystem = UYSWorldTagSubsystem::Get(this);
+	if (WorldTagSubsystem)
+	{
+		for (const FGameplayTag& Tag : WorldTagContainer)
+		{
+			WorldTagSubsystem->AddWorldTag(Tag);
+		}
+	}
+}
+
+void UYSGameplayAbility::_RemoveWorldTag()
+{
+	UYSWorldTagSubsystem* WorldTagSubsystem = UYSWorldTagSubsystem::Get(this);
+	if (WorldTagSubsystem)
+	{
+		for (const FGameplayTag& Tag : WorldTagContainer)
+		{
+			WorldTagSubsystem->RemoveWorldTag(Tag);
 		}
 	}
 }

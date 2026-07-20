@@ -182,7 +182,9 @@ private :
 	
 	void _PrepareForAbilityEvent();
 	
-	
+	void _AddWorldTag();
+	void _RemoveWorldTag();
+
 
 public:
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Input Related", meta = (DisplayName = "바뀔 State"))
@@ -208,8 +210,11 @@ protected :
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Buff", meta = (Categories = "Buff"))
 	FGameplayTagContainer BuffTags;
 
-	UPROPERTY(EditAnywhere, meta = (RowType = "/Script/MNYS.YSSkillInfo"))
+	UPROPERTY(EditDefaultsOnly, meta = (RowType = "/Script/MNYS.YSSkillInfo"))
 	FDataTableRowHandle SkillRow;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Tag")
+	FGameplayTagContainer WorldTagContainer;
 	
 protected :
 	FYSGameplayAbility_RuntimeData RuntimeData;
