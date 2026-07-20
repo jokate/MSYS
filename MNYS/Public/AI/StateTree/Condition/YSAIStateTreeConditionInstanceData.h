@@ -44,3 +44,33 @@ public :
 	virtual bool TestCondition(FStateTreeExecutionContext& Context) const override;
 	
 };
+
+
+
+USTRUCT()
+struct FYSHasTagConditionInstancedData
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere)
+	bool bInvert = false;
+	
+	UPROPERTY(EditAnywhere)
+	bool bConsiderationWorld = false;
+	
+	UPROPERTY(EditAnywhere)
+	FGameplayTag ConsiderationTag;
+};
+
+USTRUCT(DisplayName = "태그가 현재 존재하는가?")
+struct MNYS_API FYSHasTagCondition : public FYSAIStateTreeConditionBase
+{
+	GENERATED_BODY()
+	
+public : 
+	using UInstanceDataType = FYSHasTagConditionInstancedData;
+	
+	virtual const UStruct* GetInstanceDataType() const override { return UInstanceDataType::StaticStruct(); }
+	virtual bool TestCondition(FStateTreeExecutionContext& Context) const override;
+	
+};
