@@ -4,6 +4,7 @@
 
 #include "YSAbilitySystemComponent.h"
 #include "AI/YSAIController.h"
+#include "AI/Component/YSPhaseChangeComponent.h"
 #include "General/YSDefine.h"
 
 // Sets default values
@@ -11,6 +12,8 @@ AYSMonster::AYSMonster(const FObjectInitializer& ObjectInitializer) : Super(Obje
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	
+	PhaseChangeComponent = CreateDefaultSubobject<UYSPhaseChangeComponent>(TEXT("PhaseChangeComponent"));
 }
 
 // Called when the game starts or when spawned

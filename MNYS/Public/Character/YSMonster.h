@@ -6,6 +6,8 @@
 #include "YSCharacterBase.h"
 #include "YSMonster.generated.h"
 
+class UYSPhaseChangeComponent;
+
 UCLASS()
 class MNYS_API AYSMonster : public AYSCharacterBase
 {
@@ -22,4 +24,8 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	
+public : 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | PhaseChange")
+	TObjectPtr<UYSPhaseChangeComponent> PhaseChangeComponent;
 };
