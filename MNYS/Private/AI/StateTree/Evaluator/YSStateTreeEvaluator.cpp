@@ -13,6 +13,8 @@
 #include "YSAbilitySystemComponent.h"
 #include "Data/YSAbilityDataAsset.h"
 #include "Ability/AIAbility/YSGameplayAbility_AIBase.h"
+#include "General/YSGameplayTag.h"
+#include "Subsystem/YSWorldTagSubsystem.h"
 
 bool FYSStateTreeEvaluatorTarget::Link(FStateTreeLinker& Linker)
 {
@@ -181,7 +183,7 @@ void FYSStateTreeEvaluatorAbilityActivation::Tick(FStateTreeExecutionContext& Co
 			BestAbilityHandle = AbilitySpec->Handle;
 			QueryToReposition = AIAbility->GetQueryToReposition();
 		}
-		// 가중치에 의해서 동작.s
+		// 가중치에 의해서 동작.
 		else if ( UtilityScoreFactor == BestScoreFactor)
 		{
 			if ( UtilityScore > BestUtilityScore )

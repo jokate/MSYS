@@ -74,6 +74,26 @@ private :
 
 
 UCLASS()
+class MNYS_API UYSAIStateTreeTask_FocusTarget : public UYSAIStateTreeTaskInstanceData
+{
+	GENERATED_BODY()
+
+public :
+	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) override;
+	virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context, const float DeltaTime) override;
+	virtual void ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) override;
+
+private :
+	AActor* GetFocusTarget(const FStateTreeExecutionContext& Context) const;
+
+public :
+	// 매 틱 베스트 타겟을 다시 조회해 주시 대상을 갱신할지 여부 (false면 진입 시점 타겟에 고정)
+	UPROPERTY(EditAnywhere, Category = "Input | Parameters", meta = (DisplayName = "타겟을 매 틱 갱신"))
+	bool bUpdateEveryTick = true;
+};
+
+
+UCLASS()
 class MNYS_API UYSAIStateTreeTask_UseAbility : public UYSAIStateTreeTaskInstanceData
 {
 	GENERATED_BODY()

@@ -108,7 +108,73 @@ void UYSAIStateTreeTask_TargetActor::_SearchBestTarget(const FStateTreeExecution
 	
 	AActor* BestTargetActor = Result->GetItemAsActor(0);
 	TargetingActorCollections->SetBestTargetActor(BestTargetActor);
-	Controller->SetFocus(BestTargetActor);
+	// 주시(SetFocus)는 상태 수명에 묶인 별도 태스크(UYSAIStateTreeTask_FocusTarget)가 담당한다.
+	// 검색 태스크에서 걸면 포커스를 풀 주체가 없어 모든 상태에서 계속 바라보게 된다.
+}
+
+AActor* UYSAIStateTreeTask_FocusTarget::GetFocusTarget(const FStateTreeExecutionContext& Context) const
+{
+	const AYSAIController* Controller = GetAIControllerFromContext(Context);
+	if ( IsValid(Controller) == false || IsValid(Controller->MainPerceptionComponent) == false )
+	{
+		return nullptr;
+	}
+
+	return Controller->MainPerceptionComponent->GetBestTargetActor();
+}
+
+EStateTreeRunStatus UYSAIStateTreeTask_FocusTarget::EnterState(FStateTreeExecutionContext& Context,
+	const FStateTreeTransitionResult& Transition)
+{
+	AYSAIController* Controller = GetAIControllerFromContext(Context);
+	if ( IsValid(Controller) == false )
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	if ( AActor* FocusTarget = GetFocusTarget(Context) )
+	{
+		Controller->SetFocus(FocusTarget);
+	}
+
+	return EStateTreeRunStatus::Running;
+}
+
+EStateTreeRunStatus UYSAIStateTreeTask_FocusTarget::Tick(FStateTreeExecutionContext& Context, const float DeltaTime)
+{
+	if ( bUpdateEveryTick == false )
+	{
+		return EStateTreeRunStatus::Running;
+	}
+
+	AYSAIController* Controller = GetAIControllerFromContext(Context);
+	if ( IsValid(Controller) == false )
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+
+	AActor* FocusTarget = GetFocusTarget(Context);
+	if ( IsValid(FocusTarget) )
+	{
+		Controller->SetFocus(FocusTarget);
+	}
+	else
+	{
+		Controller->ClearFocus(EAIFocusPriority::Gameplay);
+	}
+
+	return EStateTreeRunStatus::Running;
+}
+
+void UYSAIStateTreeTask_FocusTarget::ExitState(FStateTreeExecutionContext& Context,
+	const FStateTreeTransitionResult& Transition)
+{
+	if ( AYSAIController* Controller = GetAIControllerFromContext(Context) )
+	{
+		Controller->ClearFocus(EAIFocusPriority::Gameplay);
+	}
+
+	Super::ExitState(Context, Transition);
 }
 
 EStateTreeRunStatus UYSAIStateTreeTask_UseAbility::EnterState(FStateTreeExecutionContext& Context,

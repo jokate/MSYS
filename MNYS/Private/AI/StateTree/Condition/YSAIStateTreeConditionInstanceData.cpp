@@ -84,5 +84,5 @@ bool FYSHasTagCondition::TestCondition(FStateTreeExecutionContext& Context) cons
 		bRetVal |= TagSubsystem->HasWorldTagMatching(InstanceData->ConsiderationTag);
 	}
 	
-	return bRetVal;
+	return bRetVal ^ InstanceData->bInvert;
 }

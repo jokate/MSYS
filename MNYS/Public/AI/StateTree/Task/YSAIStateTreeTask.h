@@ -41,8 +41,18 @@ USTRUCT(DisplayName = "어빌리티 사용")
 struct MNYS_API FYSUseAbilityTask : public FYSStateTreeTaskBase
 {
 	GENERATED_BODY()
-	
-public : 
+
+public :
 	using UInstanceDataType = UYSAIStateTreeTask_UseAbility;
+	virtual const UStruct* GetInstanceDataType() const override { return UInstanceDataType::StaticClass(); }
+};
+
+USTRUCT(DisplayName = "타겟 주시 (이 상태 동안만)")
+struct MNYS_API FYSFocusTargetTask : public FYSStateTreeTaskBase
+{
+	GENERATED_BODY()
+
+public :
+	using UInstanceDataType = UYSAIStateTreeTask_FocusTarget;
 	virtual const UStruct* GetInstanceDataType() const override { return UInstanceDataType::StaticClass(); }
 };
