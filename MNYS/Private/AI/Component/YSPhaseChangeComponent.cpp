@@ -4,6 +4,7 @@
 #include "AI/Component/YSPhaseChangeComponent.h"
 
 #include "AI/Component/YSPhaseChangeCondition.h"
+#include "Character/YSCharacterBase.h"
 
 UYSPhaseChangeComponent::UYSPhaseChangeComponent()
 {

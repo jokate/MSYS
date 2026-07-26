@@ -69,8 +69,7 @@ USTRUCT(BlueprintType)
 struct FYSStatBlock
 {
 	GENERATED_BODY()
-
-
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS|Stat", meta = (ClampMin = "1", ClampMax = "10"))
 	int32 HP = 5;
 	

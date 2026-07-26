@@ -40,6 +40,7 @@ class MNYS_API UYSSquadSubsystem : public UGameInstanceSubsystem
 	
 	
 public :
+	UYSSquadSubsystem();
 	/** 처음에 스쿼드 구성한다.
 	 * 런 시작 시 3인 스쿼드를 구성한다.
 	 * @param Definitions  선택된 캐릭터 3인. 0번이 시작 캐릭터.

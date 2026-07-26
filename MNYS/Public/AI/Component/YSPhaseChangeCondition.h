@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "StructUtils/InstancedStruct.h"
+#include "YSPhaseChangeCondition.generated.h"
 
 class AYSCharacterBase;
 /**
@@ -18,11 +19,11 @@ struct MNYS_API FYSPhaseChangeConditions
 public : 
 	bool CheckCondition(AYSCharacterBase* CharacterBase) const;
 public : 
-	UPROPERTY(EditAnywhere,  meta = (DisplayName = "페이즈 변환 조건", BaseStruct = "/Script/MNYS.YSPhaseChangeCondition", ExcludeBaseStruct))
-	FInstancedStruct ConditionStructs;
+	UPROPERTY(EditAnywhere,  meta = (DisplayName = "페이즈 변환 조건", BaseStruct = "/Script/MNYS.YSPhaseChangeConditionBase", ExcludeBaseStruct))
+	TArray<FInstancedStruct> ConditionStructs;
 };
 
-USTRUCT(Abstract)
+USTRUCT()
 struct MNYS_API FYSPhaseChangeConditionBase
 {
 	GENERATED_BODY()
