@@ -13,7 +13,7 @@ void UYSGameplayAbility_Hit::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 	
-	_ProcessDamage(TriggerEventData);
+	//_ProcessDamage(TriggerEventData);
 }
 
 bool UYSGameplayAbility_Hit::CanActivateAbility(const FGameplayAbilitySpecHandle Handle,
@@ -26,29 +26,4 @@ bool UYSGameplayAbility_Hit::CanActivateAbility(const FGameplayAbilitySpecHandle
 			return false;
 	}
 	return Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags);
-}
-
-void UYSGameplayAbility_Hit::_ProcessDamage(const FGameplayEventData* TriggerData)
-{
-	if ( TriggerData == nullptr )
-	{
-		return;
-	}
-	
-	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
-	const UYSCharacterAttributeSetBase* TargetAttributeSet = ASC->GetSet<UYSCharacterAttributeSetBase>();
-
-	if ( IsValid(TargetAttributeSet) == false )
-		return;
-		
-	float CurHp = TargetAttributeSet->GetHp();
-		
-	if ( CurHp <= 0.f )
-		return;
-	
-	if ( IsValid(ASC) )
-	{
-		// 데미지 처리 로직 추가. ( 클램핑은 내부에서 알아 처리 될 거임 )
-		ASC->SetNumericAttributeBase(TargetAttributeSet->GetHpAttribute(), CurHp - TriggerData->EventMagnitude);		
-	}
 }

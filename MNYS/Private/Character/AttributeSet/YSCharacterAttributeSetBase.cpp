@@ -3,14 +3,29 @@
 
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
 
+#include "GameplayEffectExtension.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "General/YSGameplayTag.h"
+#include "Subsystem/YSSquadSubsystem.h"
 
 UYSCharacterAttributeSetBase::UYSCharacterAttributeSetBase()
 {
-	Hp = 100.f;
-	MaxHp = 100.f;
-	AttackDmg = 10.f;
-	DefenseRate = 0.1f;
+	InitStatHP(5.f);
+	InitStatMEL(5.f);
+	InitStatRNG(5.f);
+	InitStatAGI(5.f);
+	InitStatSYN(5.f);
+	InitStatSCL(5.f);
+	
+	InitHp(100.f);
+	InitMaxHp(100.f);
+	InitMeleeAttackDmg(10.f);
+	InitRangedAttackDmg(10.f);
+	InitDefenseRate(0.1f);
+	InitMoveSpeed(600.f);
+	InitTagGaugeRate(1.f);
+	InitIncomingDamage(0.f);
 }
 
 void UYSCharacterAttributeSetBase::PostInitProperties()
@@ -35,13 +50,79 @@ void UYSCharacterAttributeSetBase::PostAttributeChange(const FGameplayAttribute&
 {
 	Super::PostAttributeChange(Attribute, OldValue, NewValue);
 	
+	if ( Attribute == GetIncomingDamageAttribute() )
+	{
+		const float Damage = GetIncomingDamage();
+		SetIncomingDamage(0.f); // 메타는 즉시 비운다
+ 
+		if (Damage <= 0.f)
+		{
+			return;
+		}
+ 
+		UAbilitySystemComponent* TargetASC = GetOwningAbilitySystemComponent();
+ 
+		// 무적 상태면 데미지를 통째로 버린다.
+		// 저스트 회피의 완전 무적이 여기서 성립한다.
+		if (TargetASC && TargetASC->HasMatchingGameplayTag(YSTags::Invincible))
+		{
+			return;
+		}
+		
+		SetHp(FMath::Clamp(GetHp() - Damage, 0.f, GetMaxHp()));
+		return;
+	}
+	
 	if ( Attribute == GetHpAttribute() )
 	{ 
 		if (NewValue <= 0.f && OldValue > 0.f)
 		{	
 			FGameplayEventData EventData;
+			HandleDowned();
 			GetOwningAbilitySystemComponent()->HandleGameplayEvent(YSTags::Event_OnDead, &EventData);
 		}
+		
+		return;
+	}
+}
+
+void UYSCharacterAttributeSetBase::PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data)
+{
+	Super::PostGameplayEffectExecute(Data);
+	
+	if (Data.EvaluatedData.Attribute == GetMoveSpeedAttribute())
+	{
+		if (ACharacter* Character = Cast<ACharacter>(GetOwningActor()))
+		{
+			if (UCharacterMovementComponent* Movement = Character->GetCharacterMovement())
+			{
+				Movement->MaxWalkSpeed = GetMoveSpeed();
+			}
+		}
+		return;
+	}
+}
+
+void UYSCharacterAttributeSetBase::HandleDowned()
+{
+	AActor* Owner = GetOwningActor();
+	if (IsValid(Owner) == false)
+	{
+		return;
+	}
+ 
+	OnCharacterDowned.Broadcast(Owner);
+ 
+	UGameInstance* GI = Owner->GetGameInstance();
+
+	if ( IsValid(GI) == false )
+	{
+		return;
+	}
+	
+	if (UYSSquadSubsystem* Squad = GI->GetSubsystem<UYSSquadSubsystem>())
+	{
+		Squad->ForceTagOnDown();
 	}
 }
 

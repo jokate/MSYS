@@ -17,9 +17,8 @@ UENUM(BlueprintType)
 enum class EYSDamageType : uint8
 {
 	None,
-	Physical,
-	Magical,
-	TrueDamage,
+	Range,
+	Melee,
 };
 
 // Purpose : 데미지 처리를 위한, 데이터 ( 어빌리티에 대한 데미지 정보를 근간으로 합니다. )
