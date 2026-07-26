@@ -7,6 +7,7 @@
 #include "General/YSStruct.h"
 #include "YSAbilityDataAsset.generated.h"
 
+class UGameplayEffect;
 class UYSAbilitySystemComponent;
 /**
  * 
@@ -19,6 +20,8 @@ class MNYS_API UYSAbilityDataAsset : public UDataAsset
 public : 
 	static UYSAbilityDataAsset* GetDataAssetFromAbilitySystemComponent(UYSAbilitySystemComponent* InASC);
 	TArray<FYSGrantedAbilityData> GetAllAbilities() const;
+	TSubclassOf<UGameplayEffect> GetBackupPassiveEffect() const { return BackupPassiveEffect; }
+	TSubclassOf<UGameplayEffect> GetStatInitEffect() const { return StatInitEffect; }
 	
 protected : 
 	UPROPERTY(EditDefaultsOnly, Category = "YS | GameplayAbility", meta = (DisplayName = "기본 공격"))
@@ -38,4 +41,10 @@ protected :
 	
 	UPROPERTY(EditDefaultsOnly, Category = "YS | GameplayAbility", meta = (DisplayName = "히트"))
 	FYSGrantedAbilityData HitAbility;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | GameplayAbility", meta = (DisplayName = "백업 패시브	"))
+	TSubclassOf<UGameplayEffect> BackupPassiveEffect;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | GameplayAbility", meta = (DisplayName = "스탯 GE"))
+	TSubclassOf<UGameplayEffect> StatInitEffect;
 };

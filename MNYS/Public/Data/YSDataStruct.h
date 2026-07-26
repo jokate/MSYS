@@ -64,3 +64,50 @@ public :
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Type")
 	EYSSkillType SkillType = EYSSkillType::Basic;
 };
+
+USTRUCT(BlueprintType)
+struct FYSStatBlock
+{
+	GENERATED_BODY()
+
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS|Stat", meta = (ClampMin = "1", ClampMax = "10"))
+	int32 HP = 5;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS|Stat", meta = (ClampMin = "1", ClampMax = "10"))
+	int32 MEL = 5;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS|Stat", meta = (ClampMin = "1", ClampMax = "10"))
+	int32 RNG = 5;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS|Stat", meta = (ClampMin = "1", ClampMax = "10"))
+	int32 AGI = 5;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS|Stat", meta = (ClampMin = "1", ClampMax = "10"))
+	int32 SYN = 5;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS|Stat", meta = (ClampMin = "1", ClampMax = "10"))
+	int32 SCL = 5;
+};
+
+USTRUCT()
+struct FYSCharacterInfo : public FTableRowBase
+{
+	GENERATED_BODY()
+	
+public : 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MN|Identity")
+	FGameplayTag CharacterTag;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MN|Identity")
+	FText DisplayName;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MN|Identity")
+	TObjectPtr<UTexture2D> Portrait;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MN|Identity")
+	TSubclassOf<APawn> PawnClass;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MN|Stat")
+	FYSStatBlock Stats;
+};
