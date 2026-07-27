@@ -33,6 +33,13 @@ namespace YSTags
 	
 	UE_DEFINE_GAMEPLAY_TAG(Buff_JustAvoid, "Buff.JustAvoid");
 
+	UE_DEFINE_GAMEPLAY_TAG(Data_Stat_HP,  "Data.Stat.HP");
+	UE_DEFINE_GAMEPLAY_TAG(Data_Stat_MEL, "Data.Stat.MEL");
+	UE_DEFINE_GAMEPLAY_TAG(Data_Stat_RNG, "Data.Stat.RNG");
+	UE_DEFINE_GAMEPLAY_TAG(Data_Stat_AGI, "Data.Stat.AGI");
+	UE_DEFINE_GAMEPLAY_TAG(Data_Stat_SYN, "Data.Stat.SYN");
+	UE_DEFINE_GAMEPLAY_TAG(Data_Stat_SCL, "Data.Stat.SCL");
+
 	UE_DEFINE_GAMEPLAY_TAG(AISuppress, "AI.Suppress");
 	UE_DEFINE_GAMEPLAY_TAG(AISuppress_HitReact, "AI.Suppress.HitReact");
 	UE_DEFINE_GAMEPLAY_TAG(AISuppress_Skill, "AI.Suppress.Skill");

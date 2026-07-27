@@ -113,8 +113,7 @@ bool UYSSquadSubsystem::ForceTagOnDown()
 		PerformTag(Index, false);
 		return true;
 	}
-
-	// 살아있는 슬롯이 없다 = 런 종료
+	
 	return false;
 }
 

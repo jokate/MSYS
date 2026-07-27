@@ -208,6 +208,10 @@ void AYSCharacterPlayer::PossessedBy(AController* NewController)
 	Super::PossessedBy(NewController);
 
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
+
+	// 어빌리티 부여보다 스탯 초기화가 먼저다.
+	// 어빌리티 쿨다운/배율이 어트리뷰트를 참조하므로, 기본값 상태에서 부여되면 첫 산출이 어긋난다.
+	AbilitySystemComponent->ApplyStatInitialization();
 	AbilitySystemComponent->GiveInitAbility();
 }
 

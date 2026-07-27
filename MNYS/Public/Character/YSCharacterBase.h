@@ -6,6 +6,7 @@
 #include "AbilitySystemInterface.h"
 #include "GenericTeamAgentInterface.h"
 #include "YSBattleActor.h"
+#include "Data/YSDataStruct.h"
 #include "GameFramework/Character.h"
 #include "YSCharacterBase.generated.h"
 
@@ -42,6 +43,8 @@ public:
 
 	virtual void SetGenericTeamId(const FGenericTeamId& TeamID) override;
 	virtual FGenericTeamId GetGenericTeamId() const override { return GenericTeamId; }
+	
+	const FYSCharacterInfo* GetCharacterInfo() const;
 public :
 	UPROPERTY(BlueprintReadWrite, Category = "MotionWarping", EditDefaultsOnly )
 	TObjectPtr<UYSMotionWarpingComponent> MotionWarpingComponent;
@@ -51,6 +54,9 @@ public :
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Weapon")
 	TObjectPtr<USkeletalMeshComponent> WeaponMeshComponent;
+	
+	UPROPERTY(EditDefaultsOnly, meta = (RowType = "/Script/MNYS.YSCharacterInfo"))
+	FDataTableRowHandle CharacterInfo;
 	
 	UPROPERTY()
 	FGenericTeamId GenericTeamId;

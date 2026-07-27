@@ -6,7 +6,9 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Ability/YSGameplayAbility.h"
 #include "Character/YSCharacterPlayer.h"
+#include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
 #include "Data/YSAbilityDataAsset.h"
+#include "General/YSGameplayTag.h"
 #include "General/YSGeneratedGameplayTags.h"
 #include "General/YSStruct.h"
 #include "Input/YSInputSaveData.h"
@@ -216,4 +218,92 @@ void UYSAbilitySystemComponent::ProcessAbilityByInputPass(const FGameplayTag& In
 	ProcessSkillActive(InputTag);
 }
 
+
+void UYSAbilitySystemComponent::ApplyStatInitialization()
+{
+	AYSCharacterBase* CharacterBase = GetOwner<AYSCharacterBase>();
+	
+	if ( IsValid(CharacterBase) == false )
+	{
+		return;
+	}
+
+	const FYSCharacterInfo* CharacterInfo = CharacterBase->GetCharacterInfo();
+	
+	if ( CharacterInfo == nullptr )
+	{
+		return;
+	}
+	
+	if (!CharacterInfo->StatInitEffect)
+	{
+		return;
+	}
+ 
+	const FGameplayEffectContextHandle Context = MakeEffectContext();
+	const FGameplayEffectSpecHandle Spec = MakeOutgoingSpec(CharacterInfo->StatInitEffect, 1.f, Context);
+	if (!Spec.IsValid())
+	{
+		return;
+	}
+ 
+	// 6스탯을 SetByCaller 로 전달한다.
+	// GE_StatInit 은 이 값을 StatXXX 어트리뷰트에 Override 로 그대로 꽂기만 한다.
+	// SetByCaller 는 계수/상수 필드가 없어 산술이 불가능하므로, 실수치 환산은 2단계로 분리한다.
+	const FYSStatBlock& Stats = CharacterInfo->Stats;
+	Spec.Data->SetSetByCallerMagnitude(YSTags::Data_Stat_HP,  Stats.HP);
+	Spec.Data->SetSetByCallerMagnitude(YSTags::Data_Stat_MEL, Stats.MEL);
+	Spec.Data->SetSetByCallerMagnitude(YSTags::Data_Stat_RNG, Stats.RNG);
+	Spec.Data->SetSetByCallerMagnitude(YSTags::Data_Stat_AGI, Stats.AGI);
+	Spec.Data->SetSetByCallerMagnitude(YSTags::Data_Stat_SYN, Stats.SYN);
+	Spec.Data->SetSetByCallerMagnitude(YSTags::Data_Stat_SCL, Stats.SCL);
+
+	ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
+
+	// 2단계는 반드시 별도 적용이어야 한다. 같은 Instant GE 안에서 StatXXX 를 쓰고
+	// 곧바로 AttributeBased 로 되읽으면 모디파이어 실행 순서와 캡처 타이밍에 의존하게 된다.
+	ApplyDerivedStats(/*bRefillHp=*/true);
+}
+
+void UYSAbilitySystemComponent::ApplyDerivedStats(bool bRefillHp)
+{
+	const AYSCharacterBase* CharacterBase = GetOwner<AYSCharacterBase>();
+
+	if ( IsValid(CharacterBase) == false )
+	{
+		return;
+	}
+
+	const FYSCharacterInfo* CharacterInfo = CharacterBase->GetCharacterInfo();
+
+	if ( CharacterInfo == nullptr || !CharacterInfo->StatDeriveEffect )
+	{
+		return;
+	}
+
+	const FGameplayEffectContextHandle Context = MakeEffectContext();
+	const FGameplayEffectSpecHandle Spec = MakeOutgoingSpec(CharacterInfo->StatDeriveEffect, 1.f, Context);
+
+	if (!Spec.IsValid())
+	{
+		return;
+	}
+
+	ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
+
+	if (!bRefillHp)
+	{
+		return;
+	}
+
+	// Hp 를 GE 모디파이어로 채우지 않는 이유 :
+	// UYSCharacterAttributeSetBase::AutoRegisterHandler 가 Hp 를 MaxHp 의 CurrentValue 로 클램프한다.
+	// MaxHp 갱신보다 Hp 갱신이 먼저 실행되면 생성자 기본값(100)에 잘려버리므로,
+	// 파생이 끝난 것이 확정된 이 지점에서 명시적으로 채운다.
+	if (UYSCharacterAttributeSetBase* AttributeSet =
+			const_cast<UYSCharacterAttributeSetBase*>(GetSet<UYSCharacterAttributeSetBase>()))
+	{
+		AttributeSet->SetHp(AttributeSet->GetMaxHp());
+	}
+}
 

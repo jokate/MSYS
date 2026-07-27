@@ -38,6 +38,16 @@ namespace YSTags
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Buff_JustAvoid);
 
+	// 스탯 초기화 SetByCaller — GE_StatInit 의 Set By Caller 모디파이어와 1:1 대응한다.
+	// 문자열 조회(RequestGameplayTag) 대신 네이티브 태그를 쓰는 이유는, 미등록/오타 시
+	// 무효 태그가 반환되어 마그니튜드가 조용히 0이 되는 사고를 컴파일 타임에 막기 위함이다.
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Stat_HP);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Stat_MEL);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Stat_RNG);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Stat_AGI);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Stat_SYN);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Stat_SCL);
+
 	// AI 억제 — 캐릭터 고유 (ASC에 부여, ActivationOwnedTags/루즈 태그)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AISuppress);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AISuppress_HitReact);

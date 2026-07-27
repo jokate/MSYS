@@ -13,4 +13,7 @@ UCLASS()
 class MNYS_API UYSRunSubsystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
+
+public : 
+	
 };

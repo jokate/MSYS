@@ -4,6 +4,7 @@
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
 
 #include "GameplayEffectExtension.h"
+#include "Character/YSPlayerController.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "General/YSGameplayTag.h"
@@ -110,7 +111,14 @@ void UYSCharacterAttributeSetBase::HandleDowned()
 	{
 		return;
 	}
- 
+
+	AYSPlayerController* PlayerController = Cast<AYSPlayerController>(Owner->GetInstigatorController());
+	
+	if ( IsValid(PlayerController) == false )
+	{
+		return;
+	}
+	
 	OnCharacterDowned.Broadcast(Owner);
  
 	UGameInstance* GI = Owner->GetGameInstance();
@@ -123,7 +131,7 @@ void UYSCharacterAttributeSetBase::HandleDowned()
 	if (UYSSquadSubsystem* Squad = GI->GetSubsystem<UYSSquadSubsystem>())
 	{
 		Squad->ForceTagOnDown();
-	}
+	}	
 }
 
 void UYSCharacterAttributeSetBase::AutoRegisterHandler()

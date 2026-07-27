@@ -112,3 +112,13 @@ void AYSCharacterBase::SetGenericTeamId(const FGenericTeamId& TeamID)
 	GenericTeamId = TeamID;
 }
 
+const FYSCharacterInfo* AYSCharacterBase::GetCharacterInfo() const
+{
+	if ( CharacterInfo.IsNull() )
+	{
+		return nullptr;
+	}
+	
+	return CharacterInfo.GetRow<FYSCharacterInfo>(TEXT("context"));
+}
+

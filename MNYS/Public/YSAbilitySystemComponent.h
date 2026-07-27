@@ -37,6 +37,15 @@ public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	void ProcessAbilityByInputPass(const FGameplayTag& InputTag);
+	void ApplyStatInitialization();
+
+	/**
+	 * StatXXX 어트리뷰트를 기준으로 파생 수치(MaxHp, 공격력, 이동속도, 태그 게이지 효율)를 재산출한다.
+	 * 초기화 시점뿐 아니라 각성 제단/봉인 해방 등으로 원본 스탯이 변한 뒤에도 호출한다.
+	 * @param bRefillHp 파생 직후 Hp 를 MaxHp 로 채울지 여부. 런 중 재산출 시에는 false 로 둔다.
+	 */
+	void ApplyDerivedStats(bool bRefillHp = false);
+
 	void GiveInitAbility();
 
 	virtual void OnTagUpdated(const FGameplayTag& Tag, bool TagExists) override;
@@ -67,6 +76,8 @@ protected:
 	
 	bool ProcessSkillActive(const FGameplayTag& InputTag);
 	bool ProcessAlreadyActiveAbility(const FGameplayTag& InputTag);
+	
+	
 	
 public :
 	UPROPERTY()
