@@ -218,12 +218,6 @@ protected :
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Tag")
 	FGameplayTagContainer WorldTagContainer;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Camera")
-	bool bNeedCameraDirect = false;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Camera", meta = (EditCondition = "bNeedCameraDirect", EditConditionHides))
-	FYSCameraEffectParams CameraEffectParams;
-	
 protected :
 	FYSGameplayAbility_RuntimeData RuntimeData;
 	

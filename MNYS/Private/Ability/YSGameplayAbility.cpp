@@ -360,7 +360,13 @@ void UYSGameplayAbility::PostEditChangeProperty(struct FPropertyChangedEvent& Pr
 				}
 			case EYSAbilityType::NeedCameraDirect :
 				{
-					bNeedCameraDirect = true;
+					FYSEventPayload CameraPush;
+					CameraPush.EventActions.Add(NewObject<UYSAbilityEventAction_PushCamera>(this));
+					EventActionMap.Add(YSTags::Event_PushCamera, CameraPush);
+					
+					FYSEventPayload CameraPop;
+					CameraPop.EventActions.Add(NewObject<UYSAbilityEventAction_PopCamera>(this));
+					EventActionMap.Add(YSTags::Event_PopCamera, CameraPop);
 					break;
 				}
 			default: 
