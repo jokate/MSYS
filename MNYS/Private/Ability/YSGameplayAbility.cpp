@@ -358,6 +358,11 @@ void UYSGameplayAbility::PostEditChangeProperty(struct FPropertyChangedEvent& Pr
 					EventActionMap.Add(YSTags::Event_ApplyVelocity, Velocity);
 					break;
 				}
+			case EYSAbilityType::NeedCameraDirect :
+				{
+					bNeedCameraDirect = true;
+					break;
+				}
 			default: 
 				break;
 			}	

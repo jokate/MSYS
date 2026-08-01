@@ -166,3 +166,22 @@ public :
 	void OnEQSQueryFinished(UYSGameplayAbility* OwningAbility, FVector Location);
 	virtual void OnEQSQueryFinished_Implementation(UYSGameplayAbility* OwningAbility, FVector Location);
 };
+
+UCLASS(DisplayName = "카메라 진입")
+class MNYS_API UYSAbilityEventAction_PushCamera : public UYSAbilityEventAction
+{
+	GENERATED_BODY()	
+	
+public : 
+	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
+	
+};
+
+UCLASS(DisplayName = "카메라 해제")
+class MNYS_API UYSAbilityEventAction_PopCamera : public UYSAbilityEventAction
+{
+	GENERATED_BODY()	
+	
+public : 
+	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
+};

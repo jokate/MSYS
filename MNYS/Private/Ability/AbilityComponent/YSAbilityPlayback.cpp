@@ -14,7 +14,7 @@
 #include "Ability/YSGameplayAbility.h"
 #include "Ability/MontageSelector/YSMontageSelector.h"
 #include "Ability/AbilityComponent/YSPlaybackCondition.h"
-#include "Character/Components/YSCameraLockOnComponent.h"
+#include "Character/Components/YSCameraManageComponent.h"
 #include "General/YSGameplayTag.h"
 
 void UYSAbilityPlaybackBase::SetPlayback(TSharedPtr<FYSPlaybackContext> Context)

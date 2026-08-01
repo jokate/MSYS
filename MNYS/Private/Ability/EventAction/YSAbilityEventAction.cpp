@@ -16,7 +16,7 @@
 #include "Character/YSCharacterBase.h"
 #include "Character/YSPlayerController.h"
 #include "Character/Components/YSCharacterMovementComponent.h"
-#include "Character/Components/YSCameraLockOnComponent.h"
+#include "Character/Components/YSCameraManageComponent.h"
 #include "General/YSDefine.h"
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
@@ -306,5 +306,55 @@ void UYSAbilityEventAction_RunEQS::OnEQSQueryFinished_Implementation(UYSGameplay
 	FVector Location)
 {
 	UE_LOG(LogTemp, Log, TEXT("EQS Query Completed"));
+}
+
+bool UYSAbilityEventAction_PushCamera::Execute_Implementation(UYSGameplayAbility* OwningAbility,
+	const FGameplayEventData& EventData)
+{	
+	const UYSAbilityTriggerPayload_CameraEffect* PushCamera = UYSAbilityTriggerPayload::GetPayload<UYSAbilityTriggerPayload_CameraEffect>(&EventData);
+	
+	if ( IsValid(PushCamera) == false || IsValid(OwningAbility) == false )
+	{
+		return false;
+	}
+	
+	AActor* AvatarActor = OwningAbility->GetAvatarActorFromActorInfo();
+	
+	if ( IsValid(AvatarActor) == false )
+	{
+		return false;
+	}
+	
+	UYSCameraManageComponent* CameraManager = UYSCameraManageComponent::Get(AvatarActor);
+	if ( IsValid(CameraManager) == false )
+	{
+		return false;
+	}
+	
+	CameraManager->PushCameraMode(OwningAbility, PushCamera->CameraEffectParams, PushCamera->CameraEffectPriority);
+	return true;
+}
+
+bool UYSAbilityEventAction_PopCamera::Execute_Implementation(UYSGameplayAbility* OwningAbility,
+	const FGameplayEventData& EventData)
+{
+	if ( IsValid(OwningAbility) == false )
+		return false;
+
+	AActor* AvatarActor = OwningAbility->GetAvatarActorFromActorInfo();
+	
+	if ( IsValid(AvatarActor) == false )
+	{
+		return false;
+	}
+	
+	UYSCameraManageComponent* CameraManager = UYSCameraManageComponent::Get(AvatarActor);
+	if ( IsValid(CameraManager) == false )
+	{
+		return false;
+	}
+	
+	CameraManager->PopCameraMode(OwningAbility);
+	return true;
 }
 

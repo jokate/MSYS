@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Abilities/GameplayAbilityTypes.h"
+#include "Character/Components/YSCameraManageComponent.h"
 #include "GameFramework/RootMotionSource.h"
 #include "General/YSStruct.h"
 #include "UObject/Object.h"
@@ -108,3 +109,16 @@ public :
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "EQS")
 	TObjectPtr<UEnvQuery> TargetToRun;
 };
+
+UCLASS(BlueprintType, EditInlineNew, DisplayName = "카메라 이펙트")
+class MNYS_API UYSAbilityTriggerPayload_CameraEffect : public UYSAbilityTriggerPayload
+{
+	GENERATED_BODY()
+	
+public : 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "카메라 이펙트")
+	FYSCameraEffectParams CameraEffectParams;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "카메라 이펙트 우선순위")
+	EYSCameraModePriority CameraEffectPriority = EYSCameraModePriority::Default;
+};	

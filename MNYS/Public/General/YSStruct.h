@@ -257,6 +257,9 @@ struct FYSCameraEffectParams
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "복귀 보간 속도"))
 	FRotator RelativeRotator = FRotator::ZeroRotator;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "컨트롤 회전에 맞추기"))
+	bool bOrientToControlRotation = false;
 };
 
 USTRUCT(BlueprintType)

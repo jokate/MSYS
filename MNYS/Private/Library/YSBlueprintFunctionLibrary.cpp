@@ -15,7 +15,7 @@
 #include "AttackableActor/YSAttackableBase.h"
 #include "Character/YSCharacterBase.h"
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
-#include "Character/Components/YSCameraLockOnComponent.h"
+#include "Character/Components/YSCameraManageComponent.h"
 #include "General/YSDefine.h"
 #include "General/YSGameplayTag.h"
 
@@ -131,7 +131,7 @@ FRotator UYSBlueprintFunctionLibrary::GetEventRotation(EYSDirectionPolicy Direct
 
 	case EYSDirectionPolicy::UseTowardLockOnTarget:
 		{
-			if (UYSCameraLockOnComponent* LockOn = UYSCameraLockOnComponent::Get(OwnerActor))
+			if (UYSCameraManageComponent* LockOn = UYSCameraManageComponent::Get(OwnerActor))
 			{
 				if (AActor* Target = LockOn->GetCurrentTarget())
 				{

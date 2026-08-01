@@ -22,6 +22,8 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(Event_JustAvoid, "Event.JustAvoid");
 	UE_DEFINE_GAMEPLAY_TAG(Event_Attack_Activate, "Event.Attack.Activate");
 	UE_DEFINE_GAMEPLAY_TAG(Event_TagEnter, "Event.TagEnter");
+	UE_DEFINE_GAMEPLAY_TAG(Event_PushCamera, "Event.PushCamera");
+	UE_DEFINE_GAMEPLAY_TAG(Event_PopCamera, "Event.PopCamera");
 	
 	UE_DEFINE_GAMEPLAY_TAG(Hit_Normal, "Hit.Normal");
 	UE_DEFINE_GAMEPLAY_TAG(Hit_Big, "Hit.Big");

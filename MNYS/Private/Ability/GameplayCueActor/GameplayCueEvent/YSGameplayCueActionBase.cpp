@@ -9,7 +9,7 @@
 #include "LevelSequencePlayer.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Ability/GameplayCueActor/YSGameplayCueNotifyBase.h"
-#include "Character/Components/YSCameraLockOnComponent.h"
+#include "Character/Components/YSCameraManageComponent.h"
 #include "Framework/YSGameModeBase.h"
 
 void UYSGameplayCueActionBase::OnActive(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget,
@@ -116,18 +116,18 @@ void UYSGameplayCueAction_CameraEffect::OnActive(AYSGameplayCueNotifyBase* Gamep
 {
 	Super::OnActive(GameplayCueNotify, MyTarget, Parameters);
 
-	if ( UYSCameraLockOnComponent* LockOn = UYSCameraLockOnComponent::Get(MyTarget) )
+	if ( UYSCameraManageComponent* LockOn = UYSCameraManageComponent::Get(MyTarget) )
 	{
-		LockOn->StartCameraEffect(CameraParams);
+		LockOn->StartCameraEffect(this, CameraParams);
 	}
 }
 
 void UYSGameplayCueAction_CameraEffect::OnRemove(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget,
 	const FGameplayCueParameters& Parameters)
 {
-	if ( UYSCameraLockOnComponent* LockOn = UYSCameraLockOnComponent::Get(MyTarget) )
+	if ( UYSCameraManageComponent* LockOn = UYSCameraManageComponent::Get(MyTarget) )
 	{
-		LockOn->StopCameraEffect();
+		LockOn->StopCameraEffect(this);
 	}
 
 	Super::OnRemove(GameplayCueNotify, MyTarget, Parameters);

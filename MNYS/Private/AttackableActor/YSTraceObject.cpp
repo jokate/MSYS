@@ -10,7 +10,7 @@
 #include "YSBattleActor.h"
 #include "YSDeveloperSettings.h"
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
-#include "Character/Components/YSCameraLockOnComponent.h"
+#include "Character/Components/YSCameraManageComponent.h"
 #include "General/YSGameplayTag.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
 

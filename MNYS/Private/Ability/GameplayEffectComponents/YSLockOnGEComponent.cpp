@@ -5,7 +5,7 @@
 
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
-#include "Character/Components/YSCameraLockOnComponent.h"
+#include "Character/Components/YSCameraManageComponent.h"
 
 void UYSLockOnGEComponent::OnActiveGameplayEffectRemoved(const FGameplayEffectRemovalInfo& GameplayEffectRemovalInfo,
                                                          FActiveGameplayEffectsContainer* ActiveGEContainer) const
@@ -24,7 +24,7 @@ void UYSLockOnGEComponent::OnActiveGameplayEffectRemoved(const FGameplayEffectRe
 		return;
 	}
 
-	UYSCameraLockOnComponent* LockOnComponent = UYSCameraLockOnComponent::Get(ASC->GetOwner());
+	UYSCameraManageComponent* LockOnComponent = UYSCameraManageComponent::Get(ASC->GetOwner());
 	
 	if ( IsValid(LockOnComponent))
 	{
@@ -42,7 +42,7 @@ void UYSLockOnGEComponent::OnGameplayEffectApplied(FActiveGameplayEffectsContain
 	if ( IsValid(ASC) == false )
 		return;
 	
-	UYSCameraLockOnComponent* LockOnComponent = UYSCameraLockOnComponent::Get(ASC->GetOwner());
+	UYSCameraManageComponent* LockOnComponent = UYSCameraManageComponent::Get(ASC->GetOwner());
 	
 	const FGameplayEffectContextHandle& EffectContext = GESpec.GetEffectContext();
 	if ( IsValid(LockOnComponent))

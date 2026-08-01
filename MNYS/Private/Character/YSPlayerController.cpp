@@ -4,13 +4,13 @@
 #include "Character/YSPlayerController.h"
 
 #include "EnhancedInputSubsystems.h"
-#include "Character/Components/YSCameraLockOnComponent.h"
+#include "Character/Components/YSCameraManageComponent.h"
 
 class UEnhancedInputLocalPlayerSubsystem;
 
 AYSPlayerController::AYSPlayerController(const FObjectInitializer& ObjectInitializer)
 {
-	LockOnComponent = CreateDefaultSubobject<UYSCameraLockOnComponent>(TEXT("LockOnComponent"));
+	LockOnComponent = CreateDefaultSubobject<UYSCameraManageComponent>(TEXT("LockOnComponent"));
 }
 
 void AYSPlayerController::SetupInputComponent()

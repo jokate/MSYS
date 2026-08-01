@@ -7,6 +7,7 @@
 #include "Data/YSDataStruct.h"
 #include "General/YSEnum.h"
 #include "General/YSMacros.h"
+#include "General/YSStruct.h"
 #include "Input/Combo/YSComboData.h"
 #include "YSGameplayAbility.generated.h"
 
@@ -25,6 +26,7 @@ enum class EYSAbilityType : uint8
 	MeleeAttack UMETA(DisplayName = "근접 공격"),
 	RangedAttack UMETA(DisplayName = "원거리 공격"),
 	Dash UMETA(Displayname = "속도 적용"),
+	NeedCameraDirect UMETA(DisplayName = "카메라 연출 필요")
 };
 
 struct FYSAbilityHitContext
@@ -134,7 +136,7 @@ public:
 	UFUNCTION()
 	void OnGameplayTagChanged(const FGameplayTag& Tag, bool bInIsActive);
 
-	bool TryTransition(const FGameplayTag& InputGameplayTag, EYSInputPhase InputPhase);
+	virtual bool TryTransition(const FGameplayTag& InputGameplayTag, EYSInputPhase InputPhase);
 	
 	YS_ACCESSOR(UYSAT_Trace*, TraceTask)
 	YS_ACCESSOR_REF(TSet<EYSAbilityType>, AbilityTypes);
@@ -215,6 +217,12 @@ protected :
 	
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Tag")
 	FGameplayTagContainer WorldTagContainer;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Camera")
+	bool bNeedCameraDirect = false;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Camera", meta = (EditCondition = "bNeedCameraDirect", EditConditionHides))
+	FYSCameraEffectParams CameraEffectParams;
 	
 protected :
 	FYSGameplayAbility_RuntimeData RuntimeData;
