@@ -206,3 +206,17 @@ class UYSDeathState : public UYSInputStates
 		State = EYSInputStatesType::Death;
 	}
 };
+
+UCLASS()
+class UYSAimState : public UYSInputStates
+{
+	GENERATED_BODY()
+	
+	UYSAimState() : UYSInputStates()
+	{
+		StateName = TEXT("Aim");
+		State = EYSInputStatesType::Aim;
+		TransitionRule.Add(EYSInputStatesType::Idle);
+		TransitionRule.Add(EYSInputStatesType::Falling);
+	}
+};

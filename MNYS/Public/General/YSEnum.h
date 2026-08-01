@@ -22,6 +22,7 @@ enum class EYSInputStatesType : uint8
 	JumpAttack,
 	Damaged,
 	Death,
+	Aim,
 	End,
 };
 
