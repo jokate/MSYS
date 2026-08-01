@@ -25,6 +25,24 @@ enum class EYSInputStatesType : uint8
 	End,
 };
 
+/*
+ * 입력의 위상(누름/홀드/뗌)입니다.
+ * 태그(State.Input.Action)에 접미사로 넣지 않고 별도 축으로 흘리는 이유는,
+ * State 11종 × Input 13종에 위상까지 곱하면 조합이 286개를 넘어가는데
+ * 실제로 어빌리티가 물리는 조합은 그중 일부뿐이기 때문입니다.
+ *
+ * ETriggerEvent를 직접 노출하지 않는 것은 None/Ongoing 같은 무의미한 선택지를
+ * 데이터 에셋 드롭다운에서 지우고, Enhanced Input과의 결합을 끊기 위함입니다.
+ */
+UENUM(BlueprintType)
+enum class EYSInputPhase : uint8
+{
+	Pressed		UMETA(DisplayName = "누름"),			// ETriggerEvent::Started
+	Held		UMETA(DisplayName = "누르는 중"),		// ETriggerEvent::Triggered (매 프레임)
+	Released	UMETA(DisplayName = "뗌"),				// ETriggerEvent::Completed
+	Canceled	UMETA(DisplayName = "취소"),			// ETriggerEvent::Canceled
+};
+
 UENUM(BlueprintType)
 enum class EVelocityDirection : uint8
 {

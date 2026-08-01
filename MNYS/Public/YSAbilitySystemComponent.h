@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystemComponent.h"
+#include "General/YSEnum.h"
 #include "YSAbilitySystemComponent.generated.h"
 
 
@@ -36,7 +37,7 @@ public:
 	static UYSAbilitySystemComponent* Get(AActor* Owner);
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	void ProcessAbilityByInputPass(const FGameplayTag& InputTag);
+	void ProcessAbilityByInputPass(const FGameplayTag& InputTag, EYSInputPhase InputPhase);
 	void ApplyStatInitialization();
 
 	/**
@@ -75,7 +76,7 @@ protected:
 	virtual void OnRemoveAbility(FGameplayAbilitySpec& AbilitySpec) override;
 	
 	bool ProcessSkillActive(const FGameplayTag& InputTag);
-	bool ProcessAlreadyActiveAbility(const FGameplayTag& InputTag);
+	bool ProcessAlreadyActiveAbility(const FGameplayTag& InputTag, EYSInputPhase InputPhase);
 	
 	
 	

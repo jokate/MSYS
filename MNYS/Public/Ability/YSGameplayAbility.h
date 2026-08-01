@@ -134,7 +134,7 @@ public:
 	UFUNCTION()
 	void OnGameplayTagChanged(const FGameplayTag& Tag, bool bInIsActive);
 
-	bool TryTransition(const FGameplayTag& InputGameplayTag);
+	bool TryTransition(const FGameplayTag& InputGameplayTag, EYSInputPhase InputPhase);
 	
 	YS_ACCESSOR(UYSAT_Trace*, TraceTask)
 	YS_ACCESSOR_REF(TSet<EYSAbilityType>, AbilityTypes);

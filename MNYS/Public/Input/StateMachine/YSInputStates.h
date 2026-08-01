@@ -3,12 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "General/YSEnum.h"
 #include "UObject/Object.h"
 #include "YSInputStates.generated.h"
 
 class UYSAbilitySystemComponent;
-struct FGameplayTag;
 class AYSCharacterBase;
 /**
  * 해당 시스템은 외부에서 변경 제어되는 StateMachine의 형태이며, 오로지 Input에 대한 제어를 목표로 합니다.
@@ -19,7 +19,7 @@ class MNYS_API UYSInputStates : public UObject
 	GENERATED_BODY()
 
 public :
-	virtual void ProcessInput(const FGameplayTag& InputGameplayTag);
+	virtual void ProcessInput(const FGameplayTag& InputGameplayTag, EYSInputPhase InputPhase);
 	void InitState(AActor* Owner);
 	bool IsEnableTransition(EYSInputStatesType NextState) const { return TransitionRule.Contains(NextState); }
 	EYSInputStatesType GetStateType() const { return State; }
@@ -35,11 +35,20 @@ public :
 	TWeakObjectPtr<UYSAbilitySystemComponent> OwnerASC;
 
 protected :
-	
+	/** "StateName.InputTag" 조합 태그를 해석한다. 최초 1회만 문자열을 만들고 이후엔 캐시를 탄다. */
+	FGameplayTag ResolveStateTag(const FGameplayTag& InputGameplayTag);
+
+protected :
+
 	UPROPERTY()
 	TSet<EYSInputStatesType> TransitionRule;
 
 	EYSInputStatesType State;
+
+private :
+	// InputTag → "StateName.InputTag" 결과 캐시.
+	// 무효 태그(미등록 조합)도 그대로 캐시해 재조회를 막는다.
+	TMap<FGameplayTag, FGameplayTag> ResolvedTagCache;
 };
 
 UCLASS()

@@ -29,6 +29,12 @@ public :
 public : 
 	UPROPERTY(EditAnywhere, Config, Category = "JustAvoidGameplayEffect")
 	TSubclassOf<class UGameplayEffect> JustAvoidGameplayEffect;
+	
+	UPROPERTY(EditAnywhere, Config, Category = "YS | StatInitEffect")
+	TSubclassOf<class UGameplayEffect> StatInitEffect;
+	
+	UPROPERTY(EditAnywhere, Config, Category = "YS | StatDeriveEffect")
+	TSubclassOf<class UGameplayEffect> StatDeriveEffect;
 		
 private : 
 	template <class T>

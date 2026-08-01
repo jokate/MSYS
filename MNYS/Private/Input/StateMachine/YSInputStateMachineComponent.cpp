@@ -84,16 +84,18 @@ void UYSInputStateMachineComponent::OnTagUpdated(const FGameplayTag& Tag, bool b
 	}
 }
 
-void UYSInputStateMachineComponent::AcceptInput(const FGameplayTag& Tag)
+void UYSInputStateMachineComponent::AcceptInput(const FGameplayTag& Tag, EYSInputPhase InputPhase)
 {
 	if ( bIsInputBlocked )
 		return;
-	
-	FGameplayTag RetTag = FindBestCombo(Tag);
-	
+
+	// 커맨드 버퍼에는 "누름"만 먹인다.
+	// 뗌까지 InputTags에 쌓이면 FYSCommandSequence::IsSatisfiedCommand의 순서 판정이 깨진다.
+	const FGameplayTag RetTag = (InputPhase == EYSInputPhase::Pressed) ? FindBestCombo(Tag) : Tag;
+
 	if ( IsValid(CurrentInputState))
     {
-        CurrentInputState->ProcessInput(RetTag);
+        CurrentInputState->ProcessInput(RetTag, InputPhase);
     }
 }
 

@@ -7,7 +7,7 @@
 #include "YSAbilitySystemComponent.h"
 #include "General/YSGeneratedGameplayTags.h"
 
-void UYSInputStates::ProcessInput(const FGameplayTag& InputGameplayTag)
+void UYSInputStates::ProcessInput(const FGameplayTag& InputGameplayTag, EYSInputPhase InputPhase)
 {
 	UYSAbilitySystemComponent* ASC = OwnerASC.Get();
 
@@ -16,17 +16,30 @@ void UYSInputStates::ProcessInput(const FGameplayTag& InputGameplayTag)
 	{
 		return;
 	}
-
-	// 여기에 들어온 input의 경우에는 다음과 같이 설정됨.
-	// StateType.InputType.Pressed / Released.
-	FString StateTagStr = FString::Printf(TEXT("%s.%s"), *StateName, *InputGameplayTag.ToString());
 	
-	// GameplayTag로 변환
-	FGameplayTag FinalizedTag =  FGameplayTag::RequestGameplayTag(FName(*StateTagStr));
-
-	UE_LOG(LogTemp, Log, TEXT("FinalizedInput : %s"), *StateTagStr);
+	const FGameplayTag FinalizedTag = ResolveStateTag(InputGameplayTag);
 	
-	ASC->ProcessAbilityByInputPass(FinalizedTag);
+	if ( FinalizedTag.IsValid() == false )
+	{
+		return;
+	}
+
+	ASC->ProcessAbilityByInputPass(FinalizedTag, InputPhase);
+}
+
+FGameplayTag UYSInputStates::ResolveStateTag(const FGameplayTag& InputGameplayTag)
+{
+	if ( const FGameplayTag* Cached = ResolvedTagCache.Find(InputGameplayTag) )
+	{
+		return *Cached;
+	}
+
+	const FString StateTagStr = FString::Printf(TEXT("%s.%s"), *StateName, *InputGameplayTag.ToString());
+	
+	const FGameplayTag Resolved = FGameplayTag::RequestGameplayTag(FName(*StateTagStr), /*ErrorIfNotFound=*/false);
+
+	ResolvedTagCache.Emplace(InputGameplayTag, Resolved);
+	return Resolved;
 }
 
 void UYSInputStates::InitState(AActor* Owner)

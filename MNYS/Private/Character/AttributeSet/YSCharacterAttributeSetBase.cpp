@@ -54,8 +54,8 @@ void UYSCharacterAttributeSetBase::PostAttributeChange(const FGameplayAttribute&
 	if ( Attribute == GetIncomingDamageAttribute() )
 	{
 		const float Damage = GetIncomingDamage();
-		SetIncomingDamage(0.f); // 메타는 즉시 비운다
- 
+		IncomingDamage = 0.f;
+		
 		if (Damage <= 0.f)
 		{
 			return;

@@ -190,7 +190,7 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 	PlaybackContext = nullptr;
 }
 
-bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag) 
+bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag, EYSInputPhase InputPhase)
 {
 	if ( IsInputAcceptable() == false )
 	{
@@ -206,7 +206,7 @@ bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag)
 	// 바로 트랜지션 가능하면 Dispatch Next를 호출하는게 좋을 듯 싶다.. ( 원래는 어셉트 되고 예약이 된다면 return true를 시켰었음..
 	// 사유는 인풋에 따른 처리가 부가적으로 필요한 경우에는 TryTransition에서 true를 리턴해서 인풋이 처리되었다는 것을 알려주는게 좋을 것 같아서임
 	//  ( 예시로는 콤보 입력이 들어왔을 때, 콤보 입력이 처리된 건지, 아니면 인풋이 무시된 건지 구분하기 위해서 )
-	return	AbilityPlaybackBase->TryAcceptContextTag(InputGameplayTag);
+	return	AbilityPlaybackBase->TryAcceptContextTag(InputGameplayTag, InputPhase);
 }
 
 

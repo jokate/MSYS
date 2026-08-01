@@ -37,9 +37,8 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-	UFUNCTION()
-	void ProcessInput(FGameplayTag InputTag);
+	
+	void ProcessInput(FGameplayTag InputTag, EYSInputPhase InputPhase);
 
 	void AddStateToStateMachine(EYSInputStatesType InputStateType) const;
 	void RemoveStateToStateMachine(EYSInputStatesType InputStateType) const;

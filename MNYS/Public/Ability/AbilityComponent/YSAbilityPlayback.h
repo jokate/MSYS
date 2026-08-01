@@ -85,7 +85,7 @@ public :
 	
 	virtual void EndPlay();
 	
-	bool TryAcceptContextTag(const FGameplayTag& InputTag);
+	bool TryAcceptContextTag(const FGameplayTag& InputTag, EYSInputPhase InputPhase);
 	
 protected :
 	UFUNCTION()

@@ -33,6 +33,9 @@ namespace YSTags
 	
 	UE_DEFINE_GAMEPLAY_TAG(Buff_JustAvoid, "Buff.JustAvoid");
 
+	UE_DEFINE_GAMEPLAY_TAG(Input_Phase_Pressed, "Input.Phase.Pressed");
+	UE_DEFINE_GAMEPLAY_TAG(Input_Phase_Released, "Input.Phase.Released");
+
 	UE_DEFINE_GAMEPLAY_TAG(Data_Stat_HP,  "Data.Stat.HP");
 	UE_DEFINE_GAMEPLAY_TAG(Data_Stat_MEL, "Data.Stat.MEL");
 	UE_DEFINE_GAMEPLAY_TAG(Data_Stat_RNG, "Data.Stat.RNG");

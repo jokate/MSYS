@@ -22,7 +22,7 @@ public:
 	// Sets default values for this component's properties
 	static UYSInputStateMachineComponent* Get(AActor* Owner);
 	UYSInputStateMachineComponent();
-	virtual void AcceptInput(const FGameplayTag& Tag);
+	virtual void AcceptInput(const FGameplayTag& Tag, EYSInputPhase InputPhase);
 	
 	virtual void AddStateStack(EYSInputStatesType State);
 	virtual void RemoveStateStack(EYSInputStatesType State);

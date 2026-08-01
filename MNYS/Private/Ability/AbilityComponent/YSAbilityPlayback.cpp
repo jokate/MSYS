@@ -15,6 +15,7 @@
 #include "Ability/MontageSelector/YSMontageSelector.h"
 #include "Ability/AbilityComponent/YSPlaybackCondition.h"
 #include "Character/Components/YSCameraLockOnComponent.h"
+#include "General/YSGameplayTag.h"
 
 void UYSAbilityPlaybackBase::SetPlayback(TSharedPtr<FYSPlaybackContext> Context)
 {
@@ -75,11 +76,29 @@ void UYSAbilityPlaybackBase::EndPlay()
 	CapturedContext = nullptr;
 }
 
-bool UYSAbilityPlaybackBase::TryAcceptContextTag(const FGameplayTag& InputTag)
+bool UYSAbilityPlaybackBase::TryAcceptContextTag(const FGameplayTag& InputTag, EYSInputPhase InputPhase)
 {
+	// Play() 이전에 입력이 들어올 수 있다. 컨텍스트가 없으면 소비하지 않고 흘려보낸다.
+	if ( CapturedContext.IsValid() == false )
+	{
+		return false;
+	}
+
 	// 1단계: 입력 태그 추가
 	CapturedContext->ContextTags.AddTag(InputTag);
-	
+
+	// 위상은 별도 축으로 얹는다. 태그 조합을 늘리지 않고도 전환 조건이
+	// "뗄 때만 전환"(차지 → 발사, 조준 해제)을 표현할 수 있게 된다.
+	// Held는 키가 아직 눌린 상태이므로 Pressed 쪽으로 접는다.
+	const bool bReleased = (InputPhase == EYSInputPhase::Released || InputPhase == EYSInputPhase::Canceled);
+
+	// 직전 위상은 반드시 지운다 — 남아 있으면 Pressed/Released가 동시에 참이 된다.
+	CapturedContext->ContextTags.RemoveTag(YSTags::Input_Phase_Pressed);
+	CapturedContext->ContextTags.RemoveTag(YSTags::Input_Phase_Released);
+	CapturedContext->ContextTags.AddTag(bReleased
+		? YSTags::Input_Phase_Released
+		: YSTags::Input_Phase_Pressed);
+
 	// 2단계: 즉시 전환이 활성화된 경우, 실제로 전환 가능한지 평가
 	if ( bImmediateTransition )
 	{

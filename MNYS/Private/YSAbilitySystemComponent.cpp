@@ -4,6 +4,7 @@
 #include "YSAbilitySystemComponent.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
+#include "YSDeveloperSettings.h"
 #include "Ability/YSGameplayAbility.h"
 #include "Character/YSCharacterPlayer.h"
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
@@ -165,7 +166,7 @@ bool UYSAbilitySystemComponent::ProcessSkillActive(const FGameplayTag& InputTag)
 	return false;
 }
 
-bool UYSAbilitySystemComponent::ProcessAlreadyActiveAbility(const FGameplayTag& InputTag)
+bool UYSAbilitySystemComponent::ProcessAlreadyActiveAbility(const FGameplayTag& InputTag, EYSInputPhase InputPhase)
 {
 	for ( FGameplayAbilitySpecHandle& AbilitySpecHandle : AbilitySpecHandles )
 	{
@@ -187,7 +188,7 @@ bool UYSAbilitySystemComponent::ProcessAlreadyActiveAbility(const FGameplayTag& 
 		if ( IsValid(TargetAbil) == false || TargetAbil->IsActive() == false )
 			continue;
 
-		if (TargetAbil->TryTransition(InputTag))
+		if (TargetAbil->TryTransition(InputTag, InputPhase))
 			return true;
 	}
 
@@ -210,9 +211,12 @@ void UYSAbilitySystemComponent::StartCoolDown(TSubclassOf<UGameplayAbility> Abil
 	Entry->EndTime = TargetToCooldownTime;
 }
 
-void UYSAbilitySystemComponent::ProcessAbilityByInputPass(const FGameplayTag& InputTag)
+void UYSAbilitySystemComponent::ProcessAbilityByInputPass(const FGameplayTag& InputTag, EYSInputPhase InputPhase)
 {
-	if ( ProcessAlreadyActiveAbility(InputTag))
+	if ( ProcessAlreadyActiveAbility(InputTag, InputPhase))
+		return;
+	
+	if ( InputPhase != EYSInputPhase::Pressed )
 		return;
 
 	ProcessSkillActive(InputTag);
@@ -234,22 +238,20 @@ void UYSAbilitySystemComponent::ApplyStatInitialization()
 	{
 		return;
 	}
-	
-	if (!CharacterInfo->StatInitEffect)
+
+	const UYSDeveloperSettings* DeveloperSettings = GetDefault<UYSDeveloperSettings>();
+	if ( DeveloperSettings == nullptr )
 	{
 		return;
 	}
- 
+
 	const FGameplayEffectContextHandle Context = MakeEffectContext();
-	const FGameplayEffectSpecHandle Spec = MakeOutgoingSpec(CharacterInfo->StatInitEffect, 1.f, Context);
+	const FGameplayEffectSpecHandle Spec = MakeOutgoingSpec(DeveloperSettings->StatInitEffect, 1.f, Context);
 	if (!Spec.IsValid())
 	{
 		return;
 	}
- 
-	// 6스탯을 SetByCaller 로 전달한다.
-	// GE_StatInit 은 이 값을 StatXXX 어트리뷰트에 Override 로 그대로 꽂기만 한다.
-	// SetByCaller 는 계수/상수 필드가 없어 산술이 불가능하므로, 실수치 환산은 2단계로 분리한다.
+	
 	const FYSStatBlock& Stats = CharacterInfo->Stats;
 	Spec.Data->SetSetByCallerMagnitude(YSTags::Data_Stat_HP,  Stats.HP);
 	Spec.Data->SetSetByCallerMagnitude(YSTags::Data_Stat_MEL, Stats.MEL);
@@ -259,10 +261,7 @@ void UYSAbilitySystemComponent::ApplyStatInitialization()
 	Spec.Data->SetSetByCallerMagnitude(YSTags::Data_Stat_SCL, Stats.SCL);
 
 	ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
-
-	// 2단계는 반드시 별도 적용이어야 한다. 같은 Instant GE 안에서 StatXXX 를 쓰고
-	// 곧바로 AttributeBased 로 되읽으면 모디파이어 실행 순서와 캡처 타이밍에 의존하게 된다.
-	ApplyDerivedStats(/*bRefillHp=*/true);
+	ApplyDerivedStats(true);
 }
 
 void UYSAbilitySystemComponent::ApplyDerivedStats(bool bRefillHp)
@@ -276,13 +275,14 @@ void UYSAbilitySystemComponent::ApplyDerivedStats(bool bRefillHp)
 
 	const FYSCharacterInfo* CharacterInfo = CharacterBase->GetCharacterInfo();
 
-	if ( CharacterInfo == nullptr || !CharacterInfo->StatDeriveEffect )
+	const UYSDeveloperSettings* DeveloperSettings = GetDefault<UYSDeveloperSettings>();
+	if ( CharacterInfo == nullptr || DeveloperSettings == nullptr || !DeveloperSettings->StatDeriveEffect )
 	{
 		return;
 	}
 
 	const FGameplayEffectContextHandle Context = MakeEffectContext();
-	const FGameplayEffectSpecHandle Spec = MakeOutgoingSpec(CharacterInfo->StatDeriveEffect, 1.f, Context);
+	const FGameplayEffectSpecHandle Spec = MakeOutgoingSpec(DeveloperSettings->StatDeriveEffect, 1.f, Context);
 
 	if (!Spec.IsValid())
 	{
@@ -295,11 +295,7 @@ void UYSAbilitySystemComponent::ApplyDerivedStats(bool bRefillHp)
 	{
 		return;
 	}
-
-	// Hp 를 GE 모디파이어로 채우지 않는 이유 :
-	// UYSCharacterAttributeSetBase::AutoRegisterHandler 가 Hp 를 MaxHp 의 CurrentValue 로 클램프한다.
-	// MaxHp 갱신보다 Hp 갱신이 먼저 실행되면 생성자 기본값(100)에 잘려버리므로,
-	// 파생이 끝난 것이 확정된 이 지점에서 명시적으로 채운다.
+	
 	if (UYSCharacterAttributeSetBase* AttributeSet =
 			const_cast<UYSCharacterAttributeSetBase*>(GetSet<UYSCharacterAttributeSetBase>()))
 	{

@@ -114,17 +114,24 @@ void AYSCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 			}
 			else
 			{
-				EnhancedInputComponent->BindActionByTag(InputConfig, InputAction.InputTag, ETriggerEvent::Triggered, this, &AYSCharacterPlayer::ProcessInput, InputAction.InputTag);	
+				EnhancedInputComponent->BindActionByTag(InputConfig, InputAction.InputTag, ETriggerEvent::Started, this,
+					&AYSCharacterPlayer::ProcessInput, InputAction.InputTag, EYSInputPhase::Pressed);
+
+				EnhancedInputComponent->BindActionByTag(InputConfig, InputAction.InputTag, ETriggerEvent::Completed, this,
+					&AYSCharacterPlayer::ProcessInput, InputAction.InputTag, EYSInputPhase::Released);
+				
+				EnhancedInputComponent->BindActionByTag(InputConfig, InputAction.InputTag, ETriggerEvent::Canceled, this,
+					&AYSCharacterPlayer::ProcessInput, InputAction.InputTag, EYSInputPhase::Canceled);
 			}
 		}
 	}
 }
 
-void AYSCharacterPlayer::ProcessInput(FGameplayTag InputTag)
+void AYSCharacterPlayer::ProcessInput(FGameplayTag InputTag, EYSInputPhase InputPhase)
 {
 	if ( IsValid(InputStateMachineComponent))
 	{
-		InputStateMachineComponent->AcceptInput(InputTag);
+		InputStateMachineComponent->AcceptInput(InputTag, InputPhase);
 	}
 }
 
@@ -225,10 +232,11 @@ void AYSCharacterPlayer::ProcessMovementInput(const FVector2D& InputDir)
 	if (InputDir.X < 0.f)  NewTags.Add(YSInputTags::InputLeft);
 	
 	// 새로 들어온 태그만 AcceptInput 호출
+	// 방향 태그는 축 입력에서 합성한 것이라 "뗌"이 없다. 진입 순간을 누름으로 취급한다.
 	for (const FGameplayTag& Tag : NewTags)
 	{
 		if (!LastDirectionTags.Contains(Tag))
-			InputStateMachineComponent->AcceptInput(Tag);
+			InputStateMachineComponent->AcceptInput(Tag, EYSInputPhase::Pressed);
 	}
 	
 	LastDirectionTags = NewTags;
