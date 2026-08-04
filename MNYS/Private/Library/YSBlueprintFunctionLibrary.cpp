@@ -16,6 +16,7 @@
 #include "Character/YSCharacterBase.h"
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
 #include "Character/Components/YSCameraManageComponent.h"
+#include "Character/Components/YSTargetingComponent.h"
 #include "General/YSDefine.h"
 #include "General/YSGameplayTag.h"
 
@@ -156,6 +157,17 @@ FRotator UYSBlueprintFunctionLibrary::GetEventRotation(EYSDirectionPolicy Direct
 		{
 			return OwnerActor->GetActorTransform().TransformRotation(RelativeOffset.Quaternion()).Rotator();
 		}
+	case EYSDirectionPolicy::UseTargetingDirection :
+		{
+			UYSTargetingComponent* TargetingComponent = UYSTargetingComponent::Get(OwnerActor);
+			if ( IsValid(TargetingComponent) == false )
+			{
+				return OwnerActor->GetActorRotation();
+			}
+			
+			return TargetingComponent->GetResult().Direction.Rotation();
+		}
+		
 	case EYSDirectionPolicy::UseActorForwardVector:
 	default:
 		return OwnerActor->GetActorRotation();
@@ -211,7 +223,16 @@ FVector UYSBlueprintFunctionLibrary::GetEventPosition(EYSPositionPolicy Position
 			NavSystem->GetRandomPointInNavigableRadius(OwnerActor->GetActorLocation(), RelativeOffset.Size(), RetLocation);
 			return RetLocation;
 		}
-		
+	case EYSPositionPolicy::TargetingPosition :
+		{
+			UYSTargetingComponent* TargetingComponent = UYSTargetingComponent::Get(OwnerActor);
+			if ( IsValid(TargetingComponent) == false )
+			{
+				return FVector::ZeroVector;
+			}
+			
+			return TargetingComponent->GetResult().Location;
+		}
 	case EYSPositionPolicy::UseActorLocation:
 	default:
 		return OwnerActor->GetActorLocation();

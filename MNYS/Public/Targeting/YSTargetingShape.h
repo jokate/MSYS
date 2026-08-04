@@ -22,6 +22,7 @@ struct FYSTargetingResult
 	FVector Direction = FVector::ForwardVector;
 
 	/** 대상 지정 도형에서 잡힌 액터. 그 외 도형에서는 항상 null 이다. */
+	// 해당 부분은 현재 미구현 상태.
 	UPROPERTY(BlueprintReadOnly, Category = "YS | Targeting")
 	TObjectPtr<AActor> TargetingActor = nullptr;
 

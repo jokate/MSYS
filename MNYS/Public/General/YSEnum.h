@@ -82,9 +82,9 @@ enum class EYSDirectionPolicy : uint8
 	UseTowardPlaybackTarget 	UMETA(DisplayName = "플레이 백 목표를 향하는 방향 사용"),
 	UseTowardLockOnTarget		UMETA(DisplayName = "락온 목표를 향하는 방향 사용"),
 	UseControlRotation			UMETA(DisplayName = "컨트롤 로테이션 기준"),
-	UseTowardIndicatorPosition	UMETA(DisplayName = "인디케이터 포지션 사용."),
 	UseSocketRotation			UMETA(DisplayName = "소켓 포지션 사용"),
-	UseRelativeOffset			UMETA(DisplayName = "액터 기준 상대 오프셋")
+	UseRelativeOffset			UMETA(DisplayName = "액터 기준 상대 오프셋"),
+	UseTargetingDirection		UMETA(DisplayName = "타겟팅 방향 사용 (Player Only)")
 };
 
 /*
@@ -96,7 +96,8 @@ enum class EYSPositionPolicy : uint8
 	UseActorLocation	UMETA(DisplayName = "액터 위치"),
 	UseSocket			UMETA(DisplayName = "소켓 위치"),
 	UseRelativeOffset	UMETA(DisplayName = "액터 기준 상대 오프셋"),
-	RandomizedPosition	UMETA(DisplayName = "특정 범위에 대한 랜덤 포지선")
+	RandomizedPosition	UMETA(DisplayName = "특정 범위에 대한 랜덤 포지선"),
+	TargetingPosition	UMETA(DisplayName = "타겟팅 위치 사용 (Player Only)")
 };
 
 // 스킬 슬롯에 세팅할 수 있게끔 처리할 예정 ( Subclass로 판단 할 수 있도록 ) / 내 생각에는 기준이 되는 애셋 잡고, 이걸 기반으로 설정가능하도록 해야 할 듯.

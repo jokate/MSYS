@@ -36,10 +36,7 @@ public :
 	// 인디케이터 인스턴스와 조준 상태가 유지돼야 하기 때문이다.
 	UPROPERTY(EditDefaultsOnly, Category="YS | Targeting")
 	TObjectPtr<UYSTargetingComponent> TargetingComponent;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting")
-	TObjectPtr<UYSTargetingComponent> TargetingComponent;
-	
+
 protected : 
 	UPROPERTY(EditDefaultsOnly)
 	float LockOnBreakThreshold = 3.0f; 

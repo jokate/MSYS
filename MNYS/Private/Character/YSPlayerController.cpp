@@ -14,7 +14,6 @@ AYSPlayerController::AYSPlayerController(const FObjectInitializer& ObjectInitial
 {
 	LockOnComponent = CreateDefaultSubobject<UYSCameraManageComponent>(TEXT("LockOnComponent"));
 	TargetingComponent = CreateDefaultSubobject<UYSTargetingComponent>(TEXT("TargetingComponent"));
-	TargetingComponent = CreateDefaultSubobject<UYSTargetingComponent>(TEXT("TargetingComponent"));
 }
 
 void AYSPlayerController::SetupInputComponent()
