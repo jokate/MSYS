@@ -185,3 +185,21 @@ class MNYS_API UYSAbilityEventAction_PopCamera : public UYSAbilityEventAction
 public : 
 	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
 };
+
+UCLASS(DisplayName = "인디케이터 조준")
+class MNYS_API UYSAbilityEventAction_AimStart: public UYSAbilityEventAction
+{
+	GENERATED_BODY()
+	
+public : 
+	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
+};
+
+UCLASS(DisplayName = "인디케이터 조준 해제")
+class MNYS_API UYSAbilityEventAction_AimStop : public UYSAbilityEventAction
+{
+	GENERATED_BODY()
+	
+public :
+	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;	
+};

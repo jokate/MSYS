@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Abilities/GameplayAbilityTypes.h"
 #include "Character/Components/YSCameraManageComponent.h"
+#include "Character/Components/YSTargetingComponent.h"
 #include "GameFramework/RootMotionSource.h"
 #include "General/YSStruct.h"
 #include "UObject/Object.h"
@@ -122,3 +123,13 @@ public :
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "카메라 이펙트 우선순위")
 	EYSCameraModePriority CameraEffectPriority = EYSCameraModePriority::Default;
 };	
+
+UCLASS(BlueprintType, EditInlineNew, DisplayName = "조준")
+class MNYS_API UYSAbilityTriggerPayload_AimTarget : public UYSAbilityTriggerPayload
+{
+	GENERATED_BODY()
+	
+public : 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "조준 파라미터 세팅")
+	FYSTargetingSpec TargetingSpec;
+};

@@ -5,46 +5,28 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "General/YSStruct.h"
+#include "StructUtils/InstancedStruct.h"
+#include "Targeting/YSSkillIndicator.h"
+#include "Targeting/YSTargetingShape.h"
 #include "YSTargetingComponent.generated.h"
 
 class AYSSkillIndicator;
+
 /** 스킬 하나가 "어떻게 조준되는가"를 선언합니다. 어빌리티가 EditDefaultsOnly로 들고 있습니다. */
 USTRUCT(BlueprintType)
 struct FYSTargetingSpec
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "최대 사거리"))
-	float Range = 1000.f;
+	// 치수(사거리·반경·각도)와 사거리 링 표시 여부는 전부 도형이 들고 간다.
+	// 도형을 고르면 그 도형의 필드만 뜨므로 EditCondition 을 늘어놓을 필요가 없다.
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting",
+		meta = (DisplayName = "타게팅 도형",
+				BaseStruct = "/Script/MNYS.YSTargetingShape", ExcludeBaseStruct))
+	FInstancedStruct Shape;
 
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "반경"))
-	float Radius = 200.f;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "사거리 밖이면 끝으로 클램프"))
-	bool bClampToRange = true;
-	
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "조준 중 카메라"))
 	FYSCameraEffectParams CameraParams;
-};
-
-// 결과를 어떻게 보일 거 ㅅ인가 
-USTRUCT(BlueprintType)
-struct FYSTargetingResult
-{
-	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadOnly, Category = "YS | Targeting")
-	FVector Location = FVector::ZeroVector;
-
-	UPROPERTY(BlueprintReadOnly, Category = "YS | Targeting")
-	FVector Direction = FVector::ForwardVector;
-	
-	UPROPERTY(BlueprintReadOnly, Category = "YS | Targeting")
-	AActor* TargetingActor = nullptr;
-
-	/** 사거리 밖·조준 실패 등으로 시전할 수 없으면 false. */
-	UPROPERTY(BlueprintReadOnly, Category = "YS | Targeting")
-	bool bValid = false;
 };
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -72,6 +54,9 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	FYSTargetingResult EvaluateTarget() const;
+
+	/** 현재 도형·결과를 인디케이터에 반영한다. 매 프레임 호출을 전제로 한다. */
+	void RefreshIndicator();
 
 	/** 화면 기준점을 월드 지면으로 옮긴다. 허공을 겨눈 경우 수평면으로 폴백한다. */
 	bool ProjectScreenToGround(FVector& OutLocation) const;
@@ -108,6 +93,8 @@ private:
 	UPROPERTY()
 	TWeakObjectPtr<UObject> CurrentRequester;
 
-	FYSTargetingSpec   CurrentSpec;
+	UPROPERTY()
+	FYSTargetingSpec CurrentSpec;
+
 	FYSTargetingResult CurrentResult;
 };

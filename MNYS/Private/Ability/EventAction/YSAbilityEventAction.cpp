@@ -358,3 +358,57 @@ bool UYSAbilityEventAction_PopCamera::Execute_Implementation(UYSGameplayAbility*
 	return true;
 }
 
+bool UYSAbilityEventAction_AimStart::Execute_Implementation(UYSGameplayAbility* OwningAbility,
+	const FGameplayEventData& EventData)
+{
+	const UYSAbilityTriggerPayload_AimTarget* AimTarget = UYSAbilityTriggerPayload::GetPayload<UYSAbilityTriggerPayload_AimTarget>(&EventData);
+	
+	if ( IsValid(AimTarget) == false || IsValid(OwningAbility) == false )
+	{
+		return false;
+	}
+	
+	AActor* AvatarActor = OwningAbility->GetAvatarActorFromActorInfo();
+	
+	if ( IsValid(AvatarActor) == false )
+	{
+		return false;
+	}
+	
+	UYSTargetingComponent* TargetingComponent = UYSTargetingComponent::Get(AvatarActor);
+	
+	if ( IsValid(TargetingComponent) == false ) 
+	{
+		return false;
+	}
+	
+	TargetingComponent->BeginTargeting(OwningAbility, AimTarget->TargetingSpec);
+	return true;
+}
+
+bool UYSAbilityEventAction_AimStop::Execute_Implementation(UYSGameplayAbility* OwningAbility,
+	const FGameplayEventData& EventData)
+{
+	if ( IsValid(OwningAbility) == false )
+	{
+		return false;
+	}
+	
+	AActor* AvatarActor = OwningAbility->GetAvatarActorFromActorInfo();
+	
+	if ( IsValid(AvatarActor) == false )
+	{
+		return false;
+	}
+	
+	UYSTargetingComponent* TargetingComponent = UYSTargetingComponent::Get(AvatarActor);
+	
+	if ( IsValid(TargetingComponent) == false ) 
+	{
+		return false;
+	}
+	
+	TargetingComponent->EndTargeting(OwningAbility);
+	return true;
+}
+

@@ -6,12 +6,14 @@
 #include "EnhancedInputSubsystems.h"
 #include "Character/Components/YSCameraManageComponent.h"
 #include "Character/Components/YSTargetingComponent.h"
+#include "Character/Components/YSTargetingComponent.h"
 
 class UEnhancedInputLocalPlayerSubsystem;
 
 AYSPlayerController::AYSPlayerController(const FObjectInitializer& ObjectInitializer)
 {
 	LockOnComponent = CreateDefaultSubobject<UYSCameraManageComponent>(TEXT("LockOnComponent"));
+	TargetingComponent = CreateDefaultSubobject<UYSTargetingComponent>(TEXT("TargetingComponent"));
 	TargetingComponent = CreateDefaultSubobject<UYSTargetingComponent>(TEXT("TargetingComponent"));
 }
 

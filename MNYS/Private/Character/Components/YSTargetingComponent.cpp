@@ -70,7 +70,11 @@ bool UYSTargetingComponent::BeginTargeting(UObject* Requester, const FYSTargetin
 		Camera->PushCameraMode(Requester, Spec.CameraParams, EYSCameraModePriority::Targeting);
 	}
 	
+	// 첫 프레임부터 올바른 도형이 뜨도록 한 번 즉시 산출해 반영한다.
+	// 틱을 기다리면 이전 조준의 잔상이 한 프레임 보인다.
 	CurrentResult = EvaluateTarget();
+	RefreshIndicator();
+
 	SetComponentTickEnabled(true);
 	return true;
 }
@@ -113,13 +117,23 @@ void UYSTargetingComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 	CurrentResult = EvaluateTarget();
 
+	RefreshIndicator();
+}
+
+void UYSTargetingComponent::RefreshIndicator()
+{
 	if ( IsValid(Indicator) == false )
 	{
 		return;
 	}
 
-	Indicator->ShowCircle(CurrentResult.Location, CurrentSpec.Radius);
-	Indicator->SetRangeRing(true, GetCasterLocation(), CurrentSpec.Range);
+	// 도형 종류에 따라 그리는 방식과 사거리 링 표시 여부가 갈린다.
+	// 원형·사각형은 조준점이 중심이고, 직선·부채꼴·자기중심원은 시전자가 기준이다.
+	if ( const FYSTargetingShape* Shape = CurrentSpec.Shape.GetPtr<FYSTargetingShape>() )
+	{
+		Shape->Draw(Indicator, CurrentResult, GetCasterLocation());
+	}
+
 	Indicator->SetValid(CurrentResult.bValid);
 }
 
@@ -139,6 +153,14 @@ FYSTargetingResult UYSTargetingComponent::EvaluateTarget() const
 	FYSTargetingResult Result;
 
 	const FVector Caster = GetCasterLocation();
+	const FYSTargetingShape* Shape = CurrentSpec.Shape.GetPtr<FYSTargetingShape>();
+
+	if ( Shape == nullptr )
+	{
+		Result.Location  = Caster;
+		Result.Direction = GetCasterForward();
+		return Result;
+	}
 
 	FVector Desired = FVector::ZeroVector;
 	if ( ProjectScreenToGround(Desired) == false )
@@ -147,28 +169,37 @@ FYSTargetingResult UYSTargetingComponent::EvaluateTarget() const
 		Result.Direction = GetCasterForward();
 		return Result;
 	}
-	
+
+	// 방향은 도형 종류와 무관하게 항상 산출한다. 직선·부채꼴은 이 값만 쓴다.
 	FVector Offset = Desired - Caster;
 	Offset.Z = 0.f;
+	Result.Direction = Offset.IsNearlyZero() ? GetCasterForward() : Offset.GetSafeNormal();
 
-	const bool bOutOfRange = Offset.SizeSquared() > FMath::Square(CurrentSpec.Range);
+	// 시전자 기준 도형은 조준점을 위치로 쓰지 않는다. 사거리 판정도 의미가 없다.
+	if ( Shape->UsesAimPointAsOrigin() == false )
+	{
+		Result.Location = Caster;
+		Result.bValid   = true;
+		return Result;
+	}
 
-	if ( bOutOfRange && CurrentSpec.bClampToRange )
+	// 사거리는 수평 거리로만 잰다.
+	// 높이차를 포함시키면 언덕 위 적이 사거리 밖으로 밀려난다.
+	const float Range = Shape->GetRange();
+	const bool bOutOfRange = ( Range > 0.f ) && ( Offset.SizeSquared() > FMath::Square(Range) );
+
+	if ( bOutOfRange && Shape->bClampToRange )
 	{
 		// XY를 당겼으니 Z를 다시 지면에 붙인다.
-		Result.Location = SnapToGround(Caster + Offset.GetSafeNormal() * CurrentSpec.Range);
-		Offset = Result.Location - Caster;
-		Offset.Z = 0.f;
+		Result.Location = SnapToGround(Caster + Offset.GetSafeNormal() * Range);
 	}
 	else
 	{
 		Result.Location = Desired;
 	}
 
-	Result.Direction = Offset.IsNearlyZero() ? GetCasterForward() : Offset.GetSafeNormal();
-
 	// 클램프를 켰으면 항상 사거리 안이므로 유효하다.
-	Result.bValid = CurrentSpec.bClampToRange || ( bOutOfRange == false );
+	Result.bValid = Shape->bClampToRange || ( bOutOfRange == false );
 
 	return Result;
 }
@@ -271,6 +302,9 @@ void UYSTargetingComponent::EndTargetingInternal()
 {
 	CurrentRequester = nullptr;
 	CurrentResult = FYSTargetingResult();
+
+	// 도형도 비운다. 남겨두면 다음 레디가 스펙을 덮기 전에 옛 도형이 한 프레임 그려진다.
+	CurrentSpec.Shape.Reset();
 
 	if ( IsValid(Indicator) )
 	{

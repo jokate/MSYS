@@ -173,6 +173,15 @@ void AYSSkillIndicator::ShowLine(const FVector& Origin, float Yaw, float Length,
 	SetShapeExtent(Length * 0.5f, Width * 0.5f, Length * 0.5f);
 }
 
+void AYSSkillIndicator::ShowSquare(const FVector& Center, float Length, float Width)
+{
+	ApplyShape(EYSIndicatorShapeType::Square, Center, 0.f);
+
+	// 사각형은 방향이 없다. 기준점이 곧 중심이라 전방 오프셋도 없다.
+	SetShapeExtent(0.f, Width * 0.5f, Length * 0.5f);
+}
+
+
 void AYSSkillIndicator::SetRangeRing(bool bShow, const FVector& Center, float Range)
 {
 	if ( IsValid(RangeDecal) == false )

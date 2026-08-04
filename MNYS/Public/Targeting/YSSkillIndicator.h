@@ -22,6 +22,7 @@ enum class EYSIndicatorShapeType : uint8
 	Circle	UMETA(DisplayName = "원형"),
 	Cone	UMETA(DisplayName = "부채꼴"),
 	Line	UMETA(DisplayName = "직선"),
+	Square	UMETA(DisplayName = "사각형")
 };
 
 /**
@@ -68,6 +69,10 @@ public:
 	/** 직선 스킬샷. Origin에서 Yaw 방향으로 Length 만큼 뻗고 폭은 Width. */
 	UFUNCTION(BlueprintCallable, Category = "YS | Indicator", meta = (DisplayName = "직선 표시"))
 	void ShowLine(const FVector& Origin, float Yaw, float Length, float Width);
+
+	/** 사각형 스킬샷. Center는 지면 위 방향으로 Length 만큼 뻗고 폭은 Width. */
+	UFUNCTION(BlueprintCallable, Category = "YS | Indicator", meta = (DisplayName = "사각형 표시"))
+	void ShowSquare(const FVector& Center, float Length, float Width);
 
 	/**
 	 * 최대 사거리 링. 도형과 별개로 시전자 발밑에 남는다.
