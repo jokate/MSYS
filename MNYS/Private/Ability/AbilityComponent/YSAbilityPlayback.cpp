@@ -319,9 +319,9 @@ bool UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackEvent Event, bool bIsEvalua
 		
 		UYSAbilityPlaybackBase* Next = Ability->GetPlaybackNode(Edge.NextNodeIndex);
 		
-		if (bConditionPassed && IsValid(Next))
+		if (bConditionPassed)
 		{
-			Ability->ActivePlayback(Edge.NextNodeIndex);
+			Edge.NextNodeIndex == -1 ? Ability->NotifyPlaybackChainFinished() :	Ability->ActivePlayback(Edge.NextNodeIndex);
 			return true;
 		}
 	}
