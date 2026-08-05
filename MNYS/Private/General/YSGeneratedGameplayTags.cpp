@@ -145,4 +145,10 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(AimInputUpAttack, "Aim.Input.Command.UpAttack");
 	UE_DEFINE_GAMEPLAY_TAG(AimInputDownAttack, "Aim.Input.Command.DownAttack");
 	UE_DEFINE_GAMEPLAY_TAG(AimInputBackDodgeAttack, "Aim.Input.Command.BackDodgeAttack");
+
+	// 조준 입력(우클릭). 조준 진입은 Idle 에서, 조준 해제(뗌) 판정은 Aim 에서 받는다.
+	// 나머지 State 조합은 실제로 쓰이지 않으므로 등록하지 않는다 —
+	// ResolveStateTag 가 미등록 조합을 조용히 무효 태그로 떨어뜨린다.
+	UE_DEFINE_GAMEPLAY_TAG(IdleInputAim, "Idle.Input.Aim");
+	UE_DEFINE_GAMEPLAY_TAG(AimInputAim, "Aim.Input.Aim");
 }

@@ -15,6 +15,7 @@ namespace YSInputTags
 	UE_DEFINE_GAMEPLAY_TAG(InputDown, "Input.Down");
 	UE_DEFINE_GAMEPLAY_TAG(InputLeft, "Input.Left");
 	UE_DEFINE_GAMEPLAY_TAG(InputRight, "Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(InputAim, "Input.Aim");
 	
 	UE_DEFINE_GAMEPLAY_TAG(InputUpAttack, "Input.Command.UpAttack");
 	UE_DEFINE_GAMEPLAY_TAG(InputDownAttack, "Input.Command.DownAttack");

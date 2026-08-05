@@ -329,7 +329,14 @@ bool UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackEvent Event, bool bIsEvalua
 	// 평가하는 경우에는 단순히 조건 체크 용도로만 사용되고, 실제로 플레이백이 전환되는 것은 아니므로 체인 종료 알림을 보내지 않는다.
 	if (!bIsEvaluate)
 	{
-		Ability->NotifyPlaybackChainFinished();	
+		// 입력이 어느 엣지와도 안 맞은 경우에만 이 플래그를 본다.
+		// 몽타주 완료 등 다른 이벤트까지 막으면 대기 노드에서 어빌리티가 영영 매달린다.
+		if (Event == EYSPlaybackEvent::OnCheckContextTag && bEndChainOnUnmatchedInput == false)
+		{
+			return false;
+		}
+
+		Ability->NotifyPlaybackChainFinished();
 		return false;
 	}
 	

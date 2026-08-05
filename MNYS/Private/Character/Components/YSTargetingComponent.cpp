@@ -4,6 +4,7 @@
 #include "Character/Components/YSTargetingComponent.h"
 
 #include "NavigationSystem.h"
+#include "Character/YSPlayerController.h"
 #include "Character/Components/YSCameraManageComponent.h"
 #include "General/YSDefine.h"
 #include "Targeting/YSSkillIndicator.h"
@@ -46,7 +47,7 @@ bool UYSTargetingComponent::BeginTargeting(UObject* Requester, const FYSTargetin
 	// 안 그러면 밀려난 요청이 스택에 남아 조준이 끝나도 카메라가 돌아오지 않는다.
 	if ( CurrentRequester.IsValid() && CurrentRequester.Get() != Requester )
 	{
-		if ( UYSCameraManageComponent* PrevCamera = UYSCameraManageComponent::Get(GetOwner()) )
+		if ( UYSCameraManageComponent* PrevCamera = CurrentPlayerController->LockOnComponent ) 
 		{
 			PrevCamera->PopCameraMode(CurrentRequester.Get());
 		}
@@ -65,7 +66,7 @@ bool UYSTargetingComponent::BeginTargeting(UObject* Requester, const FYSTargetin
 	CurrentRequester = Requester;
 	CurrentSpec = Spec;
 
-	if ( UYSCameraManageComponent* Camera = UYSCameraManageComponent::Get(GetOwner()) )
+	if ( UYSCameraManageComponent* Camera = CurrentPlayerController->LockOnComponent )
 	{
 		Camera->PushCameraMode(Requester, Spec.CameraParams, EYSCameraModePriority::Targeting);
 	}
@@ -88,7 +89,7 @@ void UYSTargetingComponent::EndTargeting(UObject* Requester)
 	}
 	
 	// 카메라를 빼준다. 
-	if ( UYSCameraManageComponent* Camera = UYSCameraManageComponent::Get(GetOwner()) )
+	if ( UYSCameraManageComponent* Camera = CurrentPlayerController->LockOnComponent )
 	{
 		Camera->PopCameraMode(Requester);
 	}
@@ -118,6 +119,13 @@ void UYSTargetingComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	CurrentResult = EvaluateTarget();
 
 	RefreshIndicator();
+}
+
+void UYSTargetingComponent::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	CurrentPlayerController = Cast<AYSPlayerController>(GetOwner());
 }
 
 void UYSTargetingComponent::RefreshIndicator()
@@ -206,17 +214,17 @@ FYSTargetingResult UYSTargetingComponent::EvaluateTarget() const
 
 bool UYSTargetingComponent::ProjectScreenToGround(FVector& OutLocation) const
 {
-	APlayerController* PC = Cast<APlayerController>(GetOwner());
+	
 	UWorld* World = GetWorld();
 
-	if ( IsValid(PC) == false || IsValid(World) == false )
+	if ( IsValid(CurrentPlayerController) == false || IsValid(World) == false )
 	{
 		return false;
 	}
 
 	int32 SizeX = 0;
 	int32 SizeY = 0;
-	PC->GetViewportSize(SizeX, SizeY);
+	CurrentPlayerController->GetViewportSize(SizeX, SizeY);
 
 	if ( SizeX <= 0 || SizeY <= 0 )
 	{
@@ -229,7 +237,7 @@ bool UYSTargetingComponent::ProjectScreenToGround(FVector& OutLocation) const
 	FVector WorldOrigin    = FVector::ZeroVector;
 	FVector WorldDirection = FVector::ForwardVector;
 
-	if ( PC->DeprojectScreenPositionToWorld(ScreenX, ScreenY, WorldOrigin, WorldDirection) == false )
+	if ( CurrentPlayerController->DeprojectScreenPositionToWorld(ScreenX, ScreenY, WorldOrigin, WorldDirection) == false )
 	{
 		return false;
 	}
@@ -237,7 +245,7 @@ bool UYSTargetingComponent::ProjectScreenToGround(FVector& OutLocation) const
 	const FVector TraceEnd = WorldOrigin + WorldDirection * MaxTraceDistance;
 
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(YSTargeting), false);
-	Params.AddIgnoredActor(PC->GetPawn());
+	Params.AddIgnoredActor(CurrentPlayerController->GetPawn());
 
 	FHitResult Hit;
 	if ( World->LineTraceSingleByChannel(Hit, WorldOrigin, TraceEnd, TraceChannel, Params) )
@@ -283,16 +291,14 @@ FVector UYSTargetingComponent::SnapToGround(const FVector& Location) const
 
 FVector UYSTargetingComponent::GetCasterLocation() const
 {
-	const APlayerController* PC = Cast<APlayerController>(GetOwner());
-	const APawn* Pawn = IsValid(PC) ? PC->GetPawn() : nullptr;
+	const APawn* Pawn = IsValid(CurrentPlayerController) ? CurrentPlayerController->GetPawn() : nullptr;
 
 	return IsValid(Pawn) ? Pawn->GetActorLocation() : FVector::ZeroVector;
 }
 
 FVector UYSTargetingComponent::GetCasterForward() const
 {
-	const APlayerController* PC = Cast<APlayerController>(GetOwner());
-	const APawn* Pawn = IsValid(PC) ? PC->GetPawn() : nullptr;
+	const APawn* Pawn = IsValid(CurrentPlayerController) ? CurrentPlayerController->GetPawn() : nullptr;
 
 	return IsValid(Pawn) ? Pawn->GetActorForwardVector() : FVector::ForwardVector;
 }

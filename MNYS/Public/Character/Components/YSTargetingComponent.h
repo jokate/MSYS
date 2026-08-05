@@ -10,6 +10,7 @@
 #include "Targeting/YSTargetingShape.h"
 #include "YSTargetingComponent.generated.h"
 
+class AYSPlayerController;
 class AYSSkillIndicator;
 
 /** 스킬 하나가 "어떻게 조준되는가"를 선언합니다. 어빌리티가 EditDefaultsOnly로 들고 있습니다. */
@@ -21,8 +22,7 @@ struct FYSTargetingSpec
 	// 치수(사거리·반경·각도)와 사거리 링 표시 여부는 전부 도형이 들고 간다.
 	// 도형을 고르면 그 도형의 필드만 뜨므로 EditCondition 을 늘어놓을 필요가 없다.
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting",
-		meta = (DisplayName = "타게팅 도형",
-				BaseStruct = "/Script/MNYS.YSTargetingShape", ExcludeBaseStruct))
+		meta = (DisplayName = "타게팅 도형",	BaseStruct = "/Script/MNYS.YSTargetingShape", ExcludeBaseStruct))
 	FInstancedStruct Shape;
 
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "조준 중 카메라"))
@@ -51,6 +51,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 protected:
+	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	FYSTargetingResult EvaluateTarget() const;
@@ -97,4 +98,7 @@ private:
 	FYSTargetingSpec CurrentSpec;
 
 	FYSTargetingResult CurrentResult;
+	
+	UPROPERTY()
+	TObjectPtr<AYSPlayerController> CurrentPlayerController;
 };

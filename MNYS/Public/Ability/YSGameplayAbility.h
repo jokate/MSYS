@@ -26,7 +26,8 @@ enum class EYSAbilityType : uint8
 	MeleeAttack UMETA(DisplayName = "근접 공격"),
 	RangedAttack UMETA(DisplayName = "원거리 공격"),
 	Dash UMETA(Displayname = "속도 적용"),
-	NeedCameraDirect UMETA(DisplayName = "카메라 연출 필요")
+	NeedCameraDirect UMETA(DisplayName = "카메라 연출 필요"),
+	NeedReady UMETA(DisplayName = "카메라 연출 필요"),
 };
 
 struct FYSAbilityHitContext
@@ -229,6 +230,9 @@ protected :
 	
 	// 인풋에 대한 어셉팅 여부
 	bool bIsInputAcceptable = false;
+
+	// NeedReady 어빌리티의 커밋 지연용. 확정 노드 진입 시 한 번만 커밋한다.
+	bool bHasCommitted = false;
 
 	UPROPERTY()
 	UYSAT_Trace* TraceTask = nullptr;

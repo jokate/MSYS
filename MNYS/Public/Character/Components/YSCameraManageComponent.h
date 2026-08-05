@@ -142,4 +142,5 @@ private:
 	FVector DefaultSocketOffset = FVector::ZeroVector;
 	float DefaultFOV          = 90.f;
 	FRotator DefaultRotation = FRotator::ZeroRotator;
+	bool bOriginControl = false;
 };

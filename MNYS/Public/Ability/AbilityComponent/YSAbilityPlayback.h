@@ -121,6 +121,28 @@ public :
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Transitions", meta = (DisplayName = "즉시 전환 가능 여부"))
 	bool bImmediateTransition = false;
 
+	/**
+	 * 입력이 어느 엣지와도 맞지 않았을 때 체인을 끊을지 여부.
+	 *
+	 * 콤보 노드는 끊는 게 맞다 — 엉뚱한 입력이 오면 콤보가 실패한 것이다.
+	 * 하지만 조준 대기처럼 무관한 입력(이동·회피)이 계속 흘러드는 노드에서는
+	 * 꺼야 한다. 켜두면 조준 중 한 발짝만 움직여도 어빌리티가 끝난다.
+	 *
+	 * 몽타주 완료 같은 다른 이벤트는 이 값과 무관하게 항상 체인을 끝낸다.
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Transitions", meta = (DisplayName = "입력 불일치 시 체인 종료"))
+	bool bEndChainOnUnmatchedInput = true;
+
+	/**
+	 * 이 노드에 진입할 때 어빌리티를 커밋(쿨다운·비용 소모)한다.
+	 *
+	 * 어빌리티 타입에 NeedReady 가 있으면 활성 시점에는 커밋하지 않으므로,
+	 * 실제 시전이 확정되는 노드(발사 몽타주 등)에 이 값을 켜야 한다.
+	 * 켜지 않으면 그 어빌리티는 쿨다운을 영영 소모하지 않는다.
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Transitions", meta = (DisplayName = "진입 시 커밋 (쿨다운 소모)"))
+	bool bCommitOnEnter = false;
+
 protected : 
 	// Play() 시점에 캡처 — 콜백에서 컨텍스트 참조용
 	TSharedPtr<FYSPlaybackContext> CapturedContext;

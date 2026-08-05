@@ -74,7 +74,7 @@ void UYSCameraManageComponent::CaptureCameraDefaults()
 
 	if ( USpringArmComponent* Boom = OwnerPlayer->GetCameraBoom() )
 	{
-		DefaultArmLength    = Boom->TargetArmLength;
+		DefaultArmLength = Boom->TargetArmLength;
 		DefaultSocketOffset = Boom->SocketOffset;
 	}
 
@@ -82,6 +82,11 @@ void UYSCameraManageComponent::CaptureCameraDefaults()
 	{
 		DefaultFOV      = Cam->FieldOfView;
 		DefaultRotation = Cam->GetRelativeRotation();
+	}
+	
+	if ( OwnerPlayer.IsValid() )
+	{
+		bOriginControl = OwnerPlayer->bUseControllerRotationYaw;
 	}
 }
 
@@ -161,17 +166,17 @@ void UYSCameraManageComponent::PushCameraMode(UObject* Requester, const FYSCamer
 	{
 		if ( Request.Requester == Requester )
 		{
-			Request.Params   = Params;
+			Request.Params = Params;
 			Request.Priority = Priority;
-			bCameraSettled   = false;
+			bCameraSettled = false;
 			return;
 		}
 	}
 
 	FYSCameraModeRequest NewRequest;
 	NewRequest.Requester = Requester;
-	NewRequest.Params    = Params;
-	NewRequest.Priority  = Priority;
+	NewRequest.Params = Params;
+	NewRequest.Priority = Priority;
 
 	CameraModeStack.Add(MoveTemp(NewRequest));
 	bCameraSettled = false;
@@ -269,12 +274,13 @@ void UYSCameraManageComponent::TickCameraEffect(float DeltaTime)
 	const FVector TargetOff = bHasMode ? ActiveMode->Params.SocketOffset    : DefaultSocketOffset;
 	const float TargetFOV   = bHasMode ? ActiveMode->Params.FieldOfView     : DefaultFOV;
 	const FRotator Rotator  = bHasMode ? ActiveMode->Params.RelativeRotator : DefaultRotation;
-	const float Speed       = bHasMode ? ActiveMode->Params.InterpInSpeed   : RestoreInterpSpeed;
+	const float Speed = bHasMode ? ActiveMode->Params.InterpInSpeed   : RestoreInterpSpeed;
 
 	Boom->TargetArmLength = FMath::FInterpTo(Boom->TargetArmLength, TargetArm,  DeltaTime, Speed);
 	Boom->SocketOffset  = FMath::VInterpTo(Boom->SocketOffset,  TargetOff, DeltaTime, Speed);
 	Cam->SetRelativeRotation(FMath::RInterpTo(Cam->GetRelativeRotation(), Rotator, DeltaTime, Speed));
 	Cam->FieldOfView = FMath::FInterpTo(Cam->FieldOfView, TargetFOV, DeltaTime, Speed);
+	OwnerPlayer->bUseControllerRotationYaw = bHasMode ? ActiveMode->Params.bOrientToControlRotation : bOriginControl;
 
 	if ( bHasMode == false )
 	{

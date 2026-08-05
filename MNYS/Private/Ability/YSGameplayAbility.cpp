@@ -10,6 +10,7 @@
 #include "Ability/AbilityComponent/YSAbilityPlayback.h"
 #include "Character/YSCharacterPlayer.h"
 #include "Character/Components/YSCharacterMovementComponent.h"
+#include "Character/Components/YSTargetingComponent.h"
 #include "General/YSGameplayTag.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
 #include "Subsystem/YSWorldTagSubsystem.h"
@@ -50,6 +51,16 @@ void UYSGameplayAbility::ActivePlayback(int32 Index)
 		return;
 
 	CurrentPlayback = Playback;
+
+	// 시전이 확정되는 노드에서 커밋한다.
+	// NeedReady 어빌리티는 활성 시점에 커밋을 미뤄뒀으므로 여기가 쿨다운이 도는 지점이다.
+	// 조준 단계에서 취소되면 이 노드에 도달하지 않아 쿨다운이 소모되지 않는다.
+	if ( Playback->bCommitOnEnter && bHasCommitted == false )
+	{
+		bHasCommitted = true;
+		CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo);
+	}
+
 	CurrentPlayback->Play(PlaybackContext);
 }
 
@@ -133,8 +144,16 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 	PlaybackContext = MakeShared<FYSPlaybackContext>();
 	SetupPlayBack(TriggerEventData);
 
-	CommitAbility(Handle, ActorInfo, ActivationInfo);
-	
+	// NeedReady 는 조준·레디 단계를 거치는 어빌리티다.
+	// 여기서 커밋하면 조준하다 취소해도 쿨다운이 돌아버리므로,
+	// 시전이 확정되는 노드(bCommitOnEnter)까지 커밋을 미룬다.
+	bHasCommitted = ( AbilityTypes.Contains(EYSAbilityType::NeedReady) == false );
+
+	if ( bHasCommitted )
+	{
+		CommitAbility(Handle, ActorInfo, ActivationInfo);
+	}
+
 	_AddWorldTag();
 }
 
@@ -184,8 +203,20 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 		}
 	}
 	
+	// 조준을 정리한다.
+	// 몽타주 NotifyEnd 로 Event.AimStop 을 쏴도 이 시점엔 WaitGameplayEvent 태스크가 이미 죽어
+	// 이벤트가 버려진다. 게다가 InstancedPerActor 라 어빌리티 인스턴스가 살아남아
+	// 타게팅 컴포넌트의 약참조 안전망도 걸리지 않는다. 그래서 여기서 직접 끊는다.
+	// EndTargeting 이 요청자를 대조하므로 조준을 쓰지 않은 어빌리티에는 아무 영향이 없다.
+	if ( UYSTargetingComponent* Targeting = UYSTargetingComponent::Get(OwnerActor) )
+	{
+		Targeting->EndTargeting(this);
+	}
+
 	_RemoveWorldTag();
-	
+
+	bHasCommitted = false;
+
 	HitContext = nullptr;
 	PlaybackContext = nullptr;
 }
