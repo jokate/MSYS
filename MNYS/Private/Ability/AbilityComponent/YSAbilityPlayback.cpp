@@ -35,8 +35,9 @@ void UYSAbilityPlaybackBase::SetPlayback(TSharedPtr<FYSPlaybackContext> Context)
 	}
 	
 	// 기존에 받은 정보들은 그냥 없앰 처리.
+	// 예약은 노드보다 오래 사는 컨텍스트에 있으므로, 물려받으면 엉뚱한 엣지로 점프한다.
 	CapturedContext->ContextTags.Reset();
-	CapturedContext->PendingEvaluatedIndex = INDEX_NONE;
+	CapturedContext->PendingEvaluatedEdgeIndex = INDEX_NONE;
 }
 
 void UYSAbilityPlaybackBase::OnSequencePlayed()
@@ -85,15 +86,26 @@ bool UYSAbilityPlaybackBase::TryAcceptInputTag()
 		return false;
 	}
 	
-	// 입력 컨텍스트 조건 즉시 판단.
-	if ( bImmediateTransition )
+	// 예약 소진 경로(DispatchNext 선두)를 타지 않고 직접 엣지를 찾는다.
+	// 예약이 하나 걸려 있다고 해서 뒤이어 온 입력을 못 본 척하면,
+	// 발사 중 버튼을 떼도 몽타주가 끝날 때까지 반응하지 못한다.
+	const int32 MatchedEdgeIndex = FindTransitionEdgeIndex(EYSPlaybackEvent::OnInput);
+
+	if ( Transitions.IsValidIndex(MatchedEdgeIndex) == false )
 	{
-		// 실제 전환 시도 (bIsEvaluate=false로 실제 전환 수행)
-		return DispatchNext(EYSPlaybackEvent::OnInput, false);
+		return HandleUnmatchedEvent(EYSPlaybackEvent::OnInput);
 	}
-	
-	// 즉시적인 전환이 아닌 경우 평가 후 전환하는 방식으로..
-	return DispatchNext(EYSPlaybackEvent::OnInput, true);  
+
+	const FYSPlaybackEdge& MatchedEdge = Transitions[MatchedEdgeIndex];
+
+	// 즉시 엣지는 재생 중인 몽타주를 끊고 지금 전환한다 (조준 취소, 차지 릴리즈).
+	if ( MatchedEdge.bImmediateTransition )
+	{
+		return CommitEdge(MatchedEdge);
+	}
+
+	// 예약 엣지는 몽타주를 존중하고 완료 시점에 전환한다 (콤보, 연사 루프).
+	return ReserveEdge(MatchedEdgeIndex);
 }
 
 void UYSAbilityPlaybackBase::OnMontagePlayed()
@@ -217,46 +229,42 @@ bool UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackEvent Event, bool bIsEvalua
 
 	// 실행 모드로 들어왔고 예약이 있으면 그것부터 소진한다.
 	// 평가 단계에서 이미 조건을 통과시킨 전환이므로 재평가하지 않는다.
-	if (bIsEvaluate == false && CapturedContext->PendingEvaluatedIndex != INDEX_NONE)
+	if (bIsEvaluate == false && Transitions.IsValidIndex(CapturedContext->PendingEvaluatedEdgeIndex))
 	{
-		const int32 ReservedIndex = CapturedContext->PendingEvaluatedIndex;
-		CapturedContext->PendingEvaluatedIndex = INDEX_NONE;
+		const FYSPlaybackEdge& ReservedEdge = Transitions[CapturedContext->PendingEvaluatedEdgeIndex];
+		CapturedContext->PendingEvaluatedEdgeIndex = INDEX_NONE;
 
-		return CommitTransition(ReservedIndex);
+		return CommitEdge(ReservedEdge);
 	}
 
-	const FYSPlaybackEdge* MatchedEdge = FindTransitionEdge(Event);
+	const int32 MatchedEdgeIndex = FindTransitionEdgeIndex(Event);
 
 	// 만약 맞는 게 없다고 해도 그냥 넘어갈 수 있어야 함. 그렇게 되면 정확한 인풋만을 요구하게 되기 떄문임.
 	// 단, 그렇게 된다고 하니까, 없네...
-	if (MatchedEdge == nullptr)
+	if (Transitions.IsValidIndex(MatchedEdgeIndex) == false)
 	{
 		// 평가는 조건 조회일 뿐이므로 체인에 손대지 않는다.
 		return bIsEvaluate ? false : HandleUnmatchedEvent(Event);
 	}
-	
-	ProcessConditionMatch(*MatchedEdge, CapturedContext);
-	
+
+	// 평가 모드는 전환하지 않고 예약만 남긴다. 소비도 하지 않는다 —
+	// 소비는 전환이 실제로 일어나는 CommitEdge의 몫이다.
 	if (bIsEvaluate)
 	{
-		// 평가 모드는 전환하지 않고 예약만 남긴다.
-		// 체인 종료(-1)는 예약 대상이 아니다 — 예약해두면 종료가 엉뚱한 이벤트에 딸려 나간다.
-		if (Ability->GetPlaybackNode(MatchedEdge->NextNodeIndex) == nullptr)
-		{
-			return false;
-		}
-
-		CapturedContext->PendingEvaluatedIndex = MatchedEdge->NextNodeIndex;
-		return true;
+		return ReserveEdge(MatchedEdgeIndex);
 	}
 
-	return CommitTransition(MatchedEdge->NextNodeIndex);
+	return CommitEdge(Transitions[MatchedEdgeIndex]);
 }
 
-const FYSPlaybackEdge* UYSAbilityPlaybackBase::FindTransitionEdge(EYSPlaybackEvent Event) const
+int32 UYSAbilityPlaybackBase::FindTransitionEdgeIndex(EYSPlaybackEvent Event) const
 {
-	for (const FYSPlaybackEdge& Edge : Transitions)
+	// 인덱스를 돌려주는 이유 — 예약은 엣지 자체를 기억해야 하는데,
+	// 포인터는 Transitions가 재할당되면 무효가 되고 컨텍스트에 저장할 수도 없다.
+	for (int32 EdgeIndex = 0; EdgeIndex < Transitions.Num(); ++EdgeIndex)
 	{
+		const FYSPlaybackEdge& Edge = Transitions[EdgeIndex];
+
 		if (Edge.RequiredResult != Event)
 		{
 			continue;
@@ -264,11 +272,39 @@ const FYSPlaybackEdge* UYSAbilityPlaybackBase::FindTransitionEdge(EYSPlaybackEve
 
 		if (AreConditionsSatisfied(Edge))
 		{
-			return &Edge;
+			return EdgeIndex;
 		}
 	}
 
-	return nullptr;
+	return INDEX_NONE;
+}
+
+bool UYSAbilityPlaybackBase::CommitEdge(const FYSPlaybackEdge& Edge)
+{
+	// 전환이 확정된 지금에서야 입력을 소비한다.
+	// 기록 하나는 전환 하나만 일으킨다 — 딸깍 한 번에 콤보가 두 단계 나가는 것을 구조적으로 막는다.
+	ProcessConditionMatch(Edge, CapturedContext);
+
+	return CommitTransition(Edge.NextNodeIndex);
+}
+
+bool UYSAbilityPlaybackBase::ReserveEdge(int32 EdgeIndex)
+{
+	if (Transitions.IsValidIndex(EdgeIndex) == false || CapturedContext.IsValid() == false)
+	{
+		return false;
+	}
+
+	UYSGameplayAbility* Ability = GetCurrentPlaybackOwningAbility();
+
+	// 체인 종료(-1)는 예약 대상이 아니다 — 예약해두면 종료가 엉뚱한 이벤트에 딸려 나간다.
+	if (IsValid(Ability) == false || Ability->GetPlaybackNode(Transitions[EdgeIndex].NextNodeIndex) == nullptr)
+	{
+		return false;
+	}
+
+	CapturedContext->PendingEvaluatedEdgeIndex = EdgeIndex;
+	return true;
 }
 
 bool UYSAbilityPlaybackBase::AreConditionsSatisfied(const FYSPlaybackEdge& Edge) const
