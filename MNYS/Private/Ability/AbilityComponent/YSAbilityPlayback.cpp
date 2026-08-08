@@ -36,6 +36,7 @@ void UYSAbilityPlaybackBase::SetPlayback(TSharedPtr<FYSPlaybackContext> Context)
 	
 	// 기존에 받은 정보들은 그냥 없앰 처리.
 	CapturedContext->ContextTags.Reset();
+	CapturedContext->PendingEvaluatedIndex = INDEX_NONE;
 }
 
 void UYSAbilityPlaybackBase::OnSequencePlayed()
@@ -76,68 +77,23 @@ void UYSAbilityPlaybackBase::EndPlay()
 	CapturedContext = nullptr;
 }
 
-bool UYSAbilityPlaybackBase::TryAcceptContextTag(const FGameplayTag& InputTag, EYSInputPhase InputPhase)
+bool UYSAbilityPlaybackBase::TryAcceptInputTag()
 {
 	// Play() 이전에 입력이 들어올 수 있다. 컨텍스트가 없으면 소비하지 않고 흘려보낸다.
 	if ( CapturedContext.IsValid() == false )
 	{
 		return false;
 	}
-
-	// 1단계: 입력 태그 추가
-	CapturedContext->ContextTags.AddTag(InputTag);
-
-	// 위상은 별도 축으로 얹는다. 태그 조합을 늘리지 않고도 전환 조건이
-	// "뗄 때만 전환"(차지 → 발사, 조준 해제)을 표현할 수 있게 된다.
-	// Held는 키가 아직 눌린 상태이므로 Pressed 쪽으로 접는다.
-	const bool bReleased = (InputPhase == EYSInputPhase::Released || InputPhase == EYSInputPhase::Canceled);
-
-	// 직전 위상은 반드시 지운다 — 남아 있으면 Pressed/Released가 동시에 참이 된다.
-	CapturedContext->ContextTags.RemoveTag(YSTags::Input_Phase_Pressed);
-	CapturedContext->ContextTags.RemoveTag(YSTags::Input_Phase_Released);
-	CapturedContext->ContextTags.AddTag(bReleased
-		? YSTags::Input_Phase_Released
-		: YSTags::Input_Phase_Pressed);
-
-	// 2단계: 즉시 전환이 활성화된 경우, 실제로 전환 가능한지 평가
+	
+	// 입력 컨텍스트 조건 즉시 판단.
 	if ( bImmediateTransition )
 	{
 		// 실제 전환 시도 (bIsEvaluate=false로 실제 전환 수행)
-		return DispatchNext(EYSPlaybackEvent::OnCheckContextTag, false);
+		return DispatchNext(EYSPlaybackEvent::OnInput, false);
 	}
 	
-	// 3단계: 즉시 전환 미활성화 상태 조건만 평가
-	// 나중에 실제 전환이 필요할 때를 위해 평가만 수행
-	for (const FYSPlaybackEdge& Edge : Transitions)
-	{
-		if (Edge.RequiredResult == EYSPlaybackEvent::OnCheckContextTag)
-		{
-			bool bConditionPassed = true;
-			for ( const FInstancedStruct& InstancedStruct : Edge.TransitionConditions )
-			{
-				const FYSPlaybackCondition* Condition = InstancedStruct.GetPtr<FYSPlaybackCondition>();
-			
-				if ( !Condition )
-				{
-					continue;
-				}
-			
-				bConditionPassed &= Condition->Evaluate(CapturedContext);
-			
-				if ( !bConditionPassed )
-				{
-					break;
-				}
-			}
-			
-			if (bConditionPassed && CapturedContext->OwnerAbility->GetPlaybackNode(Edge.NextNodeIndex) != nullptr)
-			{
-				return true;
-			}
-		}
-	}
-	
-	return false;  // 전환 불가
+	// 즉시적인 전환이 아닌 경우 평가 후 전환하는 방식으로..
+	return DispatchNext(EYSPlaybackEvent::OnInput, true);  
 }
 
 void UYSAbilityPlaybackBase::OnMontagePlayed()
@@ -250,6 +206,142 @@ void UYSAbilityPlaybackBase::SetupSequence()
 	LevelSequencePlayer->Play();
 }
 
+bool UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackEvent Event, bool bIsEvaluate)
+{
+	UYSGameplayAbility* Ability = GetCurrentPlaybackOwningAbility();
+
+	if (IsValid(Ability) == false || CapturedContext.IsValid() == false)
+	{
+		return true;
+	}
+
+	// 실행 모드로 들어왔고 예약이 있으면 그것부터 소진한다.
+	// 평가 단계에서 이미 조건을 통과시킨 전환이므로 재평가하지 않는다.
+	if (bIsEvaluate == false && CapturedContext->PendingEvaluatedIndex != INDEX_NONE)
+	{
+		const int32 ReservedIndex = CapturedContext->PendingEvaluatedIndex;
+		CapturedContext->PendingEvaluatedIndex = INDEX_NONE;
+
+		return CommitTransition(ReservedIndex);
+	}
+
+	const FYSPlaybackEdge* MatchedEdge = FindTransitionEdge(Event);
+
+	// 만약 맞는 게 없다고 해도 그냥 넘어갈 수 있어야 함. 그렇게 되면 정확한 인풋만을 요구하게 되기 떄문임.
+	// 단, 그렇게 된다고 하니까, 없네...
+	if (MatchedEdge == nullptr)
+	{
+		// 평가는 조건 조회일 뿐이므로 체인에 손대지 않는다.
+		return bIsEvaluate ? false : HandleUnmatchedEvent(Event);
+	}
+	
+	ProcessConditionMatch(*MatchedEdge, CapturedContext);
+	
+	if (bIsEvaluate)
+	{
+		// 평가 모드는 전환하지 않고 예약만 남긴다.
+		// 체인 종료(-1)는 예약 대상이 아니다 — 예약해두면 종료가 엉뚱한 이벤트에 딸려 나간다.
+		if (Ability->GetPlaybackNode(MatchedEdge->NextNodeIndex) == nullptr)
+		{
+			return false;
+		}
+
+		CapturedContext->PendingEvaluatedIndex = MatchedEdge->NextNodeIndex;
+		return true;
+	}
+
+	return CommitTransition(MatchedEdge->NextNodeIndex);
+}
+
+const FYSPlaybackEdge* UYSAbilityPlaybackBase::FindTransitionEdge(EYSPlaybackEvent Event) const
+{
+	for (const FYSPlaybackEdge& Edge : Transitions)
+	{
+		if (Edge.RequiredResult != Event)
+		{
+			continue;
+		}
+
+		if (AreConditionsSatisfied(Edge))
+		{
+			return &Edge;
+		}
+	}
+
+	return nullptr;
+}
+
+bool UYSAbilityPlaybackBase::AreConditionsSatisfied(const FYSPlaybackEdge& Edge) const
+{
+	// 조건은 AND 결합이다. 하나라도 실패하면 나머지는 볼 필요가 없다.
+	for (const FInstancedStruct& InstancedStruct : Edge.TransitionConditions)
+	{
+		const FYSPlaybackCondition* Condition = InstancedStruct.GetPtr<FYSPlaybackCondition>();
+
+		if (Condition == nullptr)
+		{
+			continue;
+		}
+
+		if (Condition->Evaluate(CapturedContext) == false)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool UYSAbilityPlaybackBase::CommitTransition(int32 NextNodeIndex)
+{
+	UYSGameplayAbility* Ability = GetCurrentPlaybackOwningAbility();
+
+	if (IsValid(Ability) == false)
+	{
+		return false;
+	}
+
+	if (NextNodeIndex == INDEX_NONE)
+	{
+		Ability->NotifyPlaybackChainFinished();
+	}
+	else
+	{
+		Ability->ActivePlayback(NextNodeIndex);
+	}
+
+	return true;
+}
+
+bool UYSAbilityPlaybackBase::HandleUnmatchedEvent(EYSPlaybackEvent Event)
+{
+	// 입력이 어느 엣지와도 안 맞은 경우에만 이 플래그를 본다.
+	// 몽타주 완료 등 다른 이벤트까지 막으면 대기 노드에서 어빌리티가 영영 매달린다.
+	if (Event == EYSPlaybackEvent::OnInput && bEndChainOnUnmatchedInput == false)
+	{
+		return false;
+	}
+
+	CommitTransition(INDEX_NONE);
+	return false;
+}
+
+void UYSAbilityPlaybackBase::ProcessConditionMatch(const FYSPlaybackEdge& Edge,
+	const TSharedPtr<FYSPlaybackContext>& Context) const
+{
+	for (const FInstancedStruct& InstancedStruct : Edge.TransitionConditions)
+	{
+		const FYSPlaybackCondition* Condition = InstancedStruct.GetPtr<FYSPlaybackCondition>();
+
+		if (Condition == nullptr)
+		{
+			continue;
+		}
+
+		Condition->OnConditionEvaluatedComplete(Context);
+	}
+}
+
 void UYSAbilityPlayback_FirstHitTarget::ProcessContextBeforePlay()
 {
 	UYSGameplayAbility* OwnerAbility = CapturedContext->OwnerAbility;
@@ -282,65 +374,6 @@ void UYSAbilityPlayback_ReleaseBuff::ProcessContextBeforePlay()
 	{
 		ASC->RemoveActiveEffectsWithTags(BuffTags);
 	}
-}
-
-bool UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackEvent Event, bool bIsEvaluate)
-{
-	UYSGameplayAbility* Ability = GetCurrentPlaybackOwningAbility();
-	if (!IsValid(Ability))
-	{
-		return true;
-	}
-
-	for (const FYSPlaybackEdge& Edge : Transitions)
-	{
-		if (Edge.RequiredResult != Event)
-		{
-			continue;
-		}
-		
-		bool bConditionPassed = true;
-		for ( const FInstancedStruct& InstancedStruct : Edge.TransitionConditions )
-		{
-			const FYSPlaybackCondition* Condition = InstancedStruct.GetPtr<FYSPlaybackCondition>();
-			
-			if ( !Condition )
-			{
-				continue;
-			}
-			
-			bConditionPassed &= Condition->Evaluate(CapturedContext);
-			
-			 if ( !bConditionPassed )
-			 {
-			 	break;
-			 }
-		}
-		
-		UYSAbilityPlaybackBase* Next = Ability->GetPlaybackNode(Edge.NextNodeIndex);
-		
-		if (bConditionPassed)
-		{
-			Edge.NextNodeIndex == -1 ? Ability->NotifyPlaybackChainFinished() :	Ability->ActivePlayback(Edge.NextNodeIndex);
-			return true;
-		}
-	}
-	
-	// 평가하는 경우에는 단순히 조건 체크 용도로만 사용되고, 실제로 플레이백이 전환되는 것은 아니므로 체인 종료 알림을 보내지 않는다.
-	if (!bIsEvaluate)
-	{
-		// 입력이 어느 엣지와도 안 맞은 경우에만 이 플래그를 본다.
-		// 몽타주 완료 등 다른 이벤트까지 막으면 대기 노드에서 어빌리티가 영영 매달린다.
-		if (Event == EYSPlaybackEvent::OnCheckContextTag && bEndChainOnUnmatchedInput == false)
-		{
-			return false;
-		}
-
-		Ability->NotifyPlaybackChainFinished();
-		return false;
-	}
-	
-	return false;
 }
 
 void UYSAbilityPlaybackBase::OnHit(const TArray<FHitResult>& HitResults)

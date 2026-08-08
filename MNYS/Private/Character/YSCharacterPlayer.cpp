@@ -122,6 +122,9 @@ void AYSCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 				
 				EnhancedInputComponent->BindActionByTag(InputConfig, InputAction.InputTag, ETriggerEvent::Canceled, this,
 					&AYSCharacterPlayer::ProcessInput, InputAction.InputTag, EYSInputPhase::Canceled);
+				
+				EnhancedInputComponent->BindActionByTag(InputConfig, InputAction.InputTag, ETriggerEvent::Ongoing, this,
+					&AYSCharacterPlayer::ProcessInput, InputAction.InputTag, EYSInputPhase::Held);
 			}
 		}
 	}

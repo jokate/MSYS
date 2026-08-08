@@ -6,6 +6,7 @@
 #include "GameplayTagContainer.h"
 #include "Components/ActorComponent.h"
 #include "General/YSEnum.h"
+#include "General/YSStruct.h"
 #include "YSInputStateMachineComponent.generated.h"
 
 
@@ -28,11 +29,21 @@ public:
 	virtual void RemoveStateStack(EYSInputStatesType State);
 	
 	virtual void BeginPlay() override;
+	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	
+#pragma region History Recording
+	void RecordInputHistory(const FGameplayTag& Tag, EYSInputPhase InputPhase);
+	void TrimInputHistory();
+	bool ContainsInputHistory(const FGameplayTag& Tag, EYSInputPhase InputPhase);
+	
+	void ConsumeInputHistory(const FGameplayTag& Tag, EYSInputPhase InputPhase);
+#pragma endregion 
+	
 protected:
 	void ResetInputTags()
 	{
-		InputTags.Empty();
+		ComboInputTags.Empty();
 	}
 	
 	virtual void TransitionState(EYSInputStatesType NewInputState);
@@ -46,6 +57,7 @@ protected:
 
 	UFUNCTION()
 	void OnTagUpdated(const FGameplayTag& Tag, bool bActive);
+
 
 public :
 	// 현재 InputState에 대한 요청들을 담아둡니다. 만약 Transition이 불가능하더라도 요청은 남습니다.
@@ -61,14 +73,26 @@ public :
 
 protected:
 	UPROPERTY()
-	FTimerHandle TimerHandle;
+	FTimerHandle ComboTimerHandle;
+	
+	UPROPERTY()
+	FTimerHandle InputTrimTimerHandle;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TArray<FGameplayTag> InputTags;
+	TArray<FGameplayTag> ComboInputTags;
+	
+	// 내 생각에는 만약 InputHistory를 단일 저장한다 ( 약간 Map의 형식이 맞겠지.. )
+	UPROPERTY()
+	TArray<FYSInputHistory> InputHistories;
+	
 
 	// 해당 값은 조작감에 따라서 처리되기로 합시다.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float InputProcessingTime = 0.33f;
+	
+	// Tick이나 타이머 돌면서 Trim 처리.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	float InputExpirationTime = 0.33f;
 
 private :
 	TArray<const FYSCommandSequence*> AllCommandSequence;

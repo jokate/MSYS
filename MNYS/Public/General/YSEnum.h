@@ -150,3 +150,10 @@ enum class EYSIAUSType : uint8
 	Logit	UMETA(DisplayName = "로짓"),
 	Gaussian UMETA(DisplayName = "가우시안")
 };
+
+UENUM(BlueprintType)
+enum class EYSOperatorType : uint8
+{
+	OR,
+	AND
+};

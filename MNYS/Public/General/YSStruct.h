@@ -164,7 +164,35 @@ enum class EYSPlaybackEvent : uint8
 	OnHitTarget		UMETA(DisplayName = "타겟 히트 시"),
 	OnHitPlayed		UMETA(DisplayName = "히트 당했을 시"),
 	OnCheckContextTag		UMETA(DisplayName = "컨텍스트 태그 추가 시"),
+	OnInput		UMETA(DisplayName = "인풋 발생 시"),
 	CustomEvent		UMETA(DisplayName = "커스텀 이벤트")
+};
+
+USTRUCT(BlueprintType)
+struct FYSInputHistory
+{
+	GENERATED_BODY()
+	
+public : 
+	FYSInputHistory() = default;
+	FYSInputHistory(const FGameplayTag& InInputTag, EYSInputPhase InInputPhase = EYSInputPhase::Pressed, float InInputTime = 0.f)
+		: InputTag(InInputTag), InputPhase(InInputPhase), InputTime(InInputTime)
+	{
+	}
+	
+	bool operator==(const FYSInputHistory& Other) const
+	{
+		return InputTag == Other.InputTag && InputPhase == Other.InputPhase;
+	}
+	
+	UPROPERTY(EditDefaultsOnly, meta = (DisplayName="인풋 태그"))
+	FGameplayTag InputTag;
+	
+	UPROPERTY(EditDefaultsOnly, meta = (DisplayName="인풋 페이즈"))
+	EYSInputPhase InputPhase = EYSInputPhase::Pressed;
+	
+	UPROPERTY()
+	float InputTime = 0.f;
 };
 
 // 그래프를 흐르는 컨텍스트
@@ -187,6 +215,9 @@ struct FYSPlaybackContext
 	// 들어온 태그들에 대한 설정.
 	UPROPERTY()
 	FGameplayTagContainer ContextTags;
+	
+	UPROPERTY()
+	int32 PendingEvaluatedIndex = -1;
 };
 
 USTRUCT(BlueprintType)

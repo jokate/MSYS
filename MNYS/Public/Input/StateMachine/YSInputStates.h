@@ -8,6 +8,7 @@
 #include "UObject/Object.h"
 #include "YSInputStates.generated.h"
 
+class UYSInputStateMachineComponent;
 class UYSAbilitySystemComponent;
 class AYSCharacterBase;
 /**
@@ -33,6 +34,9 @@ public :
 	
 	UPROPERTY()
 	TWeakObjectPtr<UYSAbilitySystemComponent> OwnerASC;
+	
+	UPROPERTY()
+	TWeakObjectPtr<UYSInputStateMachineComponent> OwnerStateMachineManager;
 
 protected :
 	/** "StateName.InputTag" 조합 태그를 해석한다. 최초 1회만 문자열을 만들고 이후엔 캐시를 탄다. */

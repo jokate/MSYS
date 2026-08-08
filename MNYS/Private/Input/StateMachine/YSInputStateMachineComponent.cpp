@@ -41,7 +41,8 @@ void UYSInputStateMachineComponent::BeginPlay()
 	}
 
 	AddStateStack(EYSInputStatesType::Idle);
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &UYSInputStateMachineComponent::ResetInputTags, InputProcessingTime, true);
+	GetWorld()->GetTimerManager().SetTimer(ComboTimerHandle, this, &UYSInputStateMachineComponent::ResetInputTags, InputProcessingTime, true);
+	GetWorld()->GetTimerManager().SetTimer(InputTrimTimerHandle, this, &UYSInputStateMachineComponent::TrimInputHistory, InputExpirationTime, true);
 	
 	AbilitySystemComponent = UYSAbilitySystemComponent::Get(GetOwner());
 	if (AbilitySystemComponent.IsValid() )
@@ -52,23 +53,90 @@ void UYSInputStateMachineComponent::BeginPlay()
 	AllCommandSequence = UYSDeveloperSettings::GetAllCommandSequences();
 }
 
+void UYSInputStateMachineComponent::TickComponent(float DeltaTime, enum ELevelTick TickType,
+	FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	
+	
+}
+
 void UYSInputStateMachineComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(ComboTimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(InputTrimTimerHandle);
 	
 	Super::EndPlay(EndPlayReason);
 }
 
+void UYSInputStateMachineComponent::RecordInputHistory(const FGameplayTag& Tag, EYSInputPhase InputPhase)
+{
+	FYSInputHistory* InputHistory = InputHistories.FindByPredicate([&](const FYSInputHistory& History)
+	{
+		return History.InputTag == Tag && History.InputPhase == InputPhase;
+	});
+	
+	if ( InputHistory == nullptr )
+	{
+		FYSInputHistory TmpInputHistory(Tag, InputPhase, GetWorld()->GetTimeSeconds());
+		InputHistories.AddUnique(TmpInputHistory);
+	}
+	else
+	{
+		// 인풋 자체에 대해서 스태형 인풋으로 처리되는 개념 보다는 그냥 단순 입력에 대한 여부를 따질 것임.
+		InputHistory->InputTime = GetWorld()->GetTimeSeconds();
+	}
+	
+	UE_LOG(LogTemp, Log, TEXT("Recording Input : %s, Phase : %s"), *Tag.ToString(), *UEnum::GetValueAsString(InputPhase));
+}
+
+void UYSInputStateMachineComponent::TrimInputHistory()
+{
+	const float CurrentTime = GetWorld()->GetTimeSeconds();
+	InputHistories.RemoveAll([&](const FYSInputHistory& History)
+	{
+		return (CurrentTime - History.InputTime) > InputExpirationTime;
+	});
+}
+
+bool UYSInputStateMachineComponent::ContainsInputHistory(const FGameplayTag& Tag, EYSInputPhase InputPhase)
+{
+	FYSInputHistory* InputHistory = InputHistories.FindByPredicate([&](const FYSInputHistory& History)
+	{
+		return History.InputTag == Tag && History.InputPhase == InputPhase;
+	});
+	
+	return InputHistory != nullptr;
+}
+
+void UYSInputStateMachineComponent::ConsumeInputHistory(const FGameplayTag& Tag, EYSInputPhase InputPhase)
+{
+	// 배열 원소의 참조를 Remove에 되먹이면 TArray::CheckAddress에 걸린다.
+	// RemoveAll이 제자리 압축을 하는 동안 그 참조가 가리키는 값이 바뀌기 때문이다.
+	// 인덱스로 잡아 RemoveAt 하면 별칭 문제가 없고, 소비 의미에도 맞다 —
+	// Remove는 일치하는 항목을 전부 지우지만 소비는 가장 오래된 1건만 지워야 한다.
+	const int32 FoundIndex = InputHistories.IndexOfByPredicate([&](const FYSInputHistory& History)
+	{
+		return History.InputTag == Tag && History.InputPhase == InputPhase;
+	});
+
+	if ( FoundIndex != INDEX_NONE )
+	{
+		InputHistories.RemoveAt(FoundIndex);
+	}
+}
+
+// 콤보의 경우에는 State에 의존하지 않는 순수 인풋이기 때문에 사실상 의미가 없음.
 FGameplayTag UYSInputStateMachineComponent::FindBestCombo(const FGameplayTag& Tag)
 {
 	FGameplayTag BestTag = Tag;
-	InputTags.Add(Tag);
+	ComboInputTags.Add(Tag);
 	for ( const FYSCommandSequence* ComboSequence : AllCommandSequence )
 	{
-		if ( ComboSequence->IsSatisfiedCommand(InputTags) == true )
+		if ( ComboSequence->IsSatisfiedCommand(ComboInputTags) == true )
 		{
 			BestTag = ComboSequence->Command;
-			InputTags.Empty();
+			ComboInputTags.Empty();
 			break;
 		}
 	}

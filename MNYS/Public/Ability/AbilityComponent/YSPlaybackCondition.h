@@ -19,6 +19,7 @@ struct FYSPlaybackCondition
 	virtual ~FYSPlaybackCondition() = default;
 	
 	virtual bool Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const { return true; }
+	virtual void OnConditionEvaluatedComplete(const TSharedPtr<FYSPlaybackContext>& Context) const {}
 };
 
 // 태그 체크 조건
@@ -28,12 +29,15 @@ struct FYSPlaybackCondition_ContextTag : public FYSPlaybackCondition
 	GENERATED_BODY()
     
 	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = "체크할 태그"))
-	FGameplayTag RequiredTag;
-
-	virtual bool Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const override
-	{
-		return Context->ContextTags.HasTagExact(RequiredTag);
-	}
+	FGameplayTagContainer RequiredTags;
+	
+	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = "반전"))
+	bool bInvert = false;
+	
+	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = ""))
+	EYSOperatorType OperatorType = EYSOperatorType::OR;
+	
+	virtual bool Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const override;
 };
 
 USTRUCT(DisplayName = "버프 존재 여부")
@@ -75,4 +79,22 @@ public :
 	
 	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = "거리 내?"))
 	bool bIsInRange = false;
+};
+
+USTRUCT(DisplayName = "인풋 관련 조건")
+struct FYSPlaybackCondition_Input : public FYSPlaybackCondition
+{
+	GENERATED_BODY()
+	
+public : 
+	virtual bool Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const override;
+	
+	// 통과된 케이스에서만 처리하자.
+	virtual void OnConditionEvaluatedComplete(const TSharedPtr<FYSPlaybackContext>& Context) const override;
+public : 
+	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = "체크할 인풋"))
+	FYSInputHistory InputHistory;
+	
+	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = "반전"))
+	bool bInvert = false;
 };

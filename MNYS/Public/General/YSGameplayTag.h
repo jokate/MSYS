@@ -48,6 +48,7 @@ namespace YSTags
 	// (차지 → 릴리즈 발사 같은 노드 전환을 태그 조합 폭발 없이 처리한다)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Phase_Pressed);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Phase_Released);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Phase_Held);
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Stat_HP);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Stat_MEL);

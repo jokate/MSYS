@@ -6,6 +6,32 @@
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
 #include "Ability/YSGameplayAbility.h"
+#include "Input/StateMachine/YSInputStateMachineComponent.h"
+
+bool FYSPlaybackCondition_ContextTag::Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const
+{
+	bool bResult = (OperatorType == EYSOperatorType::AND);
+	for (const FGameplayTag& RequiredTag : RequiredTags)
+	{
+		bool bFound = Context->ContextTags.HasTagExact(RequiredTag);
+		
+		switch (OperatorType)
+		{
+			case EYSOperatorType::AND:
+				{
+					bResult &= bFound;
+					break;	
+				}
+			case EYSOperatorType::OR:
+				{
+					bResult |= bFound;
+					break;			
+				}	
+		}
+		
+	}
+	return bInvert ? !bResult : bResult;
+}
 
 bool FYSPlaybackCondition_HasGameplayEffect::Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const
 {
@@ -56,4 +82,26 @@ bool FYSPlaybackCondition_ActorInDistance::Evaluate(const TSharedPtr<FYSPlayback
 	
 	float Distance = FVector::Dist(Target->GetActorLocation(), Instigator->GetActorLocation());
 	return bIsInRange ? Distance <= CheckDistance : Distance > CheckDistance;
+}
+
+bool FYSPlaybackCondition_Input::Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const
+{
+	UYSInputStateMachineComponent* InputStateMachine = UYSInputStateMachineComponent::Get(Context->Instigator);
+	if (IsValid(InputStateMachine) == false)
+	{
+		return false;
+	}
+
+	return InputStateMachine->ContainsInputHistory(InputHistory.InputTag, InputHistory.InputPhase) ^ bInvert;
+}
+
+void FYSPlaybackCondition_Input::OnConditionEvaluatedComplete(const TSharedPtr<FYSPlaybackContext>& Context) const
+{
+	UYSInputStateMachineComponent* InputStateMachine = UYSInputStateMachineComponent::Get(Context->Instigator);
+	if (IsValid(InputStateMachine) == false)
+	{
+		return;
+	}
+
+	InputStateMachine->ConsumeInputHistory(InputHistory.InputTag, InputHistory.InputPhase);
 }

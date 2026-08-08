@@ -85,7 +85,7 @@ public :
 	
 	virtual void EndPlay();
 	
-	bool TryAcceptContextTag(const FGameplayTag& InputTag, EYSInputPhase InputPhase);
+	bool TryAcceptInputTag();
 	
 protected :
 	UFUNCTION()
@@ -104,6 +104,13 @@ protected :
 	virtual void SetupSequence();
 
 	virtual void ProcessContextBeforePlay() {};
+	
+protected:
+	const FYSPlaybackEdge* FindTransitionEdge(EYSPlaybackEvent Event) const;
+	bool AreConditionsSatisfied(const FYSPlaybackEdge& Edge) const;
+	bool CommitTransition(int32 NextNodeIndex);
+	bool HandleUnmatchedEvent(EYSPlaybackEvent Event);
+	void ProcessConditionMatch(const FYSPlaybackEdge& Edge, const TSharedPtr<FYSPlaybackContext>& Context) const;
 	
 public : 
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Ability Playback Type")
