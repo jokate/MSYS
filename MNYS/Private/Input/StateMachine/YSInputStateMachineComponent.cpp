@@ -154,6 +154,22 @@ void UYSInputStateMachineComponent::OnTagUpdated(const FGameplayTag& Tag, bool b
 
 void UYSInputStateMachineComponent::AcceptInput(const FGameplayTag& Tag, EYSInputPhase InputPhase)
 {
+	// 홀드 상태는 입력 차단 여부와 무관하게 항상 최신이어야 한다.
+	// 차단 중에 뗀 것을 놓치면 그 입력은 영영 눌린 것으로 남는다.
+	// 커맨드 승격 이전의 원본 태그를 쓴다 — 뗌도 같은 원본 태그로 들어오기 때문이다.
+	switch ( InputPhase )
+	{
+	case EYSInputPhase::Pressed :
+		HeldInputTags.Add(Tag);
+		break;
+	case EYSInputPhase::Released :
+	case EYSInputPhase::Canceled :
+		HeldInputTags.Remove(Tag);
+		break;
+	default :
+		break;
+	}
+
 	if ( bIsInputBlocked )
 		return;
 

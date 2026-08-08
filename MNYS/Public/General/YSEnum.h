@@ -39,7 +39,11 @@ UENUM(BlueprintType)
 enum class EYSInputPhase : uint8
 {
 	Pressed		UMETA(DisplayName = "누름"),			// ETriggerEvent::Started
-	Held		UMETA(DisplayName = "누르는 중"),		// ETriggerEvent::Triggered (매 프레임)
+	// 홀드는 "일어난 사건"이 아니라 "지금 눌려 있는 상태"라 소비 개념이 없다.
+	// 히스토리에 쌓으면 뗀 뒤에도 만료 시간만큼 살아남아 반응이 늦는다.
+	// UYSInputStateMachineComponent::IsInputHeld로 질의하고, 이 값은 더 이상 발행되지 않는다.
+	// 값을 지우지 않고 숨기는 이유 — 뒤 항목들의 정수 값이 밀려 기존 에셋 데이터가 깨진다.
+	Held		UMETA(Hidden),
 	Released	UMETA(DisplayName = "뗌"),				// ETriggerEvent::Completed
 	Canceled	UMETA(DisplayName = "취소"),			// ETriggerEvent::Canceled
 };

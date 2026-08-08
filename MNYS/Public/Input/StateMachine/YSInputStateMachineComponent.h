@@ -38,7 +38,17 @@ public:
 	bool ContainsInputHistory(const FGameplayTag& Tag, EYSInputPhase InputPhase);
 	
 	void ConsumeInputHistory(const FGameplayTag& Tag, EYSInputPhase InputPhase);
-#pragma endregion 
+#pragma endregion
+
+	/**
+	 * 해당 입력이 지금 물리적으로 눌려 있는가.
+	 *
+	 * 히스토리와 달리 소비되지 않는 상태 질의다. 그래서 연사 루프처럼
+	 * "누르고 있는 동안 반복"을 매 프레임 입력 없이 표현할 수 있다.
+	 *
+	 * 상태 접두가 붙지 않은 원본 태그(Input.Aim)로 묻는다 — 아래 HeldInputTags 주석 참고.
+	 */
+	bool IsInputHeld(const FGameplayTag& RawInputTag) const { return HeldInputTags.Contains(RawInputTag); }
 	
 protected:
 	void ResetInputTags()
@@ -84,7 +94,17 @@ protected:
 	// 내 생각에는 만약 InputHistory를 단일 저장한다 ( 약간 Map의 형식이 맞겠지.. )
 	UPROPERTY()
 	TArray<FYSInputHistory> InputHistories;
-	
+
+	/**
+	 * 지금 눌려 있는 입력들. Pressed에 넣고 Released/Canceled에 뺀다.
+	 *
+	 * 상태 접두(Idle., Aim.)가 붙지 않은 원본 태그로 관리한다.
+	 * Idle에서 누르고 Aim으로 전환된 뒤 떼면 해석된 태그가 달라져
+	 * 넣은 키와 빼는 키가 어긋나고, 그 입력은 영영 눌린 것으로 남는다.
+	 */
+	UPROPERTY(VisibleAnywhere, Category = "YS | Input", meta = (DisplayName = "현재 눌려 있는 입력"))
+	TSet<FGameplayTag> HeldInputTags;
+
 
 	// 해당 값은 조작감에 따라서 처리되기로 합시다.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)

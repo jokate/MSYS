@@ -122,9 +122,10 @@ void AYSCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 				
 				EnhancedInputComponent->BindActionByTag(InputConfig, InputAction.InputTag, ETriggerEvent::Canceled, this,
 					&AYSCharacterPlayer::ProcessInput, InputAction.InputTag, EYSInputPhase::Canceled);
-				
-				EnhancedInputComponent->BindActionByTag(InputConfig, InputAction.InputTag, ETriggerEvent::Ongoing, this,
-					&AYSCharacterPlayer::ProcessInput, InputAction.InputTag, EYSInputPhase::Held);
+
+				// 홀드 바인딩은 없다. ETriggerEvent::Ongoing은 ETriggerState(Ongoing -> Ongoing) 전이에서만
+				// 나오는데, 시간 기반 트리거가 없는 Boolean IA는 None -> Triggered로 직행해 그 상태를 거치지 않는다.
+				// "지금 눌려 있는가"는 위의 Pressed/Released로부터 UYSInputStateMachineComponent가 유도한다.
 			}
 		}
 	}

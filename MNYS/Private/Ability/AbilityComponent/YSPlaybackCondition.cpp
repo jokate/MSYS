@@ -105,3 +105,20 @@ void FYSPlaybackCondition_Input::OnConditionEvaluatedComplete(const TSharedPtr<F
 
 	InputStateMachine->ConsumeInputHistory(InputHistory.InputTag, InputHistory.InputPhase);
 }
+
+bool FYSPlaybackCondition_InputHeld::Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const
+{
+	if (Context.IsValid() == false)
+	{
+		return bInvert;
+	}
+
+	const UYSInputStateMachineComponent* InputStateMachine = UYSInputStateMachineComponent::Get(Context->Instigator);
+
+	if (IsValid(InputStateMachine) == false)
+	{
+		return bInvert;
+	}
+
+	return InputStateMachine->IsInputHeld(InputTag) ^ bInvert;
+}

@@ -94,7 +94,31 @@ public :
 public : 
 	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = "체크할 인풋"))
 	FYSInputHistory InputHistory;
-	
+
+	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = "반전"))
+	bool bInvert = false;
+};
+
+/**
+ * 버튼이 지금 눌려 있는지 묻는다.
+ *
+ * FYSPlaybackCondition_Input과 달리 소비하지 않는다 — 홀드는 사건이 아니라 상태이기 때문이다.
+ * 연사 루프(발사 완료 → 여전히 누르고 있으면 자기 자신으로)에 쓴다.
+ */
+USTRUCT(DisplayName = "인풋 홀드 중인지 여부")
+struct FYSPlaybackCondition_InputHeld : public FYSPlaybackCondition
+{
+	GENERATED_BODY()
+
+public :
+	virtual bool Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const override;
+	// OnConditionEvaluatedComplete를 구현하지 않는다 — 상태 질의라 소비할 것이 없다.
+
+public :
+	// 상태 접두(Idle., Aim.)가 붙지 않은 원본 태그를 넣는다. 예: Input.Aim
+	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = "홀드 확인할 인풋 (상태 접두 없는 원본)", Categories = "Input"))
+	FGameplayTag InputTag;
+
 	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = "반전"))
 	bool bInvert = false;
 };
