@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AttributeSet.h"
 #include "GameplayTagContainer.h"
 #include "General/YSStruct.h"
 #include "UObject/Object.h"
@@ -121,4 +122,20 @@ public :
 
 	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = "반전"))
 	bool bInvert = false;
+};
+
+USTRUCT(DisplayName = "자원 보유 여부")
+struct FYSPlaybackCondition_HasResource : public FYSPlaybackCondition
+{
+	GENERATED_BODY()
+	
+public : 
+	virtual bool Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const override;
+public : 
+	
+	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = "확인할 자원 어트리뷰트"))
+	FGameplayAttribute ResourceAttribute;
+
+	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = "필요 수량"))
+	float RequiredAmount = 1.f;
 };

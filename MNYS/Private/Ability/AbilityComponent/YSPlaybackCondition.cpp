@@ -122,3 +122,21 @@ bool FYSPlaybackCondition_InputHeld::Evaluate(const TSharedPtr<FYSPlaybackContex
 
 	return InputStateMachine->IsInputHeld(InputTag) ^ bInvert;
 }
+
+bool FYSPlaybackCondition_HasResource::Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const
+{
+	UYSGameplayAbility* Ability = Context->OwnerAbility;
+	
+	if (IsValid(Ability) == false)
+	{
+		return false;
+	}
+	
+	UAbilitySystemComponent* ASC =  Ability->GetAbilitySystemComponentFromActorInfo();
+	if ( IsValid(ASC) == false )
+	{
+		return false;
+	}
+	
+	return ASC->GetNumericAttribute(ResourceAttribute) >= RequiredAmount;
+}

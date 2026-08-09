@@ -259,6 +259,7 @@ void UYSAbilitySystemComponent::ApplyStatInitialization()
 	Spec.Data->SetSetByCallerMagnitude(YSTags::Data_Stat_AGI, Stats.AGI);
 	Spec.Data->SetSetByCallerMagnitude(YSTags::Data_Stat_SYN, Stats.SYN);
 	Spec.Data->SetSetByCallerMagnitude(YSTags::Data_Stat_SCL, Stats.SCL);
+	Spec.Data->SetSetByCallerMagnitude(YSTags::Data_Stat_RangeAttackCount, CharacterInfo->MaxRangeAttackCount);
 
 	ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
 	ApplyDerivedStats(true);
@@ -300,6 +301,7 @@ void UYSAbilitySystemComponent::ApplyDerivedStats(bool bRefillHp)
 			const_cast<UYSCharacterAttributeSetBase*>(GetSet<UYSCharacterAttributeSetBase>()))
 	{
 		AttributeSet->SetHp(AttributeSet->GetMaxHp());
+		AttributeSet->SetRangeAttackCount(AttributeSet->GetMaxRangeAttackCount());
 	}
 }
 

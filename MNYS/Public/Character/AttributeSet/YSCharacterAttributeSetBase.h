@@ -32,6 +32,9 @@ public :
 	ATTRIBUTE_ACCESSORS(UYSCharacterAttributeSetBase, MoveSpeed);
 	ATTRIBUTE_ACCESSORS(UYSCharacterAttributeSetBase, TagGaugeRate);
 	
+	ATTRIBUTE_ACCESSORS(UYSCharacterAttributeSetBase, RangeAttackCount);
+	ATTRIBUTE_ACCESSORS(UYSCharacterAttributeSetBase, MaxRangeAttackCount);
+	
 	ATTRIBUTE_ACCESSORS(UYSCharacterAttributeSetBase, StatHP);
 	ATTRIBUTE_ACCESSORS(UYSCharacterAttributeSetBase, StatMEL);
 	ATTRIBUTE_ACCESSORS(UYSCharacterAttributeSetBase, StatRNG);
@@ -69,6 +72,7 @@ protected :
 	FGameplayAttributeData TagGaugeRate;
 	UPROPERTY(BlueprintReadOnly, Category = "YS | Combat")
 	FGameplayAttributeData MoveSpeed;
+	
 	UPROPERTY(BlueprintReadOnly, Category = "YS | Stat")
 	FGameplayAttributeData StatHP;
 	UPROPERTY(BlueprintReadOnly, Category = "YS | Stat")
@@ -81,6 +85,12 @@ protected :
 	FGameplayAttributeData StatSYN;
 	UPROPERTY(BlueprintReadOnly,  Category = "YS | Stat")
 	FGameplayAttributeData StatSCL;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "YS | Range")
+	FGameplayAttributeData RangeAttackCount;	
+	UPROPERTY(BlueprintReadOnly, Category = "YS | Range")
+	FGameplayAttributeData MaxRangeAttackCount;
+	
 	UPROPERTY(BlueprintReadOnly, Category = "YS | Meta")
 	FGameplayAttributeData IncomingDamage;
 	

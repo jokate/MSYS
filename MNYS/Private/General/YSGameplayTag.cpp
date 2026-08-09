@@ -47,6 +47,7 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(Data_Stat_AGI, "Data.Stat.AGI");
 	UE_DEFINE_GAMEPLAY_TAG(Data_Stat_SYN, "Data.Stat.SYN");
 	UE_DEFINE_GAMEPLAY_TAG(Data_Stat_SCL, "Data.Stat.SCL");
+	UE_DEFINE_GAMEPLAY_TAG(Data_Stat_RangeAttackCount, "Data.Stat.RangeAttackCount");
 
 	UE_DEFINE_GAMEPLAY_TAG(AISuppress, "AI.Suppress");
 	UE_DEFINE_GAMEPLAY_TAG(AISuppress_HitReact, "AI.Suppress.HitReact");

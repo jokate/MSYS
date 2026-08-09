@@ -56,6 +56,7 @@ namespace YSTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Stat_AGI);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Stat_SYN);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Stat_SCL);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Stat_RangeAttackCount);
 
 	// AI 억제 — 캐릭터 고유 (ASC에 부여, ActivationOwnedTags/루즈 태그)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AISuppress);
