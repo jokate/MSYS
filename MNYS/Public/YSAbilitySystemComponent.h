@@ -8,6 +8,7 @@
 #include "YSAbilitySystemComponent.generated.h"
 
 
+struct FYSCharacterInfo;
 struct FYSGrantedAbilityData;
 class UYSGameplayAbility;
 
@@ -39,6 +40,7 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	void ProcessAbilityByInputPass(const FGameplayTag& InputTag, EYSInputPhase InputPhase);
 	void ApplyStatInitialization();
+	void ApplyResourceRecharge(const FYSCharacterInfo* CharacterInfo);
 
 	/**
 	 * StatXXX 어트리뷰트를 기준으로 파생 수치(MaxHp, 공격력, 이동속도, 태그 게이지 효율)를 재산출한다.
@@ -91,4 +93,7 @@ public :
 	
 	UPROPERTY()
 	TArray<FYSCooldownEntry> CooldownEntries;
+	
+	UPROPERTY()
+	FActiveGameplayEffectHandle ResourceRechargeHandle;
 };

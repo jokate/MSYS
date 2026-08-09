@@ -112,4 +112,7 @@ public :
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | Stat", meta = (DisplayName = "최대 원거리 공격 횟수"))
 	int32 MaxRangeAttackCount = 5;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | Stat", meta = (DisplayName = "자원 충전 이펙트"))
+	TSubclassOf<UGameplayEffect> ResourceRechargeEffect;
 };

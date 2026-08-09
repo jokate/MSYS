@@ -412,3 +412,25 @@ bool UYSAbilityEventAction_AimStop::Execute_Implementation(UYSGameplayAbility* O
 	return true;
 }
 
+bool UYSAbilityEventAction_ConsumeResource::Execute_Implementation(UYSGameplayAbility* OwningAbility,
+	const FGameplayEventData& EventData)
+{
+	if ( IsValid(OwningAbility) == false )
+		return false;
+	
+	UAbilitySystemComponent* ASC = OwningAbility->GetAbilitySystemComponentFromActorInfo();
+	
+	if ( IsValid(ASC) == false )
+		return false;
+	
+	
+	float CurrentValue = ASC->GetNumericAttribute(Attribute);
+	if (CurrentValue < Amount)
+	{
+		return false;
+	}
+	
+	ASC->ApplyModToAttribute(Attribute, EGameplayModOp::Additive, -Amount);
+	return true;
+}
+

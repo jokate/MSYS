@@ -263,6 +263,31 @@ void UYSAbilitySystemComponent::ApplyStatInitialization()
 
 	ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
 	ApplyDerivedStats(true);
+	ApplyResourceRecharge(CharacterInfo);
+}
+
+void UYSAbilitySystemComponent::ApplyResourceRecharge(const FYSCharacterInfo* CharacterInfo)
+{
+	if (CharacterInfo == nullptr || CharacterInfo->ResourceRechargeEffect == nullptr)
+	{
+		return;
+	}
+
+	// PossessedBy는 교대마다 불린다. 가드가 없으면 충전 GE가 교대 횟수만큼 쌓인다.
+	if (ResourceRechargeHandle.IsValid())
+	{
+		return;
+	}
+
+	const FGameplayEffectContextHandle Context = MakeEffectContext();
+	const FGameplayEffectSpecHandle Spec = MakeOutgoingSpec(CharacterInfo->ResourceRechargeEffect, 1.f, Context);
+
+	if (Spec.IsValid() == false)
+	{
+		return;
+	}
+
+	ResourceRechargeHandle = ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
 }
 
 void UYSAbilitySystemComponent::ApplyDerivedStats(bool bRefillHp)

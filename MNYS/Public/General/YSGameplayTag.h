@@ -39,6 +39,7 @@ namespace YSTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_PopCamera);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_AimStart);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_AimStop);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_ConsumeResource);
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Buff_JustAvoid);
 
@@ -57,6 +58,10 @@ namespace YSTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Stat_SYN);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Stat_SCL);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Data_Stat_RangeAttackCount);
+	
+	
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Resource_Empty);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Resource_NotFull);
 
 	// AI 억제 — 캐릭터 고유 (ASC에 부여, ActivationOwnedTags/루즈 태그)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AISuppress);

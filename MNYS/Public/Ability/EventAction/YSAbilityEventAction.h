@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AttributeSet.h"
 #include "General/YSStruct.h"
 #include "Input/Combo/YSComboData.h"
 #include "UObject/Object.h"
@@ -202,4 +203,20 @@ class MNYS_API UYSAbilityEventAction_AimStop : public UYSAbilityEventAction
 	
 public :
 	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;	
+};
+
+UCLASS(DisplayName = "자원 소모")
+class MNYS_API UYSAbilityEventAction_ConsumeResource : public UYSAbilityEventAction
+{
+	GENERATED_BODY()
+	
+public : 
+	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
+	
+public : 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "사용할 자원"))
+	FGameplayAttribute Attribute;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "자원 소모량"))
+	float Amount;
 };

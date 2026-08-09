@@ -85,6 +85,20 @@ void UYSCharacterAttributeSetBase::PostAttributeChange(const FGameplayAttribute&
 		
 		return;
 	}
+	
+	// 따로 특정 이벤트를 발동할 게 아니라 그냥 태그를 붙이거나 제거하는 용도라면 PostAttributeChange에서 처리한다.
+	if (Attribute == GetRangeAttackCountAttribute())
+	{
+		UAbilitySystemComponent* ASC = GetOwningAbilitySystemComponent();
+		if (IsValid(ASC) == false)
+		{
+			return;
+		}
+		
+		ASC->SetLooseGameplayTagCount(YSTags::State_Resource_Empty, NewValue <= 0.f ? 1 : 0);
+		ASC->SetLooseGameplayTagCount(YSTags::State_Resource_NotFull, NewValue < GetMaxRangeAttackCount() ? 1 : 0);
+	}
+	
 }
 
 void UYSCharacterAttributeSetBase::PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data)
