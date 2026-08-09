@@ -27,7 +27,8 @@ enum class EYSAbilityType : uint8
 	RangedAttack UMETA(DisplayName = "원거리 공격"),
 	Dash UMETA(Displayname = "속도 적용"),
 	NeedCameraDirect UMETA(DisplayName = "카메라 연출 필요"),
-	NeedReady UMETA(DisplayName = "카메라 연출 필요"),
+	NeedReady UMETA(DisplayName = "레디 필요"),
+	UseResource UMETA(DisplayName = "자원 소모"),
 };
 
 struct FYSAbilityHitContext

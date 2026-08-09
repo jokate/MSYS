@@ -404,6 +404,24 @@ void UYSGameplayAbility::PostEditChangeProperty(struct FPropertyChangedEvent& Pr
 					EventActionMap.Add(YSTags::Event_PopCamera, CameraPop);
 					break;
 				}
+			case EYSAbilityType::NeedReady :
+				{
+					FYSEventPayload Ready;
+					Ready.EventActions.Add(NewObject<UYSAbilityEventAction_AimStart>(this));
+					EventActionMap.Add(YSTags::Event_AimStart, Ready);
+					
+					FYSEventPayload EndReady;
+					EndReady.EventActions.Add(NewObject<UYSAbilityEventAction_AimStop>(this));
+					EventActionMap.Add(YSTags::Event_AimStop, EndReady);
+					break;
+				}
+			case EYSAbilityType::UseResource :
+				{
+					FYSEventPayload Resource;
+					Resource.EventActions.Add(NewObject<UYSAbilityEventAction_ConsumeResource>(this));
+					EventActionMap.Add(YSTags::Event_ConsumeResource, Resource);
+					break;
+				}
 			default: 
 				break;
 			}	
