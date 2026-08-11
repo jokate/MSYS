@@ -99,14 +99,28 @@ void UYSInputStateMachineComponent::TrimInputHistory()
 	});
 }
 
-bool UYSInputStateMachineComponent::ContainsInputHistory(const FGameplayTag& Tag, EYSInputPhase InputPhase)
+int32 UYSInputStateMachineComponent::FindLiveHistoryIndex(const FGameplayTag& Tag, EYSInputPhase InputPhase) const
 {
-	FYSInputHistory* InputHistory = InputHistories.FindByPredicate([&](const FYSInputHistory& History)
+	const UWorld* World = GetWorld();
+
+	if ( IsValid(World) == false )
 	{
-		return History.InputTag == Tag && History.InputPhase == InputPhase;
+		return INDEX_NONE;
+	}
+
+	const float CurrentTime = World->GetTimeSeconds();
+
+	return InputHistories.IndexOfByPredicate([&](const FYSInputHistory& History)
+	{
+		return History.InputTag == Tag
+			&& History.InputPhase == InputPhase
+			&& (CurrentTime - History.InputTime) <= InputExpirationTime;
 	});
-	
-	return InputHistory != nullptr;
+}
+
+bool UYSInputStateMachineComponent::ContainsInputHistory(const FGameplayTag& Tag, EYSInputPhase InputPhase) const
+{
+	return FindLiveHistoryIndex(Tag, InputPhase) != INDEX_NONE;
 }
 
 void UYSInputStateMachineComponent::ConsumeInputHistory(const FGameplayTag& Tag, EYSInputPhase InputPhase)
@@ -115,10 +129,7 @@ void UYSInputStateMachineComponent::ConsumeInputHistory(const FGameplayTag& Tag,
 	// RemoveAll이 제자리 압축을 하는 동안 그 참조가 가리키는 값이 바뀌기 때문이다.
 	// 인덱스로 잡아 RemoveAt 하면 별칭 문제가 없고, 소비 의미에도 맞다 —
 	// Remove는 일치하는 항목을 전부 지우지만 소비는 가장 오래된 1건만 지워야 한다.
-	const int32 FoundIndex = InputHistories.IndexOfByPredicate([&](const FYSInputHistory& History)
-	{
-		return History.InputTag == Tag && History.InputPhase == InputPhase;
-	});
+	const int32 FoundIndex = FindLiveHistoryIndex(Tag, InputPhase);
 
 	if ( FoundIndex != INDEX_NONE )
 	{

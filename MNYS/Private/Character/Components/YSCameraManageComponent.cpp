@@ -7,6 +7,7 @@
 #include "Camera/CameraComponent.h"
 #include "Character/YSCharacterPlayer.h"
 #include "Character/YSPlayerController.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "General/YSGameplayTag.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -86,7 +87,8 @@ void UYSCameraManageComponent::CaptureCameraDefaults()
 	
 	if ( OwnerPlayer.IsValid() )
 	{
-		bOriginControl = OwnerPlayer->bUseControllerRotationYaw;
+		bOriginControl = OwnerPlayer->GetCharacterMovement()->bOrientRotationToMovement;
+		bControlYaw = OwnerPlayer->bUseControllerRotationYaw;
 	}
 }
 
@@ -280,7 +282,8 @@ void UYSCameraManageComponent::TickCameraEffect(float DeltaTime)
 	Boom->SocketOffset  = FMath::VInterpTo(Boom->SocketOffset,  TargetOff, DeltaTime, Speed);
 	Cam->SetRelativeRotation(FMath::RInterpTo(Cam->GetRelativeRotation(), Rotator, DeltaTime, Speed));
 	Cam->FieldOfView = FMath::FInterpTo(Cam->FieldOfView, TargetFOV, DeltaTime, Speed);
-	OwnerPlayer->bUseControllerRotationYaw = bHasMode ? ActiveMode->Params.bOrientToControlRotation : bOriginControl;
+	OwnerPlayer->bUseControllerRotationYaw = bHasMode ? ActiveMode->Params.bUseControllerRotationYaw : bControlYaw;
+	OwnerPlayer->GetCharacterMovement()->bOrientRotationToMovement = bHasMode ? ActiveMode->Params.bOrientToControlRotation : bOriginControl;
 
 	if ( bHasMode == false )
 	{

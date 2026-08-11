@@ -152,6 +152,8 @@ public :
 		TransitionRule.Add(EYSInputStatesType::Attack);
 		TransitionRule.Add(EYSInputStatesType::Falling);
 		TransitionRule.Add(EYSInputStatesType::JustAvoid);
+		// 구르기 직후 조준. Idle을 한 번 거치게 만들면 회피-반격 리듬이 한 박자 늦는다.
+		TransitionRule.Add(EYSInputStatesType::Aim);
 	}
 };
 
@@ -222,5 +224,8 @@ class UYSAimState : public UYSInputStates
 		State = EYSInputStatesType::Aim;
 		TransitionRule.Add(EYSInputStatesType::Idle);
 		TransitionRule.Add(EYSInputStatesType::Falling);
+		// 조준 중 회피. Aim.Input.Dodge 태그는 이미 있어 어빌리티는 켜지는데
+		// 여기가 비어 있으면 인풋 상태만 Aim에 남아 실제 상태와 어긋난다.
+		TransitionRule.Add(EYSInputStatesType::Dodge);
 	}
 };

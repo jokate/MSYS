@@ -35,9 +35,14 @@ public:
 #pragma region History Recording
 	void RecordInputHistory(const FGameplayTag& Tag, EYSInputPhase InputPhase);
 	void TrimInputHistory();
-	bool ContainsInputHistory(const FGameplayTag& Tag, EYSInputPhase InputPhase);
-	
+	bool ContainsInputHistory(const FGameplayTag& Tag, EYSInputPhase InputPhase) const;
+
 	void ConsumeInputHistory(const FGameplayTag& Tag, EYSInputPhase InputPhase);
+
+protected :
+	int32 FindLiveHistoryIndex(const FGameplayTag& Tag, EYSInputPhase InputPhase) const;
+
+public :
 #pragma endregion
 
 	/**
