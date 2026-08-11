@@ -40,6 +40,8 @@ namespace YSTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_AimStart);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_AimStop);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_ConsumeResource);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Record);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Replay);
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Buff_JustAvoid);
 
@@ -62,6 +64,12 @@ namespace YSTags
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Resource_Empty);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Resource_NotFull);
+
+	// 세이브(혼). 슬롯 개수를 태그로 세지 않는 이유는 YSSaveComponent 주석 참고.
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Save_Pending);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Save_HasSlot);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Save_Full);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Echo);
 
 	// AI 억제 — 캐릭터 고유 (ASC에 부여, ActivationOwnedTags/루즈 태그)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AISuppress);

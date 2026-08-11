@@ -29,6 +29,7 @@ enum class EYSAbilityType : uint8
 	NeedCameraDirect UMETA(DisplayName = "카메라 연출 필요"),
 	NeedReady UMETA(DisplayName = "레디 필요"),
 	UseResource UMETA(DisplayName = "자원 소모"),
+	Hon_Only UMETA(DisplayName = "기사단장 혼 전용"),
 };
 
 struct FYSAbilityHitContext
@@ -153,6 +154,7 @@ public:
 	void ActivePlayback(int32 Index);
 	
 	UYSAbilityPlaybackBase* GetCurrentPlayback() const { return CurrentPlayback.Get(); }
+	int32 GetCurrentPlaybackIndex() const { return CurrentPlaybackIndex; }
 	
 	YS_BOOL_ACCESSOR(bIsInputAcceptable, InputAcceptable)
 	
@@ -210,6 +212,9 @@ protected :
 	
 	UPROPERTY(VisibleAnywhere)
 	TWeakObjectPtr<UYSAbilityPlaybackBase> CurrentPlayback = nullptr;
+	
+	UPROPERTY()
+	int32 CurrentPlaybackIndex;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Buff", meta = (Categories = "Buff"))
 	FGameplayTagContainer BuffTags;

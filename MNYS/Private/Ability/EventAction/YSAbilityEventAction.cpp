@@ -17,6 +17,7 @@
 #include "Character/YSPlayerController.h"
 #include "Character/Components/YSCharacterMovementComponent.h"
 #include "Character/Components/YSCameraManageComponent.h"
+#include "Character/Components/YSSaveComponent.h"
 #include "General/YSDefine.h"
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
@@ -434,3 +435,25 @@ bool UYSAbilityEventAction_ConsumeResource::Execute_Implementation(UYSGameplayAb
 	return true;
 }
 
+bool UYSAbilityEventAction_SaveAbilityRecord::Execute_Implementation(UYSGameplayAbility* OwningAbility,
+	const FGameplayEventData& EventData)
+{
+	if ( IsValid(OwningAbility) == false )
+		return false;
+	
+	AActor* AvatarActor = OwningAbility->GetAvatarActorFromActorInfo();
+	
+	if ( IsValid(AvatarActor) == false )
+	{
+		return false;
+	}
+	
+	UYSSaveComponent* SaveComponent = UYSSaveComponent::Get(AvatarActor);
+	if ( IsValid(SaveComponent) == false )
+	{
+		return false;
+	}
+	
+	SaveComponent->MarkSavable(OwningAbility->StaticClass(), OwningAbility->GetCurrentPlaybackIndex(), 1.0f);
+	return true;
+}

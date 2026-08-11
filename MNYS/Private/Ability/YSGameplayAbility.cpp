@@ -55,6 +55,7 @@ void UYSGameplayAbility::ActivePlayback(int32 Index)
 		return;
 
 	CurrentPlayback = Playback;
+	CurrentPlaybackIndex = Index;
 
 	// 시전이 확정되는 노드에서 커밋한다.
 	// NeedReady 어빌리티는 활성 시점에 커밋을 미뤄뒀으므로 여기가 쿨다운이 도는 지점이다.
@@ -328,6 +329,7 @@ void UYSGameplayAbility::OnMontageInterrupted()
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, bReplicatedEndAbility, bWasCancelled);
 }
 
+// 해당 부분 리팩토링 필요. 만약에 내부 데이터가 추가 필요한 경우에 날아와야 함.
 void UYSGameplayAbility::SetupPlayBack(const FGameplayEventData* TriggerEventData)
 {
 	if (!Playbacks.IsValidIndex(0))
@@ -337,8 +339,15 @@ void UYSGameplayAbility::SetupPlayBack(const FGameplayEventData* TriggerEventDat
 
 	PlaybackContext->OwnerAbility = this;
 	PlaybackContext->Instigator = GetOwningActorFromActorInfo();
+	
+	// 리플레이 전용...
+	int32 StartIndex = 0;
+	if ( TriggerEventData != nullptr && TriggerEventData->EventTag == YSTags::Event_Replay )
+	{
+		StartIndex = FMath::RoundToInt(TriggerEventData->EventMagnitude);
+	}
 
-	ActivePlayback(0);
+	ActivePlayback(Playbacks.IsValidIndex(StartIndex) ? StartIndex : 0);
 }
 
 const FYSSkillInfo* UYSGameplayAbility::GetSkillInfo() const
@@ -420,6 +429,13 @@ void UYSGameplayAbility::PostEditChangeProperty(struct FPropertyChangedEvent& Pr
 					FYSEventPayload Resource;
 					Resource.EventActions.Add(NewObject<UYSAbilityEventAction_ConsumeResource>(this));
 					EventActionMap.Add(YSTags::Event_ConsumeResource, Resource);
+					break;
+				}
+			case EYSAbilityType::Hon_Only :
+				{
+					FYSEventPayload Record;
+					Record.EventActions.Add(NewObject<UYSAbilityEventAction_SaveAbilityRecord>(this));
+					EventActionMap.Add(YSTags::Event_Record, Record);
 					break;
 				}
 			default: 

@@ -7,6 +7,7 @@
 #include "Ability/YSGameplayAbility.h"
 #include "Ability/AbilityComponent/YSAbilityPlayback.h"
 #include "AttackableActor/YSTraceObject.h"
+#include "Interface/YSDamageProxy.h"
 
 UYSAT_Trace::UYSAT_Trace()
 {
@@ -37,8 +38,15 @@ void UYSAT_Trace::Activate()
 		EndTask();
 		return;
 	}
+	
+	// ASC 자체에서 가져오되 만약 분신이 실행한 어빌이라면 Master껄 가지고 오자..
+	AActor* DamageInstigator = AvatarActor;
+	if ( const IYSDamageProxy* Proxy = Cast<IYSDamageProxy>(AvatarActor) )
+	{
+		DamageInstigator = Proxy->GetDamageInstigator();
+	}
 
-	TraceObject = UYSTraceObject::Create(this, AvatarActor, AvatarActor, TraceConfig);
+	TraceObject = UYSTraceObject::Create(this, AvatarActor, DamageInstigator, TraceConfig);
 	TraceObject->OnTraceHit.AddDynamic(this, &UYSAT_Trace::_OnTraceObjectHit);
 	TraceObject->OnHitCountDepleted.AddDynamic(this, &UYSAT_Trace::_OnHitCountDepleted);
 

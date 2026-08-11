@@ -220,3 +220,12 @@ public :
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "자원 소모량"))
 	float Amount;
 };
+
+UCLASS(DisplayName = "세이브 요청 (혼)")
+class MNYS_API UYSAbilityEventAction_SaveAbilityRecord : public UYSAbilityEventAction
+{
+	GENERATED_BODY()
+	
+public : 
+	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
+};

@@ -27,6 +27,8 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(Event_AimStart, "Event.AimStart");
 	UE_DEFINE_GAMEPLAY_TAG(Event_AimStop, "Event.AimStop");
 	UE_DEFINE_GAMEPLAY_TAG(Event_ConsumeResource, "Event.ConsumeResource");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Record, "Event.Record");
+	UE_DEFINE_GAMEPLAY_TAG(Event_Replay, "Event.Replay");
 	
 	UE_DEFINE_GAMEPLAY_TAG(Hit_Normal, "Hit.Normal");
 	UE_DEFINE_GAMEPLAY_TAG(Hit_Big, "Hit.Big");
@@ -52,6 +54,11 @@ namespace YSTags
 	
 	UE_DEFINE_GAMEPLAY_TAG(State_Resource_Empty, "State.Resource.Empty");
 	UE_DEFINE_GAMEPLAY_TAG(State_Resource_NotFull, "State.Resource.NotFull");
+
+	UE_DEFINE_GAMEPLAY_TAG(State_Save_Pending, "State.Save.Pending");
+	UE_DEFINE_GAMEPLAY_TAG(State_Save_HasSlot, "State.Save.HasSlot");
+	UE_DEFINE_GAMEPLAY_TAG(State_Save_Full, "State.Save.Full");
+	UE_DEFINE_GAMEPLAY_TAG(State_Echo, "State.Echo");
 
 	UE_DEFINE_GAMEPLAY_TAG(AISuppress, "AI.Suppress");
 	UE_DEFINE_GAMEPLAY_TAG(AISuppress_HitReact, "AI.Suppress.HitReact");
