@@ -9,6 +9,7 @@
 #include "UObject/Object.h"
 #include "YSAbilityEventAction.generated.h"
 
+class AYSSaveEcho;
 class UYSAbilityTriggerPayload_Velocity;
 class UGameplayEffect;
 struct FYSComboTransition;

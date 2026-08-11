@@ -12,6 +12,7 @@
  * 혼은 세이브를 이용한 공격을 전제로 합니다.
  */
 
+class UYSAbilitySystemComponent;
 class UYSGameplayAbility;
 
 USTRUCT(BlueprintType)
@@ -100,6 +101,4 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Save", meta = (DisplayName = "최대 슬롯 수"))
 	int32 MaxSlotCount = 2;
-
-private : 
 };

@@ -7,13 +7,14 @@
 #include "Abilities/GameplayAbilityTypes.h"
 #include "GameFramework/Actor.h"
 #include "General/YSEnum.h"
+#include "Interface/YSSpawnInitializable.h"
 #include "YSAttackableBase.generated.h"
 
 struct FYSAbilityHitContext;
 class AYSTelegraphActor;
 
 UCLASS()
-class MNYS_API AYSAttackableBase : public AActor
+class MNYS_API AYSAttackableBase : public AActor, public IYSSpawnInitializable
 {
 	GENERATED_BODY()
 
@@ -21,6 +22,8 @@ public:
 	// Sets default values for this actor's properties
 	AYSAttackableBase();
 	virtual void AllocateInstigator(AActor* InInstigator);
+	
+	virtual void OnSpawnInitialize(AActor* InOwnerActor, const TSharedPtr<FYSAbilityHitContext>& InHitContext) override;
 	
 	void InitializeHitContext(const TSharedPtr<FYSAbilityHitContext>& InHitContext)
 	{

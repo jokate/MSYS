@@ -27,6 +27,15 @@ void AYSAttackableBase::AllocateInstigator(AActor* InInstigator)
 	OwnerActor = InInstigator;
 }
 
+void AYSAttackableBase::OnSpawnInitialize(AActor* InOwnerActor, const TSharedPtr<FYSAbilityHitContext>& InHitContext)
+{
+	AllocateInstigator(InOwnerActor);
+	if (InHitContext.IsValid())
+	{
+		InitializeHitContext(InHitContext);    
+	}
+}
+
 void AYSAttackableBase::BeginPlay()
 {
 	Super::BeginPlay();

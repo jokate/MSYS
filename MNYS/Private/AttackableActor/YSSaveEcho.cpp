@@ -95,6 +95,22 @@ void AYSSaveEcho::MirrorAppearance(const ACharacter* InMaster)
 	}
 }
 
+void AYSSaveEcho::OnSpawnInitialize(AActor* InOwnerActor, const TSharedPtr<FYSAbilityHitContext>& HitContext)
+{
+	ACharacter* InMaster = Cast<ACharacter>(InOwnerActor);
+	UYSSaveComponent* SaveComponent = UYSSaveComponent::Get(InOwnerActor);
+
+	FYSSavedTechnique Technique;
+
+	if ( IsValid(InMaster) == false || IsValid(SaveComponent) == false || SaveComponent->TryConsumeSlot(Technique) == false )
+	{
+		Destroy();
+		return;
+	}
+
+	Initialize(InMaster, Technique);
+}
+
 void AYSSaveEcho::OnReplayEnded(const FAbilityEndedData& EndedData)
 {
 	if ( EndedData.AbilitySpecHandle != ReplayHandle )

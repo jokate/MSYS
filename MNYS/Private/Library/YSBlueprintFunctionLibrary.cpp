@@ -19,6 +19,7 @@
 #include "Character/Components/YSTargetingComponent.h"
 #include "General/YSDefine.h"
 #include "General/YSGameplayTag.h"
+#include "Interface/YSDamageProxy.h"
 
 float UYSBlueprintFunctionLibrary::GetFinalDamage(const UYSCharacterAttributeSetBase* Owner,
                                                   const UYSCharacterAttributeSetBase* Target, const FName& SkillID)
@@ -260,17 +261,19 @@ AActor* UYSBlueprintFunctionLibrary::SpawnByConfig(UObject* WorldContext, const 
 
 	const FTransform SpawnTransform = CalculateSpawnTransform(WorldContext, Config, OwnerActor, TargetActor);
 
+	AActor* Instigator = OwnerActor;
+	if ( const IYSDamageProxy* Proxy = Cast<IYSDamageProxy>(OwnerActor) )
+	{
+		Instigator = Proxy->GetDamageInstigator();
+	}
+	
 	AActor* SpawnedActor = World->SpawnActorDeferred<AActor>(Config.ActorClass, SpawnTransform);
 	if (IsValid(SpawnedActor) == false)
 		return nullptr;
 
-	if (AYSAttackableBase* AttackableActor = Cast<AYSAttackableBase>(SpawnedActor))
+	if ( IYSSpawnInitializable* Initializable = Cast<IYSSpawnInitializable>(SpawnedActor) )
 	{
-		AttackableActor->AllocateInstigator(OwnerActor);
-		if (HitContext.IsValid())
-		{
-			AttackableActor->InitializeHitContext(HitContext);	
-		}
+		Initializable->OnSpawnInitialize(Instigator, HitContext);
 	}
 
 	if (Config.bAttachToActor && IsValid(AttachParent))

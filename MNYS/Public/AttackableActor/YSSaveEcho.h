@@ -7,6 +7,7 @@
 #include "GameplayAbilitySpecHandle.h"
 #include "GameFramework/Character.h"
 #include "Interface/YSDamageProxy.h"
+#include "Interface/YSSpawnInitializable.h"
 #include "YSSaveEcho.generated.h"
 
 
@@ -19,7 +20,7 @@ struct FYSSavedTechnique;
 class UYSAbilitySystemComponent;
 
 UCLASS()
-class MNYS_API AYSSaveEcho : public ACharacter, public IAbilitySystemInterface, public IYSDamageProxy
+class MNYS_API AYSSaveEcho : public ACharacter, public IAbilitySystemInterface, public IYSDamageProxy, public IYSSpawnInitializable
 {
 	GENERATED_BODY()
 
@@ -45,6 +46,7 @@ protected :
 
 	/** 주인의 메시·애님BP를 그대로 가져온다. 분신은 늘 지금의 혼과 같아 보여야 한다. */
 	void MirrorAppearance(const ACharacter* InMaster);
+	virtual void OnSpawnInitialize(AActor* InOwnerActor, const TSharedPtr<FYSAbilityHitContext>& HitContext) override;
 
 protected :
 	UPROPERTY(VisibleAnywhere, Category = "YS | Echo", meta = (DisplayName = "어빌리티 시스템"))
