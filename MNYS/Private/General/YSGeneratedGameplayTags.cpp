@@ -12,6 +12,11 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(IdleInputDown, "Idle.Input.Down");
 	UE_DEFINE_GAMEPLAY_TAG(IdleInputLeft, "Idle.Input.Left");
 	UE_DEFINE_GAMEPLAY_TAG(IdleInputRight, "Idle.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(IdleInputAim, "Idle.Input.Aim");
+	UE_DEFINE_GAMEPLAY_TAG(IdleInputSkill1, "Idle.Input.Skill1");
+	UE_DEFINE_GAMEPLAY_TAG(IdleInputSkill2, "Idle.Input.Skill2");
+	UE_DEFINE_GAMEPLAY_TAG(IdleInputUltimate, "Idle.Input.Ultimate");
+	UE_DEFINE_GAMEPLAY_TAG(IdleInputSave, "Idle.Input.Save");
 	UE_DEFINE_GAMEPLAY_TAG(IdleInputUpAttack, "Idle.Input.Command.UpAttack");
 	UE_DEFINE_GAMEPLAY_TAG(IdleInputDownAttack, "Idle.Input.Command.DownAttack");
 	UE_DEFINE_GAMEPLAY_TAG(IdleInputBackDodgeAttack, "Idle.Input.Command.BackDodgeAttack");
@@ -25,6 +30,11 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(AttackInputDown, "Attack.Input.Down");
 	UE_DEFINE_GAMEPLAY_TAG(AttackInputLeft, "Attack.Input.Left");
 	UE_DEFINE_GAMEPLAY_TAG(AttackInputRight, "Attack.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(AttackInputAim, "Attack.Input.Aim");
+	UE_DEFINE_GAMEPLAY_TAG(AttackInputSkill1, "Attack.Input.Skill1");
+	UE_DEFINE_GAMEPLAY_TAG(AttackInputSkill2, "Attack.Input.Skill2");
+	UE_DEFINE_GAMEPLAY_TAG(AttackInputUltimate, "Attack.Input.Ultimate");
+	UE_DEFINE_GAMEPLAY_TAG(AttackInputSave, "Attack.Input.Save");
 	UE_DEFINE_GAMEPLAY_TAG(AttackInputUpAttack, "Attack.Input.Command.UpAttack");
 	UE_DEFINE_GAMEPLAY_TAG(AttackInputDownAttack, "Attack.Input.Command.DownAttack");
 	UE_DEFINE_GAMEPLAY_TAG(AttackInputBackDodgeAttack, "Attack.Input.Command.BackDodgeAttack");
@@ -38,6 +48,11 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(DodgeInputDown, "Dodge.Input.Down");
 	UE_DEFINE_GAMEPLAY_TAG(DodgeInputLeft, "Dodge.Input.Left");
 	UE_DEFINE_GAMEPLAY_TAG(DodgeInputRight, "Dodge.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(DodgeInputAim, "Dodge.Input.Aim");
+	UE_DEFINE_GAMEPLAY_TAG(DodgeInputSkill1, "Dodge.Input.Skill1");
+	UE_DEFINE_GAMEPLAY_TAG(DodgeInputSkill2, "Dodge.Input.Skill2");
+	UE_DEFINE_GAMEPLAY_TAG(DodgeInputUltimate, "Dodge.Input.Ultimate");
+	UE_DEFINE_GAMEPLAY_TAG(DodgeInputSave, "Dodge.Input.Save");
 	UE_DEFINE_GAMEPLAY_TAG(DodgeInputUpAttack, "Dodge.Input.Command.UpAttack");
 	UE_DEFINE_GAMEPLAY_TAG(DodgeInputDownAttack, "Dodge.Input.Command.DownAttack");
 	UE_DEFINE_GAMEPLAY_TAG(DodgeInputBackDodgeAttack, "Dodge.Input.Command.BackDodgeAttack");
@@ -51,6 +66,11 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(JustAvoidInputDown, "JustAvoid.Input.Down");
 	UE_DEFINE_GAMEPLAY_TAG(JustAvoidInputLeft, "JustAvoid.Input.Left");
 	UE_DEFINE_GAMEPLAY_TAG(JustAvoidInputRight, "JustAvoid.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(JustAvoidInputAim, "JustAvoid.Input.Aim");
+	UE_DEFINE_GAMEPLAY_TAG(JustAvoidInputSkill1, "JustAvoid.Input.Skill1");
+	UE_DEFINE_GAMEPLAY_TAG(JustAvoidInputSkill2, "JustAvoid.Input.Skill2");
+	UE_DEFINE_GAMEPLAY_TAG(JustAvoidInputUltimate, "JustAvoid.Input.Ultimate");
+	UE_DEFINE_GAMEPLAY_TAG(JustAvoidInputSave, "JustAvoid.Input.Save");
 	UE_DEFINE_GAMEPLAY_TAG(JustAvoidInputUpAttack, "JustAvoid.Input.Command.UpAttack");
 	UE_DEFINE_GAMEPLAY_TAG(JustAvoidInputDownAttack, "JustAvoid.Input.Command.DownAttack");
 	UE_DEFINE_GAMEPLAY_TAG(JustAvoidInputBackDodgeAttack, "JustAvoid.Input.Command.BackDodgeAttack");
@@ -64,6 +84,11 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(FallingInputDown, "Falling.Input.Down");
 	UE_DEFINE_GAMEPLAY_TAG(FallingInputLeft, "Falling.Input.Left");
 	UE_DEFINE_GAMEPLAY_TAG(FallingInputRight, "Falling.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(FallingInputAim, "Falling.Input.Aim");
+	UE_DEFINE_GAMEPLAY_TAG(FallingInputSkill1, "Falling.Input.Skill1");
+	UE_DEFINE_GAMEPLAY_TAG(FallingInputSkill2, "Falling.Input.Skill2");
+	UE_DEFINE_GAMEPLAY_TAG(FallingInputUltimate, "Falling.Input.Ultimate");
+	UE_DEFINE_GAMEPLAY_TAG(FallingInputSave, "Falling.Input.Save");
 	UE_DEFINE_GAMEPLAY_TAG(FallingInputUpAttack, "Falling.Input.Command.UpAttack");
 	UE_DEFINE_GAMEPLAY_TAG(FallingInputDownAttack, "Falling.Input.Command.DownAttack");
 	UE_DEFINE_GAMEPLAY_TAG(FallingInputBackDodgeAttack, "Falling.Input.Command.BackDodgeAttack");
@@ -77,6 +102,11 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(SkillInputDown, "Skill.Input.Down");
 	UE_DEFINE_GAMEPLAY_TAG(SkillInputLeft, "Skill.Input.Left");
 	UE_DEFINE_GAMEPLAY_TAG(SkillInputRight, "Skill.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(SkillInputAim, "Skill.Input.Aim");
+	UE_DEFINE_GAMEPLAY_TAG(SkillInputSkill1, "Skill.Input.Skill1");
+	UE_DEFINE_GAMEPLAY_TAG(SkillInputSkill2, "Skill.Input.Skill2");
+	UE_DEFINE_GAMEPLAY_TAG(SkillInputUltimate, "Skill.Input.Ultimate");
+	UE_DEFINE_GAMEPLAY_TAG(SkillInputSave, "Skill.Input.Save");
 	UE_DEFINE_GAMEPLAY_TAG(SkillInputUpAttack, "Skill.Input.Command.UpAttack");
 	UE_DEFINE_GAMEPLAY_TAG(SkillInputDownAttack, "Skill.Input.Command.DownAttack");
 	UE_DEFINE_GAMEPLAY_TAG(SkillInputBackDodgeAttack, "Skill.Input.Command.BackDodgeAttack");
@@ -90,6 +120,11 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(ReadyInputDown, "Ready.Input.Down");
 	UE_DEFINE_GAMEPLAY_TAG(ReadyInputLeft, "Ready.Input.Left");
 	UE_DEFINE_GAMEPLAY_TAG(ReadyInputRight, "Ready.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(ReadyInputAim, "Ready.Input.Aim");
+	UE_DEFINE_GAMEPLAY_TAG(ReadyInputSkill1, "Ready.Input.Skill1");
+	UE_DEFINE_GAMEPLAY_TAG(ReadyInputSkill2, "Ready.Input.Skill2");
+	UE_DEFINE_GAMEPLAY_TAG(ReadyInputUltimate, "Ready.Input.Ultimate");
+	UE_DEFINE_GAMEPLAY_TAG(ReadyInputSave, "Ready.Input.Save");
 	UE_DEFINE_GAMEPLAY_TAG(ReadyInputUpAttack, "Ready.Input.Command.UpAttack");
 	UE_DEFINE_GAMEPLAY_TAG(ReadyInputDownAttack, "Ready.Input.Command.DownAttack");
 	UE_DEFINE_GAMEPLAY_TAG(ReadyInputBackDodgeAttack, "Ready.Input.Command.BackDodgeAttack");
@@ -103,6 +138,11 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputDown, "JumpAttack.Input.Down");
 	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputLeft, "JumpAttack.Input.Left");
 	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputRight, "JumpAttack.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputAim, "JumpAttack.Input.Aim");
+	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputSkill1, "JumpAttack.Input.Skill1");
+	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputSkill2, "JumpAttack.Input.Skill2");
+	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputUltimate, "JumpAttack.Input.Ultimate");
+	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputSave, "JumpAttack.Input.Save");
 	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputUpAttack, "JumpAttack.Input.Command.UpAttack");
 	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputDownAttack, "JumpAttack.Input.Command.DownAttack");
 	UE_DEFINE_GAMEPLAY_TAG(JumpAttackInputBackDodgeAttack, "JumpAttack.Input.Command.BackDodgeAttack");
@@ -116,6 +156,11 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(DamagedInputDown, "Damaged.Input.Down");
 	UE_DEFINE_GAMEPLAY_TAG(DamagedInputLeft, "Damaged.Input.Left");
 	UE_DEFINE_GAMEPLAY_TAG(DamagedInputRight, "Damaged.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(DamagedInputAim, "Damaged.Input.Aim");
+	UE_DEFINE_GAMEPLAY_TAG(DamagedInputSkill1, "Damaged.Input.Skill1");
+	UE_DEFINE_GAMEPLAY_TAG(DamagedInputSkill2, "Damaged.Input.Skill2");
+	UE_DEFINE_GAMEPLAY_TAG(DamagedInputUltimate, "Damaged.Input.Ultimate");
+	UE_DEFINE_GAMEPLAY_TAG(DamagedInputSave, "Damaged.Input.Save");
 	UE_DEFINE_GAMEPLAY_TAG(DamagedInputUpAttack, "Damaged.Input.Command.UpAttack");
 	UE_DEFINE_GAMEPLAY_TAG(DamagedInputDownAttack, "Damaged.Input.Command.DownAttack");
 	UE_DEFINE_GAMEPLAY_TAG(DamagedInputBackDodgeAttack, "Damaged.Input.Command.BackDodgeAttack");
@@ -129,6 +174,11 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(DeathInputDown, "Death.Input.Down");
 	UE_DEFINE_GAMEPLAY_TAG(DeathInputLeft, "Death.Input.Left");
 	UE_DEFINE_GAMEPLAY_TAG(DeathInputRight, "Death.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(DeathInputAim, "Death.Input.Aim");
+	UE_DEFINE_GAMEPLAY_TAG(DeathInputSkill1, "Death.Input.Skill1");
+	UE_DEFINE_GAMEPLAY_TAG(DeathInputSkill2, "Death.Input.Skill2");
+	UE_DEFINE_GAMEPLAY_TAG(DeathInputUltimate, "Death.Input.Ultimate");
+	UE_DEFINE_GAMEPLAY_TAG(DeathInputSave, "Death.Input.Save");
 	UE_DEFINE_GAMEPLAY_TAG(DeathInputUpAttack, "Death.Input.Command.UpAttack");
 	UE_DEFINE_GAMEPLAY_TAG(DeathInputDownAttack, "Death.Input.Command.DownAttack");
 	UE_DEFINE_GAMEPLAY_TAG(DeathInputBackDodgeAttack, "Death.Input.Command.BackDodgeAttack");
@@ -142,13 +192,12 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(AimInputDown, "Aim.Input.Down");
 	UE_DEFINE_GAMEPLAY_TAG(AimInputLeft, "Aim.Input.Left");
 	UE_DEFINE_GAMEPLAY_TAG(AimInputRight, "Aim.Input.Right");
+	UE_DEFINE_GAMEPLAY_TAG(AimInputAim, "Aim.Input.Aim");
+	UE_DEFINE_GAMEPLAY_TAG(AimInputSkill1, "Aim.Input.Skill1");
+	UE_DEFINE_GAMEPLAY_TAG(AimInputSkill2, "Aim.Input.Skill2");
+	UE_DEFINE_GAMEPLAY_TAG(AimInputUltimate, "Aim.Input.Ultimate");
+	UE_DEFINE_GAMEPLAY_TAG(AimInputSave, "Aim.Input.Save");
 	UE_DEFINE_GAMEPLAY_TAG(AimInputUpAttack, "Aim.Input.Command.UpAttack");
 	UE_DEFINE_GAMEPLAY_TAG(AimInputDownAttack, "Aim.Input.Command.DownAttack");
 	UE_DEFINE_GAMEPLAY_TAG(AimInputBackDodgeAttack, "Aim.Input.Command.BackDodgeAttack");
-
-	// 조준 입력(우클릭). 조준 진입은 Idle 에서, 조준 해제(뗌) 판정은 Aim 에서 받는다.
-	// 나머지 State 조합은 실제로 쓰이지 않으므로 등록하지 않는다 —
-	// ResolveStateTag 가 미등록 조합을 조용히 무효 태그로 떨어뜨린다.
-	UE_DEFINE_GAMEPLAY_TAG(IdleInputAim, "Idle.Input.Aim");
-	UE_DEFINE_GAMEPLAY_TAG(AimInputAim, "Aim.Input.Aim");
 }

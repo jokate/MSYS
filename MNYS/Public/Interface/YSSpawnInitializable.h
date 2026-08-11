@@ -6,7 +6,7 @@
 #include "UObject/Interface.h"
 #include "YSSpawnInitializable.generated.h"
 
-class FYSAbilityHitContext;
+struct FYSAbilityHitContext;
 // This class does not need to be modified.
 UINTERFACE()
 class UYSSpawnInitializable : public UInterface

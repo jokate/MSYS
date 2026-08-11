@@ -10,7 +10,6 @@
 #include "Interface/YSSpawnInitializable.h"
 #include "YSAttackableBase.generated.h"
 
-struct FYSAbilityHitContext;
 class AYSTelegraphActor;
 
 UCLASS()
