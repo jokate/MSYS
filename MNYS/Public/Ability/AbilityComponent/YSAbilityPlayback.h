@@ -37,18 +37,15 @@ struct FYSPlaybackEdge
 	// -1 = 체인 종료 (어빌리티 EndAbility)
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Transition", meta = (DisplayName = "다음 노드 인덱스 (-1: 종료)"))
 	int32 NextNodeIndex = INDEX_NONE;
-
-	/**
-	 * 입력이 도착한 즉시 전환할지, 재생 중인 몽타주가 끝날 때까지 예약해둘지.
-	 *
-	 * 즉시성은 노드가 아니라 엣지의 성질이다. 한 노드가 두 가지를 동시에 원하기 때문이다 —
-	 * 발사 노드는 "홀드 지속 → 다음 발"은 몽타주를 존중해야 하고(예약),
-	 * "버튼 뗌 → 중단"은 지금 당장 끊어야 한다(즉시).
-	 *
-	 * 켜면 재생 중인 몽타주를 끊는다. 조준 취소·차지 릴리즈처럼 반응성이 중요한 엣지에만 쓴다.
-	 */
+	
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Transition", meta = (DisplayName = "입력 즉시 전환 (몽타주 완료를 기다리지 않음)"))
 	bool bImmediateTransition = false;
+	
+	UPROPERTY(EditAnywhere, meta = (DisplayName = "트리거 할 이벤트 데이터"))
+	FGameplayEventSendData TriggerGameplayData;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Transition", meta = (DisplayName = "전환 없이 이벤트만 발행"))
+	bool bFireEventOnly = false;
 };
 
 // 해당 구조의 가장 큰 문제점은 어빌리티의 플레이 백을 의미하다보니 다른 어빌리티에서 동작 시, Race Condition이 발생할 수 있음.
@@ -130,6 +127,10 @@ protected:
 
 	bool CommitTransition(int32 NextNodeIndex);
 	bool HandleUnmatchedEvent(EYSPlaybackEvent Event);
+
+	/** 엣지가 지정한 이벤트를 ASC로 흘린다. AnimNotify 가 쏘는 것과 같은 경로다. */
+	void FireEdgeEvent(const FGameplayEventSendData& SendEventData) const;
+
 	void ProcessConditionMatch(const FYSPlaybackEdge& Edge, const TSharedPtr<FYSPlaybackContext>& Context) const;
 	
 public : 

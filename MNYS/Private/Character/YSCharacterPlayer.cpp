@@ -7,6 +7,7 @@
 #include "YSAbilitySystemComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
+#include "Character/Components/YSCameraManageComponent.h"
 #include "Character/Components/YSCharacterMovementComponent.h"
 #include "Framework/YSGameModeBase.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -158,13 +159,22 @@ void AYSCharacterPlayer::RemoveStateToStateMachine(EYSInputStatesType InputState
 void AYSCharacterPlayer::Look(const FInputActionValue& Value)
 {
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
-	
-	if ( Controller != nullptr )
+
+	if ( Controller == nullptr )
 	{
-		// add yaw and pitch input to controller
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(LookAxisVector.Y);
+		return;
 	}
+	
+	AddControllerYawInput(LookAxisVector.X);
+	
+	const UYSCameraManageComponent* CameraManager = UYSCameraManageComponent::Get(this);
+
+	if ( IsValid(CameraManager) && CameraManager->IsControlPitchLocked() )
+	{
+		return;
+	}
+
+	AddControllerPitchInput(LookAxisVector.Y);
 }
 
 void AYSCharacterPlayer::Move(const FInputActionValue& Value)

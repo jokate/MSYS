@@ -184,6 +184,11 @@ void UYSInputStateMachineComponent::AcceptInput(const FGameplayTag& Tag, EYSInpu
 	if ( bIsInputBlocked )
 		return;
 
+	// 상태 해석 전에 원본 태그로 한 번 흘린다.
+	// 여기서 나가야 State 조합을 등록하지 않아도 되고, 활성 콤보의
+	// TryTransition 을 건드리지 않아 콤보가 끊기지 않는다.
+	OnRawInputAccepted.Broadcast(Tag, InputPhase);
+
 	// 커맨드 버퍼에는 "누름"만 먹인다.
 	// 뗌까지 InputTags에 쌓이면 FYSCommandSequence::IsSatisfiedCommand의 순서 판정이 깨진다.
 	const FGameplayTag RetTag = (InputPhase == EYSInputPhase::Pressed) ? FindBestCombo(Tag) : Tag;

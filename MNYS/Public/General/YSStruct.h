@@ -48,6 +48,10 @@ public :
 		TriggerPayloads.SetNum(2);
 	}
 	
+	bool IsValid() const
+	{
+		return TargetToTrigger.IsValid();
+	}	
 public :
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FGameplayTag TargetToTrigger;
@@ -294,14 +298,33 @@ struct FYSCameraEffectParams
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "복귀 보간 속도"))
 	float InterpOutSpeed = 5.f;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "복귀 보간 속도"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "카메라 상대 회전 (스프링암 기준)"))
 	FRotator RelativeRotator = FRotator::ZeroRotator;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "컨트롤 회전에 맞추기"))
 	bool bOrientToControlRotation = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "Yaw 회전"))
 	bool bUseControllerRotationYaw = false;
+
+	/**
+	 * 컨트롤 회전의 피치를 이 값으로 잠근다. 탑뷰·부감을 만드는 유일한 수단이다.
+	 *
+	 * 위의 RelativeRotator 로는 안 되는 이유 —
+	 * 스프링암이 bUsePawnControlRotation = true 라 컨트롤 회전을 따라가고,
+	 * RelativeRotator 는 그 스프링암 끝에 달린 카메라의 상대 회전일 뿐이다.
+	 * 즉 카메라는 여전히 캐릭터 뒤 눈높이에 있으면서 고개만 숙인다.
+	 * 카메라를 머리 위로 올리려면 스프링암 자체가 내려다봐야 하고,
+	 * 그건 컨트롤 회전을 건드리는 수밖에 없다.
+	 *
+	 * Yaw 는 잠그지 않는다 — 부감에서도 배치 방향은 플레이어가 정해야 한다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "컨트롤 피치 고정 사용"))
+	bool bOverrideControlPitch = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera",
+		meta = (DisplayName = "고정할 컨트롤 피치 (음수 = 내려다봄)", EditCondition = "bOverrideControlPitch", EditConditionHides, ClampMin = "-89.0", ClampMax = "89.0"))
+	float ControlPitch = -55.f;
 };
 
 USTRUCT(BlueprintType)

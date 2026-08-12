@@ -119,6 +119,13 @@ private:
 
 	void TickCameraEffect(float DeltaTime);
 
+public :
+	bool IsControlPitchLocked() const { return bControlPitchLockRequested; }
+
+protected :
+
+	void TickControlPitch(const FYSCameraEffectParams* Params, float DeltaTime, float Speed);
+
 private:
 	// 우선순위로 정렬하지 않는다. 요청 수가 한 자릿수라 매 틱 선형 탐색이 더 싸다.
 	UPROPERTY()
@@ -144,4 +151,11 @@ private:
 	FRotator DefaultRotation = FRotator::ZeroRotator;
 	bool bOriginControl = false;
 	bool bControlYaw = false;
+	
+	float PreOverrideControlPitch = 0.f;
+
+	/** 지금 피치를 잠그고 있거나 복귀 보간 중인가. 내부 상태 머신용. */
+	bool bIsControlPitchOverridden = false;
+	
+	bool bControlPitchLockRequested = false;
 };

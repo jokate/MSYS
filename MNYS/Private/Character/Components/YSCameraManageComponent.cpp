@@ -249,6 +249,51 @@ const FYSCameraModeRequest* UYSCameraManageComponent::ResolveActiveMode()
 	return Best;
 }
 
+void UYSCameraManageComponent::TickControlPitch(const FYSCameraEffectParams* Params, float DeltaTime, float Speed)
+{
+	if ( OwnerPlayerController.IsValid() == false )
+	{
+		return;
+	}
+
+	const bool bWantsOverride = ( Params != nullptr && Params->bOverrideControlPitch );
+
+	// 입력 차단 여부는 "요청 중"에만 참이어야 한다. 복귀 보간까지 막으면
+	// 플레이어가 카메라를 되찾는 순간이 답답해진다.
+	bControlPitchLockRequested = bWantsOverride;
+
+	// 평소에는 컨트롤 회전에 손대지 않는다. 마우스는 플레이어 것이다.
+	if ( bWantsOverride == false && bIsControlPitchOverridden == false )
+	{
+		return;
+	}
+
+	if ( bWantsOverride && bIsControlPitchOverridden == false )
+	{
+		// 잠그기 시작하는 프레임. 지금 보고 있던 각도를 복귀 지점으로 기억한다.
+		PreOverrideControlPitch = FRotator::NormalizeAxis(OwnerPlayerController->GetControlRotation().Pitch);
+		bIsControlPitchOverridden = true;
+	}
+
+	const float TargetPitch = bWantsOverride ? Params->ControlPitch : PreOverrideControlPitch;
+
+	FRotator ControlRotation = OwnerPlayerController->GetControlRotation();
+
+	// NormalizeAxis 로 -180~180 으로 펴서 보간한다.
+	// GetControlRotation 은 0~360 이라 그대로 -55 를 향해 보간하면 305도를 한 바퀴 돈다.
+	const float CurrentPitch = FRotator::NormalizeAxis(ControlRotation.Pitch);
+
+	// Yaw 는 건드리지 않는다 — 부감에서도 배치 방향은 플레이어가 정해야 한다.
+	ControlRotation.Pitch = FMath::FInterpTo(CurrentPitch, TargetPitch, DeltaTime, Speed);
+
+	OwnerPlayerController->SetControlRotation(ControlRotation);
+
+	if ( bWantsOverride == false && FMath::IsNearlyEqual(ControlRotation.Pitch, PreOverrideControlPitch, 1.f) )
+	{
+		bIsControlPitchOverridden = false;
+	}
+}
+
 void UYSCameraManageComponent::TickCameraEffect(float DeltaTime)
 {
 	const FYSCameraModeRequest* ActiveMode = ResolveActiveMode();
@@ -285,12 +330,16 @@ void UYSCameraManageComponent::TickCameraEffect(float DeltaTime)
 	OwnerPlayer->bUseControllerRotationYaw = bHasMode ? ActiveMode->Params.bUseControllerRotationYaw : bControlYaw;
 	OwnerPlayer->GetCharacterMovement()->bOrientRotationToMovement = bHasMode ? ActiveMode->Params.bOrientToControlRotation : bOriginControl;
 
+	TickControlPitch(bHasMode ? &ActiveMode->Params : nullptr, DeltaTime, Speed);
+
 	if ( bHasMode == false )
 	{
 		const bool bArmDone = FMath::IsNearlyEqual(Boom->TargetArmLength, DefaultArmLength, 1.f);
 		const bool bFOVDone = FMath::IsNearlyEqual(Cam->FieldOfView, DefaultFOV, 0.5f);
 
-		if ( bArmDone && bFOVDone )
+		// 피치 복귀가 남아 있으면 아직 정착이 아니다.
+		// 여기서 참으로 만들면 다음 틱부터 조기 반환에 걸려 부감으로 굳어버린다.
+		if ( bArmDone && bFOVDone && bIsControlPitchOverridden == false )
 		{
 			Boom->TargetArmLength = DefaultArmLength;
 			Boom->SocketOffset  = DefaultSocketOffset;

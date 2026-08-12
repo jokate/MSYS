@@ -13,6 +13,7 @@
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Ability/YSGameplayAbility.h"
 #include "Ability/MontageSelector/YSMontageSelector.h"
+#include "Ability/Payload/YSAbilityTriggerPayload.h"
 #include "Ability/AbilityComponent/YSPlaybackCondition.h"
 #include "Character/Components/YSCameraManageComponent.h"
 #include "General/YSGameplayTag.h"
@@ -99,7 +100,9 @@ bool UYSAbilityPlaybackBase::TryAcceptInputTag()
 	const FYSPlaybackEdge& MatchedEdge = Transitions[MatchedEdgeIndex];
 
 	// 즉시 엣지는 재생 중인 몽타주를 끊고 지금 전환한다 (조준 취소, 차지 릴리즈).
-	if ( MatchedEdge.bImmediateTransition )
+	// 이벤트만 쏘는 엣지도 여기로 온다 — 몽타주를 건드리지 않으니 미룰 이유가 없고,
+	// 오히려 미루면 "조준 중 클릭했는데 조준이 끝나야 분신이 나오는" 꼴이 된다.
+	if ( MatchedEdge.bImmediateTransition || MatchedEdge.bFireEventOnly )
 	{
 		return CommitEdge(MatchedEdge);
 	}
@@ -238,17 +241,13 @@ bool UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackEvent Event, bool bIsEvalua
 	}
 
 	const int32 MatchedEdgeIndex = FindTransitionEdgeIndex(Event);
-
-	// 만약 맞는 게 없다고 해도 그냥 넘어갈 수 있어야 함. 그렇게 되면 정확한 인풋만을 요구하게 되기 떄문임.
-	// 단, 그렇게 된다고 하니까, 없네...
+	
 	if (Transitions.IsValidIndex(MatchedEdgeIndex) == false)
 	{
 		// 평가는 조건 조회일 뿐이므로 체인에 손대지 않는다.
 		return bIsEvaluate ? false : HandleUnmatchedEvent(Event);
 	}
-
-	// 평가 모드는 전환하지 않고 예약만 남긴다. 소비도 하지 않는다 —
-	// 소비는 전환이 실제로 일어나는 CommitEdge의 몫이다.
+	
 	if (bIsEvaluate)
 	{
 		return ReserveEdge(MatchedEdgeIndex);
@@ -259,8 +258,6 @@ bool UYSAbilityPlaybackBase::DispatchNext(EYSPlaybackEvent Event, bool bIsEvalua
 
 int32 UYSAbilityPlaybackBase::FindTransitionEdgeIndex(EYSPlaybackEvent Event) const
 {
-	// 인덱스를 돌려주는 이유 — 예약은 엣지 자체를 기억해야 하는데,
-	// 포인터는 Transitions가 재할당되면 무효가 되고 컨텍스트에 저장할 수도 없다.
 	for (int32 EdgeIndex = 0; EdgeIndex < Transitions.Num(); ++EdgeIndex)
 	{
 		const FYSPlaybackEdge& Edge = Transitions[EdgeIndex];
@@ -281,11 +278,55 @@ int32 UYSAbilityPlaybackBase::FindTransitionEdgeIndex(EYSPlaybackEvent Event) co
 
 bool UYSAbilityPlaybackBase::CommitEdge(const FYSPlaybackEdge& Edge)
 {
-	// 전환이 확정된 지금에서야 입력을 소비한다.
-	// 기록 하나는 전환 하나만 일으킨다 — 딸깍 한 번에 콤보가 두 단계 나가는 것을 구조적으로 막는다.
 	ProcessConditionMatch(Edge, CapturedContext);
+	
+	if ( Edge.TriggerGameplayData.IsValid())
+	{
+		FireEdgeEvent(Edge.TriggerGameplayData);
+	}
+	
+	if ( Edge.bFireEventOnly )
+	{
+		return true;
+	}
 
 	return CommitTransition(Edge.NextNodeIndex);
+}
+
+void UYSAbilityPlaybackBase::FireEdgeEvent(const FGameplayEventSendData& SendEventData) const 
+{
+	UYSGameplayAbility* Ability = GetCurrentPlaybackOwningAbility();
+
+	if ( IsValid(Ability) == false || CapturedContext.IsValid() == false )
+	{
+		return;
+	}
+
+	UAbilitySystemComponent* ASC = Ability->GetAbilitySystemComponentFromActorInfo();
+
+	if ( IsValid(ASC) == false )
+	{
+		return;
+	}
+
+	FGameplayEventData EventData;
+	EventData.EventTag = SendEventData.TargetToTrigger;
+
+	const TArray<UYSAbilityTriggerPayload*>& Payloads = SendEventData.TriggerPayloads;
+	for ( int32 i = 0; i < 2; ++i )
+	{
+		if ( Payloads.IsValidIndex(i) == false )
+		{
+			continue;
+		}
+
+		i == 0 ? EventData.OptionalObject = Payloads[i] : EventData.OptionalObject2 = Payloads[i];
+	}
+	
+	EventData.Instigator = CapturedContext->Instigator;
+	EventData.Target = CapturedContext->Target;
+
+	ASC->HandleGameplayEvent(SendEventData.TargetToTrigger, &EventData);
 }
 
 bool UYSAbilityPlaybackBase::ReserveEdge(int32 EdgeIndex)

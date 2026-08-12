@@ -275,6 +275,11 @@ AActor* UYSBlueprintFunctionLibrary::SpawnByConfig(UObject* WorldContext, const 
 	{
 		Initializable->OnSpawnInitialize(Instigator, HitContext);
 	}
+	
+	if ( IsValid(SpawnedActor) == false )
+	{
+		return nullptr;
+	}
 
 	if (Config.bAttachToActor && IsValid(AttachParent))
 	{

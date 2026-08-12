@@ -454,6 +454,6 @@ bool UYSAbilityEventAction_SaveAbilityRecord::Execute_Implementation(UYSGameplay
 		return false;
 	}
 	
-	SaveComponent->MarkSavable(OwningAbility->StaticClass(), OwningAbility->GetCurrentPlaybackIndex(), 1.0f);
+	SaveComponent->MarkSavable(OwningAbility->GetClass(), OwningAbility->GetCurrentPlaybackIndex(), 1.0f);
 	return true;
 }

@@ -14,6 +14,8 @@ class UYSAbilitySystemComponent;
 struct FYSCommandSequence;
 class UYSInputStates;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnRawInputAccepted, const FGameplayTag&, InputTag, EYSInputPhase, InputPhase);
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class MNYS_API UYSInputStateMachineComponent : public UActorComponent
 {
@@ -24,6 +26,23 @@ public:
 	static UYSInputStateMachineComponent* Get(AActor* Owner);
 	UYSInputStateMachineComponent();
 	virtual void AcceptInput(const FGameplayTag& Tag, EYSInputPhase InputPhase);
+
+	/**
+	 * 상태 해석과 어빌리티 라우팅을 거치지 않고 원본 태그 그대로 나가는 통로.
+	 *
+	 * 어느 상태에서든 의미가 같고 어빌리티가 아닌 입력을 위한 것이다 —
+	 * 혼의 세이브처럼 몽타주·쿨다운·코스트·상태 전환이 전부 없는 조작.
+	 *
+	 * 어빌리티로 만들지 않는 이유가 편의만은 아니다. 어빌리티 경로로 보내면
+	 * (1) State 11종 × 입력만큼 태그 조합을 다 등록해야 하고,
+	 * (2) 활성 콤보의 TryTransition 이 먼저 이 입력을 받아 맞는 엣지를 못 찾고
+	 *     bEndChainOnUnmatchedInput 에 걸려 콤보를 끊는다. 저장하려고 누른 키가
+	 *     저장하려던 콤보를 죽이는 자기모순이 된다.
+	 *
+	 * 입력 차단(BlockInput) 은 존중한다 — 경직 중에는 이 통로도 막힌다.
+	 */
+	UPROPERTY(BlueprintAssignable, Category = "YS | Input", meta = (DisplayName = "원본 입력 수신"))
+	FOnRawInputAccepted OnRawInputAccepted;
 	
 	virtual void AddStateStack(EYSInputStatesType State);
 	virtual void RemoveStateStack(EYSInputStatesType State);

@@ -12,6 +12,7 @@
  * 혼은 세이브를 이용한 공격을 전제로 합니다.
  */
 
+struct FGameplayTag;
 class UYSAbilitySystemComponent;
 class UYSGameplayAbility;
 
@@ -75,6 +76,10 @@ protected:
 	const FYSSavedTechnique& GetPendingTechnique() const { return PendingTechnique; }
 	
 	void SetMaxSlotCount(int32 NewMax);
+	
+protected:
+	UFUNCTION()
+	void HandleRawInput(const FGameplayTag& InputTag, EYSInputPhase InputPhase);
 	
 public:
 	UPROPERTY(BlueprintAssignable, Category = "YS | Save", meta = (DisplayName = "세이브 상태 변경"))

@@ -6,6 +6,8 @@
 #include "YSAbilitySystemComponent.h"
 #include "Ability/YSGameplayAbility.h"
 #include "General/YSGameplayTag.h"
+#include "General/YSInputGameplayTags.h"
+#include "Input/StateMachine/YSInputStateMachineComponent.h"
 
 
 bool FYSSavedTechnique::IsValid() const
@@ -43,10 +45,21 @@ void UYSSaveComponent::BeginPlay()
 
 	SavedTechniques.Reserve(MaxSlotCount);
 	RefreshStateTags();
+	
+	if ( UYSInputStateMachineComponent* InputStateMachine = UYSInputStateMachineComponent::Get(GetOwner()) )
+	{
+		InputStateMachine->OnRawInputAccepted.AddUniqueDynamic(this, &UYSSaveComponent::HandleRawInput);
+	}
+
+	RefreshStateTags();
 }
 
 void UYSSaveComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	if ( UYSInputStateMachineComponent* InputStateMachine = UYSInputStateMachineComponent::Get(GetOwner()) )
+	{
+		InputStateMachine->OnRawInputAccepted.RemoveDynamic(this, &UYSSaveComponent::HandleRawInput);
+	}
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -120,6 +133,16 @@ void UYSSaveComponent::SetMaxSlotCount(int32 NewMax)
 
 	RefreshStateTags();
 	OnSaveStateChanged.Broadcast();
+}
+
+void UYSSaveComponent::HandleRawInput(const FGameplayTag& InputTag, EYSInputPhase InputPhase)
+{
+	if ( InputTag != YSInputTags::InputSave || InputPhase != EYSInputPhase::Pressed )
+	{
+		return;
+	}
+
+	TryCommitPending();
 }
 
 void UYSSaveComponent::ClearPending()
