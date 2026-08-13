@@ -73,13 +73,14 @@ void AYSSaveEcho::Initialize(ACharacter* InMaster, const FYSSavedTechnique& InTe
 	{
 		Destroy();
 	}), MaxLifeTime, false);
+	
 }
 
 void AYSSaveEcho::MirrorAppearance(const ACharacter* InMaster)
 {
 	USkeletalMeshComponent* MasterMesh = InMaster->GetMesh();
-
-	if ( IsValid(MasterMesh) == false )
+	UCapsuleComponent* MasterCapsule = InMaster->GetCapsuleComponent();
+	if ( IsValid(MasterMesh) == false  || IsValid(MasterCapsule) == false )
 	{
 		return;
 	}
@@ -93,6 +94,14 @@ void AYSSaveEcho::MirrorAppearance(const ACharacter* InMaster)
 	{
 		EchoMesh->SetOverlayMaterial(EchoOverlayMaterial);
 	}
+	
+	UCapsuleComponent* EchoCapsule = GetCapsuleComponent();
+	EchoCapsule->SetCapsuleHalfHeight(MasterCapsule->GetUnscaledCapsuleHalfHeight());
+	EchoCapsule->SetCapsuleRadius(MasterCapsule->GetUnscaledCapsuleRadius());
+	
+	FVector ActorLocation = GetActorLocation();
+	ActorLocation.Z += EchoCapsule->GetUnscaledCapsuleHalfHeight();
+	SetActorLocation(ActorLocation);
 }
 
 void AYSSaveEcho::OnSpawnInitialize(AActor* InOwnerActor, const TSharedPtr<FYSAbilityHitContext>& HitContext)
