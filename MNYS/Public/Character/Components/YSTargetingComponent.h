@@ -65,7 +65,7 @@ public:
 	const FYSTargetingResult& GetResult() const { return CurrentResult; }
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
+	bool IsCursorMode() const { return bCursorModeApplied; }
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -92,21 +92,14 @@ protected:
 
 	void EndTargetingInternal();
 
+
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "인디케이터 클래스"))
 	TSubclassOf<AYSSkillIndicator> IndicatorClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "조준 기준점"))
 	EYSAimSource AimSource = EYSAimSource::MouseCursor;
-
-	/**
-	 * 조준 중 마우스 커서를 노출할지 여부.
-	 * 캡처 상태의 마우스는 화면 중앙에 고정되어 위치가 갱신되지 않는다.
-	 * 마우스 커서로 조준한다면 켜두어야 한다. 대신 조준 중에는 마우스 카메라 회전이 멈춘다.
-	 */
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "조준 중 커서 표시"))
-	bool bShowCursorWhileTargeting = true;
-
+	
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "조준 트레이스 최대 거리"))
 	float MaxTraceDistance = 20000.f;
 

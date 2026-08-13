@@ -9,6 +9,7 @@
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
 #include "Character/Components/YSCameraManageComponent.h"
 #include "Character/Components/YSCharacterMovementComponent.h"
+#include "Character/Components/YSTargetingComponent.h"
 #include "Framework/YSGameModeBase.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "General/YSDefine.h"
@@ -164,6 +165,13 @@ void AYSCharacterPlayer::Look(const FInputActionValue& Value)
 	{
 		return;
 	}
+	UYSTargetingComponent* Targeting = UYSTargetingComponent::Get(this);
+	
+	if ( IsValid(Targeting) && Targeting->IsCursorMode() )
+	{
+		return;
+	}
+	
 	
 	AddControllerYawInput(LookAxisVector.X);
 	

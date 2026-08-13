@@ -338,7 +338,7 @@ FVector UYSTargetingComponent::GetCasterForward() const
 
 void UYSTargetingComponent::ApplyCursorMode(bool bTargeting)
 {
-	if ( bShowCursorWhileTargeting == false || IsValid(CurrentPlayerController) == false )
+	if ( IsValid(CurrentPlayerController) == false )
 	{
 		return;
 	}
@@ -350,25 +350,6 @@ void UYSTargetingComponent::ApplyCursorMode(bool bTargeting)
 	}
 
 	bCursorModeApplied = bTargeting;
-
-	if ( bTargeting )
-	{
-		bSavedShowMouseCursor = CurrentPlayerController->bShowMouseCursor;
-
-		// GameAndUI 로 두어야 커서가 뷰포트 안에서 자유롭게 움직인다.
-		// GameOnly 는 캡처가 유지되어 커서 위치가 화면 중앙에 묶인다.
-		FInputModeGameAndUI InputMode;
-		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
-		InputMode.SetHideCursorDuringCapture(false);
-
-		CurrentPlayerController->SetInputMode(InputMode);
-		CurrentPlayerController->bShowMouseCursor = true;
-
-		return;
-	}
-
-	CurrentPlayerController->bShowMouseCursor = bSavedShowMouseCursor;
-	CurrentPlayerController->SetInputMode(FInputModeGameOnly());
 }
 
 void UYSTargetingComponent::EndTargetingInternal()
