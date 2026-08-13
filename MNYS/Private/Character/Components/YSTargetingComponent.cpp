@@ -71,6 +71,10 @@ bool UYSTargetingComponent::BeginTargeting(UObject* Requester, const FYSTargetin
 		Camera->PushCameraMode(Requester, Spec.CameraParams, EYSCameraModePriority::Targeting);
 	}
 	
+	// 조준점을 산출하기 전에 커서를 먼저 드러낸다.
+	// 캡처 상태에서는 마우스 위치가 갱신되지 않아 첫 프레임이 화면 중앙으로 잡힌다.
+	ApplyCursorMode(true);
+
 	// 첫 프레임부터 올바른 도형이 뜨도록 한 번 즉시 산출해 반영한다.
 	// 틱을 기다리면 이전 조준의 잔상이 한 프레임 보인다.
 	CurrentResult = EvaluateTarget();
@@ -212,12 +216,9 @@ FYSTargetingResult UYSTargetingComponent::EvaluateTarget() const
 	return Result;
 }
 
-bool UYSTargetingComponent::ProjectScreenToGround(FVector& OutLocation) const
+bool UYSTargetingComponent::GetAimScreenPosition(FVector2D& OutScreenPosition) const
 {
-	
-	UWorld* World = GetWorld();
-
-	if ( IsValid(CurrentPlayerController) == false || IsValid(World) == false )
+	if ( IsValid(CurrentPlayerController) == false )
 	{
 		return false;
 	}
@@ -230,14 +231,45 @@ bool UYSTargetingComponent::ProjectScreenToGround(FVector& OutLocation) const
 	{
 		return false;
 	}
-	
-	const float ScreenX = SizeX * 0.5f;
-	const float ScreenY = SizeY * 0.5f;
+
+	if ( AimSource == EYSAimSource::MouseCursor )
+	{
+		float MouseX = 0.f;
+		float MouseY = 0.f;
+
+		// 커서가 뷰포트 밖이거나 패드로 조작 중이면 실패한다. 이때는 아래 중앙 폴백으로 넘어간다.
+		if ( CurrentPlayerController->GetMousePosition(MouseX, MouseY) )
+		{
+			OutScreenPosition = FVector2D(MouseX, MouseY);
+			return true;
+		}
+	}
+
+	OutScreenPosition = FVector2D(SizeX * 0.5f, SizeY * 0.5f);
+	return true;
+}
+
+bool UYSTargetingComponent::ProjectScreenToGround(FVector& OutLocation) const
+{
+
+	UWorld* World = GetWorld();
+
+	if ( IsValid(CurrentPlayerController) == false || IsValid(World) == false )
+	{
+		return false;
+	}
+
+	FVector2D ScreenPosition = FVector2D::ZeroVector;
+
+	if ( GetAimScreenPosition(ScreenPosition) == false )
+	{
+		return false;
+	}
 
 	FVector WorldOrigin    = FVector::ZeroVector;
 	FVector WorldDirection = FVector::ForwardVector;
 
-	if ( CurrentPlayerController->DeprojectScreenPositionToWorld(ScreenX, ScreenY, WorldOrigin, WorldDirection) == false )
+	if ( CurrentPlayerController->DeprojectScreenPositionToWorld(ScreenPosition.X, ScreenPosition.Y, WorldOrigin, WorldDirection) == false )
 	{
 		return false;
 	}
@@ -304,8 +336,45 @@ FVector UYSTargetingComponent::GetCasterForward() const
 }
 
 
+void UYSTargetingComponent::ApplyCursorMode(bool bTargeting)
+{
+	if ( bShowCursorWhileTargeting == false || IsValid(CurrentPlayerController) == false )
+	{
+		return;
+	}
+
+	// 조준이 연달아 시작되면 이미 바꿔둔 값을 원본으로 저장해버린다. 한 번만 처리한다.
+	if ( bTargeting == bCursorModeApplied )
+	{
+		return;
+	}
+
+	bCursorModeApplied = bTargeting;
+
+	if ( bTargeting )
+	{
+		bSavedShowMouseCursor = CurrentPlayerController->bShowMouseCursor;
+
+		// GameAndUI 로 두어야 커서가 뷰포트 안에서 자유롭게 움직인다.
+		// GameOnly 는 캡처가 유지되어 커서 위치가 화면 중앙에 묶인다.
+		FInputModeGameAndUI InputMode;
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
+		InputMode.SetHideCursorDuringCapture(false);
+
+		CurrentPlayerController->SetInputMode(InputMode);
+		CurrentPlayerController->bShowMouseCursor = true;
+
+		return;
+	}
+
+	CurrentPlayerController->bShowMouseCursor = bSavedShowMouseCursor;
+	CurrentPlayerController->SetInputMode(FInputModeGameOnly());
+}
+
 void UYSTargetingComponent::EndTargetingInternal()
 {
+	ApplyCursorMode(false);
+
 	CurrentRequester = nullptr;
 	CurrentResult = FYSTargetingResult();
 

@@ -13,6 +13,22 @@
 class AYSPlayerController;
 class AYSSkillIndicator;
 
+/**
+ * 조준점을 어디서 뽑을지 정합니다.
+ *
+ * 마우스가 잡히지 않는 상황(패드 입력, 커서가 뷰포트 밖)에서는
+ * 어느 쪽을 골랐든 화면 중앙으로 폴백합니다. 조준이 멈추는 것보다 낫습니다.
+ */
+UENUM(BlueprintType)
+enum class EYSAimSource : uint8
+{
+	/** 마우스 커서. LoL 식 지면 조준. */
+	MouseCursor		UMETA(DisplayName = "마우스 커서"),
+
+	/** 화면 중앙. 크로스헤어·패드 조준. */
+	ScreenCenter	UMETA(DisplayName = "화면 중앙")
+};
+
 /** 스킬 하나가 "어떻게 조준되는가"를 선언합니다. 어빌리티가 EditDefaultsOnly로 들고 있습니다. */
 USTRUCT(BlueprintType)
 struct FYSTargetingSpec
@@ -59,8 +75,14 @@ protected:
 	/** 현재 도형·결과를 인디케이터에 반영한다. 매 프레임 호출을 전제로 한다. */
 	void RefreshIndicator();
 
+	/** 조준에 쓸 스크린 좌표를 뽑는다. 마우스를 못 얻으면 화면 중앙으로 폴백한다. */
+	bool GetAimScreenPosition(FVector2D& OutScreenPosition) const;
+
 	/** 화면 기준점을 월드 지면으로 옮긴다. 허공을 겨눈 경우 수평면으로 폴백한다. */
 	bool ProjectScreenToGround(FVector& OutLocation) const;
+
+	/** 조준 중에만 커서를 드러낸다. 캡처된 마우스는 위치가 갱신되지 않기 때문이다. */
+	void ApplyCursorMode(bool bTargeting);
 
 	/** XY만 바뀐 지점의 Z를 다시 지면에 붙인다. 안 하면 경사에서 공중에 뜬다. */
 	FVector SnapToGround(const FVector& Location) const;
@@ -73,6 +95,17 @@ protected:
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "인디케이터 클래스"))
 	TSubclassOf<AYSSkillIndicator> IndicatorClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "조준 기준점"))
+	EYSAimSource AimSource = EYSAimSource::MouseCursor;
+
+	/**
+	 * 조준 중 마우스 커서를 노출할지 여부.
+	 * 캡처 상태의 마우스는 화면 중앙에 고정되어 위치가 갱신되지 않는다.
+	 * 마우스 커서로 조준한다면 켜두어야 한다. 대신 조준 중에는 마우스 카메라 회전이 멈춘다.
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "조준 중 커서 표시"))
+	bool bShowCursorWhileTargeting = true;
 
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "조준 트레이스 최대 거리"))
 	float MaxTraceDistance = 20000.f;
@@ -101,4 +134,10 @@ private:
 	
 	UPROPERTY()
 	TObjectPtr<AYSPlayerController> CurrentPlayerController;
+
+	// 조준 진입 직전의 커서 상태. 조준이 끝나면 이 값으로 되돌린다.
+	bool bSavedShowMouseCursor = false;
+
+	// 조준이 연달아 시작되어도 커서 상태를 한 번만 저장·복원하기 위한 플래그.
+	bool bCursorModeApplied = false;
 };
