@@ -22,6 +22,14 @@ class UYSPlaybackGraphNode_Base : public UEdGraphNode
 public:
 	virtual UEdGraphPin* GetInputPin() const;
 	virtual UEdGraphPin* GetOutputPin() const;
+
+	/**
+	 * 우클릭 메뉴를 채운다.
+	 *
+	 * 엔진 기본 구현이 비어 있어서(EdGraphSchema.cpp:1209) 노드가 직접 넣지 않으면
+	 * 삭제조차 메뉴에 안 뜬다. USoundCueGraphNode 가 같은 자리에서 같은 일을 한다.
+	 */
+	virtual void GetNodeContextMenuActions(UToolMenu* Menu, UGraphNodeContextMenuContext* Context) const override;
 };
 
 

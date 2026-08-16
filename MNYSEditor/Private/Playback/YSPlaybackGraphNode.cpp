@@ -3,7 +3,11 @@
 
 #include "Playback/YSPlaybackGraphNode.h"
 
+#include "Framework/Commands/GenericCommands.h"
+#include "GraphEditorActions.h"
 #include "Playback/YSPlaybackGraphSchema.h"
+#include "ToolMenu.h"
+#include "ToolMenuSection.h"
 
 #define LOCTEXT_NAMESPACE "YSPlaybackGraphNode"
 
@@ -31,6 +35,28 @@ UEdGraphPin* UYSPlaybackGraphNode_Base::GetOutputPin() const
 	}
 
 	return nullptr;
+}
+
+
+void UYSPlaybackGraphNode_Base::GetNodeContextMenuActions(UToolMenu* Menu, UGraphNodeContextMenuContext* Context) const
+{
+	if (Menu == nullptr || Context == nullptr || Context->Node == nullptr)
+	{
+		return;
+	}
+
+	// 핀을 직접 우클릭한 경우는 엔진이 알아서 핀 메뉴를 띄운다. 노드 동작만 얹는다.
+	if (Context->Pin != nullptr)
+	{
+		return;
+	}
+
+	FToolMenuSection& Section = Menu->AddSection(TEXT("YSPlaybackNodeActions"), LOCTEXT("NodeActionsHeader", "노드 동작"));
+
+	// 여기 올리는 커맨드는 툴킷의 GraphEditorCommands 에 매핑돼 있어야 눌린다.
+	// 매핑 없이 올리면 항목은 뜨는데 회색으로 죽어 있다.
+	Section.AddMenuEntry(FGenericCommands::Get().Delete);
+	Section.AddMenuEntry(FGraphEditorCommands::Get().BreakNodeLinks);
 }
 
 

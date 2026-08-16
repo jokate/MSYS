@@ -52,6 +52,8 @@ private:
 	void DeleteSelectedNodes();
 	bool CanDeleteNodes() const;
 	void SelectAllNodes();
+	void BreakSelectedNodeLinks();
+	bool HasSelectedNodes() const;
 
 	/** 툴바에 가져오기 버튼을 단다. InitAssetEditor 보다 먼저 붙여야 한다. */
 	void ExtendToolbar();

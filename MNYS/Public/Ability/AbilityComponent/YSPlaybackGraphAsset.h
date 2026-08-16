@@ -24,7 +24,7 @@ class UYSGameplayAbility;
  * 편집용 그래프의 노드가 소유한 플레이백 오브젝트는 쿠킹 때 그래프와 함께 사라진다.
  * 그래서 컴파일은 반드시 '복제'다 — 참조를 옮기는 게 아니다.
  */
-UCLASS(BlueprintType, Blueprintable, Abstract)
+UCLASS(BlueprintType, Blueprintable)
 class MNYS_API UYSPlaybackGraphAsset : public UObject
 {
 	GENERATED_BODY()

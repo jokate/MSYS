@@ -6,6 +6,7 @@
 #include "Ability/AbilityComponent/YSPlaybackGraphAsset.h"
 #include "Framework/Commands/GenericCommands.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
+#include "GraphEditorActions.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "Modules/ModuleManager.h"
 #include "Playback/YSPlaybackGraph.h"
@@ -156,6 +157,43 @@ void FYSPlaybackGraphEditor::CreateGraphCommands()
 		FGenericCommands::Get().SelectAll,
 		FExecuteAction::CreateSP(this, &FYSPlaybackGraphEditor::SelectAllNodes),
 		FCanExecuteAction());
+
+	GraphEditorCommands->MapAction(
+		FGraphEditorCommands::Get().BreakNodeLinks,
+		FExecuteAction::CreateSP(this, &FYSPlaybackGraphEditor::BreakSelectedNodeLinks),
+		FCanExecuteAction::CreateSP(this, &FYSPlaybackGraphEditor::HasSelectedNodes));
+}
+
+bool FYSPlaybackGraphEditor::HasSelectedNodes() const
+{
+	return GraphEditorWidget.IsValid() && GraphEditorWidget->GetSelectedNodes().Num() > 0;
+}
+
+void FYSPlaybackGraphEditor::BreakSelectedNodeLinks()
+{
+	if (GraphEditorWidget.IsValid() == false || EditedAsset->EdGraph == nullptr)
+	{
+		return;
+	}
+
+	const UEdGraphSchema* Schema = EditedAsset->EdGraph->GetSchema();
+
+	if (Schema == nullptr)
+	{
+		return;
+	}
+
+	const FScopedTransaction Transaction(LOCTEXT("BreakNodeLinks", "노드 연결 끊기"));
+
+	for (UObject* Selected : GraphEditorWidget->GetSelectedNodes())
+	{
+		if (UEdGraphNode* Node = Cast<UEdGraphNode>(Selected))
+		{
+			Schema->BreakNodeLinks(*Node);
+		}
+	}
+
+	FYSPlaybackGraphCompiler::Compile(EditedAsset);
 }
 
 bool FYSPlaybackGraphEditor::CanDeleteNodes() const
