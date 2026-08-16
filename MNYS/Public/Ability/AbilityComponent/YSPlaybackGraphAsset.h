@@ -10,20 +10,6 @@ class UEdGraph;
 class UYSAbilityPlaybackBase;
 class UYSGameplayAbility;
 
-/**
- * 플레이백 그래프 에셋.
- *
- * 이 에셋은 두 개의 표현을 들고 있다 —
- *  - 편집용 그래프(EdGraph) : 노드 위치·핀·연결. 에디터 전용이며 쿠킹되지 않는다.
- *  - 컴파일 산출물(Playbacks) : 런타임이 실제로 읽는 데이터.
- *
- * 엔진의 USoundCue 가 같은 구조다 — 런타임은 FirstNode 를 읽고,
- * 편집은 SoundCueGraph 에서 하며, 구조가 바뀔 때마다 그래프를 런타임 데이터로 굽는다.
- * (Runtime/Engine/Classes/Sound/SoundCue.h:95,114)
- *
- * 편집용 그래프의 노드가 소유한 플레이백 오브젝트는 쿠킹 때 그래프와 함께 사라진다.
- * 그래서 컴파일은 반드시 '복제'다 — 참조를 옮기는 게 아니다.
- */
 UCLASS(BlueprintType, Blueprintable)
 class MNYS_API UYSPlaybackGraphAsset : public UObject
 {
