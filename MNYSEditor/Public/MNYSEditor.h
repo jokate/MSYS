@@ -1,12 +1,18 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
 #include "Modules/ModuleInterface.h"
+
+class FYSPlaybackGraphNodeFactory;
 
 class FMNYSEditorModule : public IModuleInterface
 {
 public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
+
+private:
+	// 그래프 노드 외형 팩토리. 모듈이 살아 있는 동안 등록 상태를 유지한다.
+	TSharedPtr<FYSPlaybackGraphNodeFactory> PlaybackNodeFactory;
 };

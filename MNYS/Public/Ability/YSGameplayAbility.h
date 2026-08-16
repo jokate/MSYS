@@ -13,6 +13,7 @@
 
 struct FYSPlaybackContext;
 class UYSAbilityPlaybackBase;
+class UYSPlaybackGraphAsset;
 class ALevelSequenceActor;
 class UYSAT_Trace;
 struct FYSMontageSelector;
@@ -146,6 +147,19 @@ public:
 	
 	void NotifyPlaybackChainFinished();
 	UYSAbilityPlaybackBase* GetPlaybackNode(int32 Index);
+
+	/**
+	 * 실제로 쓸 플레이백 배열.
+	 *
+	 * 그래프 에셋이 지정돼 있으면 그쪽 컴파일 산출물이, 아니면 레거시 배열이 나온다.
+	 * 마이그레이션이 끝난 어빌리티와 안 끝난 어빌리티가 같은 코드로 돌아야 하기 때문이다.
+	 */
+	const TArray<TObjectPtr<UYSAbilityPlaybackBase>>& GetPlaybackArray() const;
+
+#if WITH_EDITOR
+	/** 마이그레이션 전용. 그래프 에셋을 무시하고 레거시 배열을 그대로 준다. */
+	const TArray<TObjectPtr<UYSAbilityPlaybackBase>>& GetLegacyPlaybacks() const { return Playbacks; }
+#endif
 	
 	const FGameplayEventData* GetEventData() const { return &CurrentEventData; }
 	
@@ -207,8 +221,16 @@ protected :
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Ability Type")
 	TSet<EYSAbilityType> AbilityTypes;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Ability Playback", Instanced)
-	TArray<UYSAbilityPlaybackBase*> Playbacks;
+	/**
+	 * 플레이백 그래프 에셋. 지정하면 아래 레거시 배열 대신 이쪽을 쓴다.
+	 * 마이그레이션이 끝나면 레거시 배열은 비워도 된다.
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Ability Playback", meta = (DisplayName = "플레이백 그래프"))
+	TObjectPtr<UYSPlaybackGraphAsset> PlaybackGraph;
+
+	/** 레거시 인라인 배열. 그래프 에셋이 없을 때만 쓰인다. */
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Ability Playback", Instanced, meta = (DisplayName = "플레이백 (레거시 인라인)"))
+	TArray<TObjectPtr<UYSAbilityPlaybackBase>> Playbacks;
 	
 	UPROPERTY(VisibleAnywhere)
 	TWeakObjectPtr<UYSAbilityPlaybackBase> CurrentPlayback = nullptr;

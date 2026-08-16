@@ -8,6 +8,7 @@
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "Ability/EventAction/YSAbilityEventAction.h"
 #include "Ability/AbilityComponent/YSAbilityPlayback.h"
+#include "Ability/AbilityComponent/YSPlaybackGraphAsset.h"
 #include "Character/YSCharacterPlayer.h"
 #include "Character/Components/YSCharacterMovementComponent.h"
 #include "Character/Components/YSTargetingComponent.h"
@@ -40,11 +41,13 @@ void UYSGameplayAbility::OnGameplayTagChanged(const FGameplayTag& Tag, bool bInI
 }
 
 void UYSGameplayAbility::ActivePlayback(int32 Index)
-{	
-	if ( Playbacks.IsValidIndex(Index) == false )
+{
+	const TArray<TObjectPtr<UYSAbilityPlaybackBase>>& PlaybackArray = GetPlaybackArray();
+
+	if ( PlaybackArray.IsValidIndex(Index) == false )
 		return;
 
-	UYSAbilityPlaybackBase* Playback = Playbacks[Index];
+	UYSAbilityPlaybackBase* Playback = PlaybackArray[Index];
 
 	if ( IsValid(CurrentPlayback.Get()))
 	{
@@ -253,12 +256,25 @@ void UYSGameplayAbility::NotifyPlaybackChainFinished()
 
 UYSAbilityPlaybackBase* UYSGameplayAbility::GetPlaybackNode(int32 Index)
 {
-	if ( Playbacks.IsValidIndex(Index) )
+	const TArray<TObjectPtr<UYSAbilityPlaybackBase>>& PlaybackArray = GetPlaybackArray();
+
+	if ( PlaybackArray.IsValidIndex(Index) )
 	{
-		return Playbacks[Index];
+		return PlaybackArray[Index];
 	}
 
 	return nullptr;
+}
+
+const TArray<TObjectPtr<UYSAbilityPlaybackBase>>& UYSGameplayAbility::GetPlaybackArray() const
+{
+	// 그래프가 있어도 컴파일이 안 됐으면 비어 있다. 그때는 레거시로 떨어진다.
+	if ( IsValid(PlaybackGraph) && PlaybackGraph->Playbacks.Num() > 0 )
+	{
+		return PlaybackGraph->Playbacks;
+	}
+
+	return Playbacks;
 }
 
 
@@ -332,7 +348,9 @@ void UYSGameplayAbility::OnMontageInterrupted()
 // 해당 부분 리팩토링 필요. 만약에 내부 데이터가 추가 필요한 경우에 날아와야 함.
 void UYSGameplayAbility::SetupPlayBack(const FGameplayEventData* TriggerEventData)
 {
-	if (!Playbacks.IsValidIndex(0))
+	const TArray<TObjectPtr<UYSAbilityPlaybackBase>>& PlaybackArray = GetPlaybackArray();
+
+	if (!PlaybackArray.IsValidIndex(0))
 	{
 		return;
 	}
@@ -347,7 +365,7 @@ void UYSGameplayAbility::SetupPlayBack(const FGameplayEventData* TriggerEventDat
 		StartIndex = FMath::RoundToInt(TriggerEventData->EventMagnitude);
 	}
 
-	ActivePlayback(Playbacks.IsValidIndex(StartIndex) ? StartIndex : 0);
+	ActivePlayback(PlaybackArray.IsValidIndex(StartIndex) ? StartIndex : 0);
 }
 
 const FYSSkillInfo* UYSGameplayAbility::GetSkillInfo() const
