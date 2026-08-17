@@ -97,9 +97,6 @@ bool UYSSaveComponent::TryCommitPending()
 	}
 
 	SavedTechniques.Add(PendingTechnique);
-	
-	PendingTechnique.Reset();
-
 	RefreshStateTags();
 	OnSaveStateChanged.Broadcast();
 
