@@ -19,15 +19,14 @@ AYSAttackableBase::AYSAttackableBase()
 	
 	RootMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RootMesh"));
 	RootMesh->SetupAttachment(SceneRoot);
-
 }
 
 void AYSAttackableBase::AllocateInstigator(AActor* InInstigator)
 {
-	OwnerActor = InInstigator;
+	InstigatorActor = InInstigator;
 }
 
-void AYSAttackableBase::OnSpawnInitialize(AActor* InOwnerActor, const TSharedPtr<FYSAbilityHitContext>& InHitContext)
+void AYSAttackableBase::OnSpawnInitialize(AActor* InOwnerActor, AActor* InInstigator, const TSharedPtr<FYSAbilityHitContext>& InHitContext)
 {
 	AllocateInstigator(InOwnerActor);
 	if (InHitContext.IsValid())

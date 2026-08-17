@@ -273,7 +273,7 @@ AActor* UYSBlueprintFunctionLibrary::SpawnByConfig(UObject* WorldContext, const 
 
 	if ( IYSSpawnInitializable* Initializable = Cast<IYSSpawnInitializable>(SpawnedActor) )
 	{
-		Initializable->OnSpawnInitialize(Instigator, HitContext);
+		Initializable->OnSpawnInitialize(OwnerActor, Instigator, HitContext);
 	}
 	
 	if ( IsValid(SpawnedActor) == false )

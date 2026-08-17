@@ -46,7 +46,7 @@ protected :
 
 	/** 주인의 메시·애님BP를 그대로 가져온다. 분신은 늘 지금의 혼과 같아 보여야 한다. */
 	void MirrorAppearance(const ACharacter* InMaster);
-	virtual void OnSpawnInitialize(AActor* InOwnerActor, const TSharedPtr<FYSAbilityHitContext>& HitContext) override;
+	virtual void OnSpawnInitialize(AActor* InOwnerActor, AActor* InInstigator, const TSharedPtr<FYSAbilityHitContext>& HitContext) override;
 
 protected :
 	UPROPERTY(VisibleAnywhere, Category = "YS | Echo", meta = (DisplayName = "어빌리티 시스템"))

@@ -23,5 +23,5 @@ class MNYS_API IYSSpawnInitializable
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	virtual void OnSpawnInitialize(AActor* InOwnerActor, const TSharedPtr<FYSAbilityHitContext>& HitContext) = 0;
+	virtual void OnSpawnInitialize(AActor* InOwnerActor, AActor* InInstigator,  const TSharedPtr<FYSAbilityHitContext>& HitContext) = 0;
 };

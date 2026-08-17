@@ -104,7 +104,7 @@ void AYSSaveEcho::MirrorAppearance(const ACharacter* InMaster)
 	SetActorLocation(ActorLocation);
 }
 
-void AYSSaveEcho::OnSpawnInitialize(AActor* InOwnerActor, const TSharedPtr<FYSAbilityHitContext>& HitContext)
+void AYSSaveEcho::OnSpawnInitialize(AActor* InOwnerActor, AActor* InInstigator, const TSharedPtr<FYSAbilityHitContext>& HitContext)
 {
 	ACharacter* InMaster = Cast<ACharacter>(InOwnerActor);
 	UYSSaveComponent* SaveComponent = UYSSaveComponent::Get(InOwnerActor);

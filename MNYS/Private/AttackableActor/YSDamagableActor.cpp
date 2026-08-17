@@ -88,7 +88,7 @@ void AYSDamagableActor::_OnTraceHit(const TArray<FHitResult>& HitResults, const 
 void AYSDamagableActor::OnActivate_Implementation()
 {
 	Super::OnActivate_Implementation();
-	TraceObject = UYSTraceObject::Create(this, this, OwnerActor.Get(), TraceConfig);
+	TraceObject = UYSTraceObject::Create(this, this, InstigatorActor.Get(), TraceConfig);
 	TraceObject->OnHitCountDepleted.AddDynamic(this, &AYSDamagableActor::_OnHitCountDepleted);
 	TraceObject->OnTraceHit.AddDynamic(this, &AYSDamagableActor::_OnTraceHit);
 	

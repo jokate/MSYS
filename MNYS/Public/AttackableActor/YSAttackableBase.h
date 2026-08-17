@@ -22,7 +22,7 @@ public:
 	AYSAttackableBase();
 	virtual void AllocateInstigator(AActor* InInstigator);
 	
-	virtual void OnSpawnInitialize(AActor* InOwnerActor, const TSharedPtr<FYSAbilityHitContext>& InHitContext) override;
+	virtual void OnSpawnInitialize(AActor* InOwnerActor, AActor* InInstigator, const TSharedPtr<FYSAbilityHitContext>& InHitContext) override;
 	
 	void InitializeHitContext(const TSharedPtr<FYSAbilityHitContext>& InHitContext)
 	{
@@ -59,6 +59,8 @@ protected :
 	UPROPERTY()
 	TWeakObjectPtr<AActor> OwnerActor;
 	
+	UPROPERTY()
+	TWeakObjectPtr<AActor> InstigatorActor;
 	// 해당 부분은 차후 활용 여지가 높아서 만들어 놓는다.
 	UPROPERTY()
 	TWeakObjectPtr<AActor> TargetActor;
