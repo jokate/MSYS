@@ -294,6 +294,73 @@ void UYSCameraManageComponent::TickControlPitch(const FYSCameraEffectParams* Par
 	}
 }
 
+bool UYSCameraManageComponent::GetNormalizedCursorOffset(float DeadZone, FVector2D& OutOffset) const
+{
+	if ( OwnerPlayerController.IsValid() == false )
+	{
+		return false;
+	}
+
+	int32 SizeX = 0;
+	int32 SizeY = 0;
+	OwnerPlayerController->GetViewportSize(SizeX, SizeY);
+
+	float MouseX = 0.f;
+	float MouseY = 0.f;
+
+	if ( SizeX <= 0 || SizeY <= 0 || OwnerPlayerController->GetMousePosition(MouseX, MouseY) == false )
+	{
+		return false;
+	}
+
+	FVector2D Normalized(
+		( MouseX - SizeX * 0.5f ) / ( SizeX * 0.5f ),
+		( MouseY - SizeY * 0.5f ) / ( SizeY * 0.5f ));
+
+	const float Length = Normalized.Size();
+
+	if ( Length <= DeadZone )
+	{
+		OutOffset = FVector2D::ZeroVector;
+		return true;
+	}
+
+	// 데드존을 뺀 나머지를 다시 0~1 로 편다. 안 그러면 데드존 경계에서 값이 튄다.
+	const float Scaled = FMath::Min(( Length - DeadZone ) / ( 1.f - DeadZone ), 1.f);
+
+	OutOffset = Normalized / Length * Scaled;
+	return true;
+}
+
+void UYSCameraManageComponent::TickCursorLean(const FYSCameraEffectParams* Params, float DeltaTime)
+{
+	USpringArmComponent* Boom = OwnerPlayer.IsValid() ? OwnerPlayer->GetCameraBoom() : nullptr;
+
+	if ( IsValid(Boom) == false )
+	{
+		return;
+	}
+
+	FVector Target = FVector::ZeroVector;
+	float Speed = RestoreInterpSpeed;
+
+	FVector2D Cursor = FVector2D::ZeroVector;
+
+	if ( Params != nullptr && Params->bUseCursorCameraLean && GetNormalizedCursorOffset(Params->CursorLeanDeadZone, Cursor) )
+	{
+		Speed = Params->CursorLeanInterpSpeed;
+
+		// 요만 남긴 기저로 민다. 피치까지 섞으면 부감에서 카메라가 지면으로 파고든다.
+		const FRotationMatrix Basis(FRotator( 0.f, OwnerPlayerController->GetControlRotation().Yaw, 0.f ));
+
+		// 스크린 Y 는 아래로 증가한다. 커서가 위면 전방으로 밀어야 한다.
+		Target = Basis.GetUnitAxis(EAxis::X) * ( -Cursor.Y ) * Params->CursorLeanDistance
+			   + Basis.GetUnitAxis(EAxis::Y) * (  Cursor.X ) * Params->CursorLeanDistance;
+	}
+
+	Boom->TargetOffset = FMath::VInterpTo(Boom->TargetOffset, Target, DeltaTime, Speed);
+}
+
 void UYSCameraManageComponent::TickCameraEffect(float DeltaTime)
 {
 	const FYSCameraModeRequest* ActiveMode = ResolveActiveMode();
@@ -327,22 +394,31 @@ void UYSCameraManageComponent::TickCameraEffect(float DeltaTime)
 	Boom->SocketOffset  = FMath::VInterpTo(Boom->SocketOffset,  TargetOff, DeltaTime, Speed);
 	Cam->SetRelativeRotation(FMath::RInterpTo(Cam->GetRelativeRotation(), Rotator, DeltaTime, Speed));
 	Cam->FieldOfView = FMath::FInterpTo(Cam->FieldOfView, TargetFOV, DeltaTime, Speed);
-	OwnerPlayer->bUseControllerRotationYaw = bHasMode ? ActiveMode->Params.bUseControllerRotationYaw : bControlYaw;
+	bControlYawLockRequested = bHasMode && ActiveMode->Params.bLockControlYaw;
+
+	// 요가 잠기면 컨트롤 회전은 상수가 된다. 그걸 캐릭터에 물려두면 캐릭터까지 굳어
+	// 조준 방향을 향하려는 회전과 매 틱 충돌한다.
+	const bool bWantsControllerYaw = bHasMode ? ActiveMode->Params.bUseControllerRotationYaw : bControlYaw;
+
+	OwnerPlayer->bUseControllerRotationYaw = bControlYawLockRequested ? false : bWantsControllerYaw;
 	OwnerPlayer->GetCharacterMovement()->bOrientRotationToMovement = bHasMode ? ActiveMode->Params.bOrientToControlRotation : bOriginControl;
 
 	TickControlPitch(bHasMode ? &ActiveMode->Params : nullptr, DeltaTime, Speed);
+	TickCursorLean(bHasMode ? &ActiveMode->Params : nullptr, DeltaTime);
 
 	if ( bHasMode == false )
 	{
 		const bool bArmDone = FMath::IsNearlyEqual(Boom->TargetArmLength, DefaultArmLength, 1.f);
 		const bool bFOVDone = FMath::IsNearlyEqual(Cam->FieldOfView, DefaultFOV, 0.5f);
+		const bool bLeanDone = Boom->TargetOffset.IsNearlyZero(1.f);
 
 		// 피치 복귀가 남아 있으면 아직 정착이 아니다.
 		// 여기서 참으로 만들면 다음 틱부터 조기 반환에 걸려 부감으로 굳어버린다.
-		if ( bArmDone && bFOVDone && bIsControlPitchOverridden == false )
+		if ( bArmDone && bFOVDone && bLeanDone && bIsControlPitchOverridden == false )
 		{
 			Boom->TargetArmLength = DefaultArmLength;
 			Boom->SocketOffset  = DefaultSocketOffset;
+			Boom->TargetOffset  = FVector::ZeroVector;
 			Cam->FieldOfView      = DefaultFOV;
 			Cam->SetRelativeRotation(DefaultRotation);
 			bCameraSettled        = true;

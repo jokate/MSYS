@@ -306,25 +306,40 @@ struct FYSCameraEffectParams
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "Yaw 회전"))
 	bool bUseControllerRotationYaw = false;
-
-	/**
-	 * 컨트롤 회전의 피치를 이 값으로 잠근다. 탑뷰·부감을 만드는 유일한 수단이다.
-	 *
-	 * 위의 RelativeRotator 로는 안 되는 이유 —
-	 * 스프링암이 bUsePawnControlRotation = true 라 컨트롤 회전을 따라가고,
-	 * RelativeRotator 는 그 스프링암 끝에 달린 카메라의 상대 회전일 뿐이다.
-	 * 즉 카메라는 여전히 캐릭터 뒤 눈높이에 있으면서 고개만 숙인다.
-	 * 카메라를 머리 위로 올리려면 스프링암 자체가 내려다봐야 하고,
-	 * 그건 컨트롤 회전을 건드리는 수밖에 없다.
-	 *
-	 * Yaw 는 잠그지 않는다 — 부감에서도 배치 방향은 플레이어가 정해야 한다.
-	 */
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "컨트롤 피치 고정 사용"))
 	bool bOverrideControlPitch = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera",
 		meta = (DisplayName = "고정할 컨트롤 피치 (음수 = 내려다봄)", EditCondition = "bOverrideControlPitch", EditConditionHides, ClampMin = "-89.0", ClampMax = "89.0"))
 	float ControlPitch = -55.f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "컨트롤 요 고정 사용"))
+	bool bLockControlYaw = false;
+
+	/**
+	 * 커서가 화면 중앙에서 벗어난 만큼 카메라를 그쪽으로 민다.
+	 *
+	 * 조준점이 아니라 커서의 스크린 좌표를 쓴다 —
+	 * 조준점(월드)을 기준으로 밀면 카메라가 움직인 만큼 조준점이 더 밀려나고
+	 * 그게 다시 카메라를 미는 양의 되먹임이 되어 항상 한계치까지 튀어나간다.
+	 * 스크린 좌표는 카메라 위치와 무관하므로 그 고리가 생기지 않는다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "커서 방향 카메라 이동 사용"))
+	bool bUseCursorCameraLean = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera",
+		meta = (DisplayName = "커서 카메라 최대 이동 거리", EditCondition = "bUseCursorCameraLean", EditConditionHides, ClampMin = "0.0"))
+	float CursorLeanDistance = 700.f;
+
+	/** 이 반경 안에서는 카메라가 반응하지 않는다. 0이면 커서를 조금만 흔들어도 화면이 따라 흔들린다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera",
+		meta = (DisplayName = "커서 카메라 데드존", EditCondition = "bUseCursorCameraLean", EditConditionHides, ClampMin = "0.0", ClampMax = "0.99"))
+	float CursorLeanDeadZone = 0.15f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera",
+		meta = (DisplayName = "커서 카메라 이동 보간 속도", EditCondition = "bUseCursorCameraLean", EditConditionHides, ClampMin = "0.1"))
+	float CursorLeanInterpSpeed = 7.f;
 };
 
 USTRUCT(BlueprintType)

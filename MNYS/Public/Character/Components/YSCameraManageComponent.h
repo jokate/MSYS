@@ -121,10 +121,17 @@ private:
 
 public :
 	bool IsControlPitchLocked() const { return bControlPitchLockRequested; }
+	bool IsControlYawLocked() const { return bControlYawLockRequested; }
 
 protected :
 
 	void TickControlPitch(const FYSCameraEffectParams* Params, float DeltaTime, float Speed);
+
+	/** 커서가 화면 중앙에서 벗어난 만큼 스프링암의 주시점을 민다. */
+	void TickCursorLean(const FYSCameraEffectParams* Params, float DeltaTime);
+
+	/** 커서를 화면 중앙 기준 -1~1 로 정규화한다. 데드존을 뺀 뒤 단위원으로 클램프한다. */
+	bool GetNormalizedCursorOffset(float DeadZone, FVector2D& OutOffset) const;
 
 private:
 	// 우선순위로 정렬하지 않는다. 요청 수가 한 자릿수라 매 틱 선형 탐색이 더 싸다.
@@ -158,4 +165,6 @@ private:
 	bool bIsControlPitchOverridden = false;
 	
 	bool bControlPitchLockRequested = false;
+
+	bool bControlYawLockRequested = false;
 };

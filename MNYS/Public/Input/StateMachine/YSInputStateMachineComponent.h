@@ -118,21 +118,14 @@ protected:
 	// 내 생각에는 만약 InputHistory를 단일 저장한다 ( 약간 Map의 형식이 맞겠지.. )
 	UPROPERTY()
 	TArray<FYSInputHistory> InputHistories;
-
-	/**
-	 * 지금 눌려 있는 입력들. Pressed에 넣고 Released/Canceled에 뺀다.
-	 *
-	 * 상태 접두(Idle., Aim.)가 붙지 않은 원본 태그로 관리한다.
-	 * Idle에서 누르고 Aim으로 전환된 뒤 떼면 해석된 태그가 달라져
-	 * 넣은 키와 빼는 키가 어긋나고, 그 입력은 영영 눌린 것으로 남는다.
-	 */
+	
 	UPROPERTY(VisibleAnywhere, Category = "YS | Input", meta = (DisplayName = "현재 눌려 있는 입력"))
 	TSet<FGameplayTag> HeldInputTags;
 
 
 	// 해당 값은 조작감에 따라서 처리되기로 합시다.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float InputProcessingTime = 0.33f;
+	float InputProcessingTime = 0.5f;
 	
 	// Tick이나 타이머 돌면서 Trim 처리.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)

@@ -165,24 +165,20 @@ void AYSCharacterPlayer::Look(const FInputActionValue& Value)
 	{
 		return;
 	}
-	UYSTargetingComponent* Targeting = UYSTargetingComponent::Get(this);
-	
-	if ( IsValid(Targeting) && Targeting->IsCursorMode() )
-	{
-		return;
-	}
-	
-	
-	AddControllerYawInput(LookAxisVector.X);
-	
 	const UYSCameraManageComponent* CameraManager = UYSCameraManageComponent::Get(this);
 
-	if ( IsValid(CameraManager) && CameraManager->IsControlPitchLocked() )
+	// 요가 잠기면 마우스 X 는 카메라가 아니라 커서 몫이다.
+	// 여기서 흘려보내면 캐릭터와 스프링암이 같이 돌아, 커서 밑의 월드 지점이
+	// 화면과 함께 딸려오면서 조준이 미끄러진다.
+	if ( IsValid(CameraManager) == false || CameraManager->IsControlYawLocked() == false )
 	{
-		return;
+		AddControllerYawInput(LookAxisVector.X);
 	}
 
-	AddControllerPitchInput(LookAxisVector.Y);
+	if ( IsValid(CameraManager) == false || CameraManager->IsControlPitchLocked() == false )
+	{
+		AddControllerPitchInput(LookAxisVector.Y);
+	}
 }
 
 void AYSCharacterPlayer::Move(const FInputActionValue& Value)

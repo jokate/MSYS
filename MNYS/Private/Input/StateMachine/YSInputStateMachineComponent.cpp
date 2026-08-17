@@ -24,7 +24,6 @@ UYSInputStateMachineComponent::UYSInputStateMachineComponent()
 }
 
 
-// Called when the game starts
 void UYSInputStateMachineComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -125,10 +124,6 @@ bool UYSInputStateMachineComponent::ContainsInputHistory(const FGameplayTag& Tag
 
 void UYSInputStateMachineComponent::ConsumeInputHistory(const FGameplayTag& Tag, EYSInputPhase InputPhase)
 {
-	// 배열 원소의 참조를 Remove에 되먹이면 TArray::CheckAddress에 걸린다.
-	// RemoveAll이 제자리 압축을 하는 동안 그 참조가 가리키는 값이 바뀌기 때문이다.
-	// 인덱스로 잡아 RemoveAt 하면 별칭 문제가 없고, 소비 의미에도 맞다 —
-	// Remove는 일치하는 항목을 전부 지우지만 소비는 가장 오래된 1건만 지워야 한다.
 	const int32 FoundIndex = FindLiveHistoryIndex(Tag, InputPhase);
 
 	if ( FoundIndex != INDEX_NONE )
@@ -183,10 +178,7 @@ void UYSInputStateMachineComponent::AcceptInput(const FGameplayTag& Tag, EYSInpu
 
 	if ( bIsInputBlocked )
 		return;
-
-	// 상태 해석 전에 원본 태그로 한 번 흘린다.
-	// 여기서 나가야 State 조합을 등록하지 않아도 되고, 활성 콤보의
-	// TryTransition 을 건드리지 않아 콤보가 끊기지 않는다.
+	
 	OnRawInputAccepted.Broadcast(Tag, InputPhase);
 
 	// 커맨드 버퍼에는 "누름"만 먹인다.
