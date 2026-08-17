@@ -158,8 +158,12 @@ void UYSInputStateMachineComponent::OnTagUpdated(const FGameplayTag& Tag, bool b
 	}
 }
 
+
 void UYSInputStateMachineComponent::TrimCommandInput()
 {
+	// 커맨드는 입력이 들어온 경우에만 처리.
+	// 타이머로 했을 시, 조작감이 매우 이상한 부분이 목격되어서 수정 조치.
+	// 일정 시간 간격으로 체크했을 시, 커맨드 인식이 더딘부분이 확인되었음.
 	if ( ComboInputTags.Num() == 0 )
 	{
 		return;
