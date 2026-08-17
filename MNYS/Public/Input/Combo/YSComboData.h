@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "General/YSStruct.h"
 #include "UObject/Object.h"
 #include "YSComboData.generated.h"
 
@@ -24,5 +25,5 @@ struct FYSCommandSequence : public FTableRowBase
 	UPROPERTY(EditDefaultsOnly, meta = (Categories = "Input"))
 	TArray<FGameplayTag> CommandSequence;
 
-	bool IsSatisfiedCommand(const TArray<FGameplayTag>& InputGameplayTags) const;
+	bool IsSatisfiedCommand(const TArray<FYSTagHistory>& InputGameplayTags) const;
 };

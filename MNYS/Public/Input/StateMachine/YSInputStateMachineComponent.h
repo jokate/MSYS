@@ -14,6 +14,7 @@ class UYSAbilitySystemComponent;
 struct FYSCommandSequence;
 class UYSInputStates;
 
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnRawInputAccepted, const FGameplayTag&, InputTag, EYSInputPhase, InputPhase);
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -91,6 +92,8 @@ protected:
 
 	UFUNCTION()
 	void OnTagUpdated(const FGameplayTag& Tag, bool bActive);
+	
+	void TrimCommandInput();
 
 
 public :
@@ -113,7 +116,7 @@ protected:
 	FTimerHandle InputTrimTimerHandle;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TArray<FGameplayTag> ComboInputTags;
+	TArray<FYSTagHistory> ComboInputTags;
 	
 	// 내 생각에는 만약 InputHistory를 단일 저장한다 ( 약간 Map의 형식이 맞겠지.. )
 	UPROPERTY()
@@ -121,7 +124,6 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, Category = "YS | Input", meta = (DisplayName = "현재 눌려 있는 입력"))
 	TSet<FGameplayTag> HeldInputTags;
-
 
 	// 해당 값은 조작감에 따라서 처리되기로 합시다.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)

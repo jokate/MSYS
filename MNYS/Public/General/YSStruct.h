@@ -172,15 +172,36 @@ enum class EYSPlaybackEvent : uint8
 	CustomEvent		UMETA(DisplayName = "커스텀 이벤트")
 };
 
+
 USTRUCT(BlueprintType)
-struct FYSInputHistory
+struct FYSTagHistory
+{
+	GENERATED_BODY()
+
+	FYSTagHistory() = default;
+	
+	FYSTagHistory(const FGameplayTag& InInputTag, float InInputTime = 0.f)
+		: InputTag(InInputTag), InputTime(InInputTime)
+	{
+	}
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FGameplayTag InputTag;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float InputTime;
+};
+
+
+USTRUCT(BlueprintType)
+struct FYSInputHistory : public FYSTagHistory
 {
 	GENERATED_BODY()
 	
 public : 
 	FYSInputHistory() = default;
 	FYSInputHistory(const FGameplayTag& InInputTag, EYSInputPhase InInputPhase = EYSInputPhase::Pressed, float InInputTime = 0.f)
-		: InputTag(InInputTag), InputPhase(InInputPhase), InputTime(InInputTime)
+		: FYSTagHistory{InInputTag, InInputTime}, InputPhase(InInputPhase)
 	{
 	}
 	
@@ -189,14 +210,8 @@ public :
 		return InputTag == Other.InputTag && InputPhase == Other.InputPhase;
 	}
 	
-	UPROPERTY(EditDefaultsOnly, meta = (DisplayName="인풋 태그"))
-	FGameplayTag InputTag;
-	
 	UPROPERTY(EditDefaultsOnly, meta = (DisplayName="인풋 페이즈"))
 	EYSInputPhase InputPhase = EYSInputPhase::Pressed;
-	
-	UPROPERTY()
-	float InputTime = 0.f;
 };
 
 // 그래프를 흐르는 컨텍스트

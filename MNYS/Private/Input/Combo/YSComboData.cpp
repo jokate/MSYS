@@ -3,14 +3,14 @@
 
 #include "Input/Combo/YSComboData.h"
 
-bool FYSCommandSequence::IsSatisfiedCommand(const TArray<FGameplayTag>& InputGameplayTags) const
+bool FYSCommandSequence::IsSatisfiedCommand(const TArray<FYSTagHistory>& InputGameplayTags) const
 {
 	for (int32 i = 0; i < CommandSequence.Num(); ++i)
 	{
 		if ( InputGameplayTags.IsValidIndex(i) == false )
 			return false;
 
-		if ( InputGameplayTags[i].MatchesTagExact(CommandSequence[i]) == false )
+		if ( InputGameplayTags[i].InputTag.MatchesTagExact(CommandSequence[i]) == false )
 			return false;
 	}
 

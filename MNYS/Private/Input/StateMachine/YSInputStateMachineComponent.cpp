@@ -40,7 +40,6 @@ void UYSInputStateMachineComponent::BeginPlay()
 	}
 
 	AddStateStack(EYSInputStatesType::Idle);
-	GetWorld()->GetTimerManager().SetTimer(ComboTimerHandle, this, &UYSInputStateMachineComponent::ResetInputTags, InputProcessingTime, true);
 	GetWorld()->GetTimerManager().SetTimer(InputTrimTimerHandle, this, &UYSInputStateMachineComponent::TrimInputHistory, InputExpirationTime, true);
 	
 	AbilitySystemComponent = UYSAbilitySystemComponent::Get(GetOwner());
@@ -57,7 +56,7 @@ void UYSInputStateMachineComponent::TickComponent(float DeltaTime, enum ELevelTi
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	
-	
+	TrimCommandInput();
 }
 
 void UYSInputStateMachineComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -136,7 +135,8 @@ void UYSInputStateMachineComponent::ConsumeInputHistory(const FGameplayTag& Tag,
 FGameplayTag UYSInputStateMachineComponent::FindBestCombo(const FGameplayTag& Tag)
 {
 	FGameplayTag BestTag = Tag;
-	ComboInputTags.Add(Tag);
+	FYSTagHistory ComboInputTag = FYSTagHistory(Tag, GetWorld()->GetTimeSeconds());
+	ComboInputTags.Add(ComboInputTag);
 	for ( const FYSCommandSequence* ComboSequence : AllCommandSequence )
 	{
 		if ( ComboSequence->IsSatisfiedCommand(ComboInputTags) == true )
@@ -155,6 +155,23 @@ void UYSInputStateMachineComponent::OnTagUpdated(const FGameplayTag& Tag, bool b
 	if ( Tag == YSTags::BlockInput )
 	{
 		bIsInputBlocked = bActive;
+	}
+}
+
+void UYSInputStateMachineComponent::TrimCommandInput()
+{
+	if ( ComboInputTags.Num() == 0 )
+	{
+		return;
+	}
+
+	for ( int32 Index = ComboInputTags.Num() - 1; Index >= 0; --Index )
+	{
+		const FYSTagHistory& History = ComboInputTags[Index];
+		if ( (GetWorld()->GetTimeSeconds() - History.InputTime) > InputExpirationTime )
+		{
+			ComboInputTags.RemoveAt(Index);
+		}
 	}
 }
 
