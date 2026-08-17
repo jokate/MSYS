@@ -151,10 +151,12 @@ public:
 	/**
 	 * 실제로 쓸 플레이백 배열.
 	 *
-	 * 그래프 에셋이 지정돼 있으면 그쪽 컴파일 산출물이, 아니면 레거시 배열이 나온다.
+	 * 그래프 에셋이 지정돼 있으면 그쪽 산출물의 사본이, 아니면 레거시 배열이 나온다.
 	 * 마이그레이션이 끝난 어빌리티와 안 끝난 어빌리티가 같은 코드로 돌아야 하기 때문이다.
+	 *
+	 * const 가 아닌 이유 — 첫 호출에서 사본을 만든다. 아래 EnsureRuntimePlaybacks 참고.
 	 */
-	const TArray<TObjectPtr<UYSAbilityPlaybackBase>>& GetPlaybackArray() const;
+	const TArray<TObjectPtr<UYSAbilityPlaybackBase>>& GetPlaybackArray();
 
 #if WITH_EDITOR
 	/** 마이그레이션 전용. 그래프 에셋을 무시하고 레거시 배열을 그대로 준다. */
@@ -231,6 +233,19 @@ protected :
 	/** 레거시 인라인 배열. 그래프 에셋이 없을 때만 쓰인다. */
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Ability Playback", Instanced, meta = (DisplayName = "플레이백 (레거시 인라인)"))
 	TArray<TObjectPtr<UYSAbilityPlaybackBase>> Playbacks;
+
+private:
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UYSAbilityPlaybackBase>> RuntimePlaybacks;
+
+	/** 사본을 뜬 시점의 그래프 컴파일 일련번호. 에디터에서 다시 컴파일되면 사본을 새로 뜬다. */
+	UPROPERTY(Transient)
+	int32 CachedPlaybackSerial = INDEX_NONE;
+
+	/** 사본이 없거나 낡았으면 다시 만든다. 어빌리티 인스턴스당 한 번이면 끝난다. */
+	void EnsureRuntimePlaybacks();
+
+protected:
 	
 	UPROPERTY(VisibleAnywhere)
 	TWeakObjectPtr<UYSAbilityPlaybackBase> CurrentPlayback = nullptr;

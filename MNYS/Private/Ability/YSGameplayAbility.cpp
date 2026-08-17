@@ -211,11 +211,6 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 		}
 	}
 	
-	// 조준을 정리한다.
-	// 몽타주 NotifyEnd 로 Event.AimStop 을 쏴도 이 시점엔 WaitGameplayEvent 태스크가 이미 죽어
-	// 이벤트가 버려진다. 게다가 InstancedPerActor 라 어빌리티 인스턴스가 살아남아
-	// 타게팅 컴포넌트의 약참조 안전망도 걸리지 않는다. 그래서 여기서 직접 끊는다.
-	// EndTargeting 이 요청자를 대조하므로 조준을 쓰지 않은 어빌리티에는 아무 영향이 없다.
 	if ( UYSTargetingComponent* Targeting = UYSTargetingComponent::Get(OwnerActor) )
 	{
 		Targeting->EndTargeting(this);
@@ -242,6 +237,7 @@ bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag, EYS
 		return false;
 	}
 	
+	
 	// 바로 트랜지션 가능하면 Dispatch Next를 호출하는게 좋을 듯 싶다.. ( 원래는 어셉트 되고 예약이 된다면 return true를 시켰었음..
 	// 사유는 인풋에 따른 처리가 부가적으로 필요한 경우에는 TryTransition에서 true를 리턴해서 인풋이 처리되었다는 것을 알려주는게 좋을 것 같아서임
 	//  ( 예시로는 콤보 입력이 들어왔을 때, 콤보 입력이 처리된 건지, 아니면 인풋이 무시된 건지 구분하기 위해서 )
@@ -266,12 +262,40 @@ UYSAbilityPlaybackBase* UYSGameplayAbility::GetPlaybackNode(int32 Index)
 	return nullptr;
 }
 
-const TArray<TObjectPtr<UYSAbilityPlaybackBase>>& UYSGameplayAbility::GetPlaybackArray() const
+void UYSGameplayAbility::EnsureRuntimePlaybacks()
 {
-	// 그래프가 있어도 컴파일이 안 됐으면 비어 있다. 그때는 레거시로 떨어진다.
-	if ( IsValid(PlaybackGraph) && PlaybackGraph->Playbacks.Num() > 0 )
+	if ( IsValid(PlaybackGraph) == false || PlaybackGraph->Playbacks.Num() == 0 )
 	{
-		return PlaybackGraph->Playbacks;
+		return;
+	}
+
+	// 같은 컴파일 결과로 이미 사본을 떴으면 그대로 쓴다.
+	// 개수만 비교하면 에디터에서 노드를 바꿔 다시 컴파일했을 때 낡은 사본을 계속 쓰게 된다.
+	if ( RuntimePlaybacks.Num() > 0 && CachedPlaybackSerial == PlaybackGraph->CompileSerial )
+	{
+		return;
+	}
+
+	RuntimePlaybacks.Reset(PlaybackGraph->Playbacks.Num());
+
+	for ( const TObjectPtr<UYSAbilityPlaybackBase>& Source : PlaybackGraph->Playbacks )
+	{
+		// Outer 를 this 로 둔다. 이 어빌리티 인스턴스와 수명을 같이하고,
+		// 다른 액터의 어빌리티 인스턴스는 자기 사본을 따로 갖는다.
+		RuntimePlaybacks.Add(IsValid(Source) ? DuplicateObject<UYSAbilityPlaybackBase>(Source, this) : nullptr);
+	}
+
+	CachedPlaybackSerial = PlaybackGraph->CompileSerial;
+}
+
+const TArray<TObjectPtr<UYSAbilityPlaybackBase>>& UYSGameplayAbility::GetPlaybackArray()
+{
+	EnsureRuntimePlaybacks();
+
+	// 그래프가 있어도 컴파일이 안 됐으면 비어 있다. 그때는 레거시로 떨어진다.
+	if ( RuntimePlaybacks.Num() > 0 )
+	{
+		return RuntimePlaybacks;
 	}
 
 	return Playbacks;

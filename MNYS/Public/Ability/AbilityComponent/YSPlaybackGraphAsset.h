@@ -25,6 +25,15 @@ public:
 	UPROPERTY(VisibleAnywhere, Instanced, Category = "YS | Compiled", meta = (DisplayName = "컴파일된 플레이백 (읽기 전용)"))
 	TArray<TObjectPtr<UYSAbilityPlaybackBase>> Playbacks;
 
+	/**
+	 * 컴파일할 때마다 오르는 번호.
+	 *
+	 * 어빌리티는 이 산출물을 자기 인스턴스로 복제해서 쓴다(재생 상태가 오브젝트에 남기 때문).
+	 * 이 번호가 없으면 에디터에서 그래프를 고쳐도 이미 사본을 뜬 어빌리티는 낡은 값을 계속 쓴다.
+	 */
+	UPROPERTY(VisibleAnywhere, Category = "YS | Compiled", meta = (DisplayName = "컴파일 일련번호"))
+	int32 CompileSerial = 0;
+
 #if WITH_EDITORONLY_DATA
 	/** 편집용 그래프. 에디터 모듈이 생성하고 소유한다. 런타임은 이 값을 보지 않는다. */
 	UPROPERTY()

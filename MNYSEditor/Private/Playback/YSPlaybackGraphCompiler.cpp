@@ -165,5 +165,8 @@ void FYSPlaybackGraphCompiler::Compile(UYSPlaybackGraphAsset* Asset)
 		Asset->Playbacks[Index]->Transitions = MoveTemp(Edges);
 	}
 
+	// 산출물이 바뀌었음을 알린다. 이미 사본을 뜬 어빌리티가 이 번호를 보고 다시 뜬다.
+	++Asset->CompileSerial;
+
 	Asset->MarkPackageDirty();
 }
