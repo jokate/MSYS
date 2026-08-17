@@ -120,7 +120,7 @@ struct FYSTargetingShape_SelfCircle : public FYSTargetingShape
 	{
 		// 시전자가 곧 중심이라 사거리 링이 도형 자체와 겹친다. 기본값을 꺼둔다.
 		bShowRangeRing = false;
-		bClampToRange  = false;
+		bClampToRange  = true;
 	}
 
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "반경"))

@@ -312,7 +312,7 @@ FVector UYSTargetingComponent::SnapToGround(const FVector& Location) const
 	if (UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(World))
 	{
 		FNavLocation NavLocation;
-		if (NavSystem->ProjectPointToNavigation(Location, NavLocation, FVector(YS_PROJECTION_MAX_DISTANCE)))
+		if (NavSystem->ProjectPointToNavigation(Location, NavLocation, FVector(0.f, 0.f, YS_PROJECTION_MAX_DISTANCE)))
 		{
 			return NavLocation.Location;
 		}

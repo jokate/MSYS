@@ -304,7 +304,7 @@ FTransform UYSBlueprintFunctionLibrary::CalculateSpawnTransform(UObject* WorldCo
 		if (UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(WorldContext))
 		{
 			FNavLocation NavLocation;
-			if (NavSystem->ProjectPointToNavigation(Position, NavLocation, FVector(YS_PROJECTION_MAX_DISTANCE)))
+			if (NavSystem->ProjectPointToNavigation(Position, NavLocation, FVector(0.f, 0.f, YS_PROJECTION_MAX_DISTANCE)))
 			{
 				Position = NavLocation.Location;
 			}
