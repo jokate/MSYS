@@ -6,9 +6,11 @@
 #include "ConnectionDrawingPolicy.h"
 #include "Playback/YSPlaybackGraphNode.h"
 #include "Styling/AppStyle.h"
+#include "Styling/StyleColors.h"
 #include "Widgets/Images/SImage.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/SBoxPanel.h"
+#include "Widgets/SOverlay.h"
 #include "Widgets/Text/STextBlock.h"
 
 void SGraphNodeYSPlaybackTransition::Construct(const FArguments& InArgs, UYSPlaybackGraphNode_Transition* InNode)
@@ -26,17 +28,47 @@ void SGraphNodeYSPlaybackTransition::UpdateGraphNode()
 	RightNodeBox.Reset();
 	LeftNodeBox.Reset();
 
+	// 선 위에 얹히는 작은 알약이다. 상자가 아니라 아이콘에 가깝다.
 	GetOrAddSlot(ENodeZone::Center)
 	.HAlign(HAlign_Center)
 	.VAlign(VAlign_Center)
 	[
-		SNew(SBorder)
-		.BorderImage(FAppStyle::GetBrush(TEXT("Graph.StateNode.Body")))
-		.Padding(FMargin(10.f, 4.f))
+		SNew(SOverlay)
+
+		+ SOverlay::Slot()
+		.Padding(2.f)
 		[
-			SNew(STextBlock)
-			.Text(this, &SGraphNodeYSPlaybackTransition::GetTransitionTitle)
-			.TextStyle(FAppStyle::Get(), TEXT("Graph.TransitionNode.TooltipName"))
+			SNew(SImage)
+			.Image(FAppStyle::GetBrush(TEXT("Graph.AnimTransitionNode.ColorSpill")))
+			.ColorAndOpacity(this, &SGraphNodeYSPlaybackTransition::GetTransitionColor)
+		]
+
+		+ SOverlay::Slot()
+		.HAlign(HAlign_Center)
+		.VAlign(VAlign_Center)
+		.Padding(FMargin(8.f, 2.f))
+		[
+			SNew(SHorizontalBox)
+
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			.VAlign(VAlign_Center)
+			[
+				SNew(SImage)
+				.Image(FAppStyle::GetBrush(TEXT("Graph.AnimTransitionNode.Icon")))
+				.ColorAndOpacity(FStyleColors::Background)
+			]
+
+			+ SHorizontalBox::Slot()
+			.AutoWidth()
+			.VAlign(VAlign_Center)
+			.Padding(FMargin(4.f, 0.f, 0.f, 0.f))
+			[
+				SNew(STextBlock)
+				.Text(this, &SGraphNodeYSPlaybackTransition::GetTransitionTitle)
+				.ColorAndOpacity(FStyleColors::Background)
+				.TextStyle(FAppStyle::Get(), TEXT("Graph.Node.NodeTitleExtraLines"))
+			]
 		]
 	];
 }
@@ -51,21 +83,43 @@ FText SGraphNodeYSPlaybackTransition::GetTransitionTitle() const
 	return GraphNode->GetNodeTitle(ENodeTitleType::ListView);
 }
 
+FSlateColor SGraphNodeYSPlaybackTransition::GetTransitionColor() const
+{
+	// 조건이 붙은 전환은 색을 달리한다. 무조건 흘러가는 전환과 구분이 돼야 한다.
+	const UYSPlaybackGraphNode_Transition* TransitionNode = Cast<UYSPlaybackGraphNode_Transition>(GraphNode);
+
+	if (TransitionNode == nullptr)
+	{
+		return FLinearColor(0.55f, 0.55f, 0.55f);
+	}
+
+	// 아무 데도 안 닿은 전환. 종료 노드로 보낸 것과 런타임 결과는 같지만 의도가 없다.
+	// 붉게 띄워서 "이건 실수다"를 먼저 말한다.
+	if (TransitionNode->IsDangling())
+	{
+		return FLinearColor(0.90f, 0.20f, 0.15f);
+	}
+
+	return (TransitionNode->TransitionConditions.Num() > 0)
+		? FLinearColor(0.95f, 0.70f, 0.25f)
+		: FLinearColor(0.75f, 0.75f, 0.75f);
+}
+
 void SGraphNodeYSPlaybackTransition::PerformSecondPassLayout(const TMap<UObject*, TSharedRef<SNode>>& NodeToWidgetLookup) const
 {
 	UYSPlaybackGraphNode_Transition* TransitionNode = CastChecked<UYSPlaybackGraphNode_Transition>(GraphNode);
 
 	UYSPlaybackGraphNode_State* PrevState = TransitionNode->GetPreviousState();
-	UYSPlaybackGraphNode_State* NextState = TransitionNode->GetNextState();
+	UYSPlaybackGraphNode_Base* NextNode = TransitionNode->GetTargetNode();
 
-	// 어느 한쪽이 없으면(체인 종료, 편집 중) 옮길 기준이 없다. 있던 자리에 둔다.
-	if (PrevState == nullptr || NextState == nullptr)
+	// 목적지가 종료·유지여도 선 위에 얹혀야 한다. 상태로 한정하면 그것들이 다시 떠다닌다.
+	if (PrevState == nullptr || NextNode == nullptr)
 	{
 		return;
 	}
 
 	const TSharedRef<SNode>* PrevWidget = NodeToWidgetLookup.Find(PrevState);
-	const TSharedRef<SNode>* NextWidget = NodeToWidgetLookup.Find(NextState);
+	const TSharedRef<SNode>* NextWidget = NodeToWidgetLookup.Find(NextNode);
 
 	if (PrevWidget == nullptr || NextWidget == nullptr)
 	{
@@ -73,7 +127,7 @@ void SGraphNodeYSPlaybackTransition::PerformSecondPassLayout(const TMap<UObject*
 	}
 
 	const FGeometry StartGeom(FVector2D(PrevState->NodePosX, PrevState->NodePosY), FVector2D::ZeroVector, (*PrevWidget)->GetDesiredSize(), 1.f);
-	const FGeometry EndGeom(FVector2D(NextState->NodePosX, NextState->NodePosY), FVector2D::ZeroVector, (*NextWidget)->GetDesiredSize(), 1.f);
+	const FGeometry EndGeom(FVector2D(NextNode->NodePosX, NextNode->NodePosY), FVector2D::ZeroVector, (*NextWidget)->GetDesiredSize(), 1.f);
 
 	// 같은 두 상태를 잇는 전환이 여럿이면 겹친다. 몇 번째인지 세서 어긋나게 놓는다.
 	TArray<UYSPlaybackGraphNode_Transition*> SiblingTransitions;
@@ -86,7 +140,7 @@ void SGraphNodeYSPlaybackTransition::PerformSecondPassLayout(const TMap<UObject*
 				? Cast<UYSPlaybackGraphNode_Transition>(LinkedPin->GetOwningNode())
 				: nullptr;
 
-			if (Sibling != nullptr && Sibling->GetNextState() == NextState)
+			if (Sibling != nullptr && Sibling->GetTargetNode() == NextNode)
 			{
 				SiblingTransitions.Add(Sibling);
 			}
@@ -95,6 +149,26 @@ void SGraphNodeYSPlaybackTransition::PerformSecondPassLayout(const TMap<UObject*
 
 	const int32 MyIndex = FMath::Max(SiblingTransitions.IndexOfByKey(TransitionNode), 0);
 	const int32 SiblingCount = FMath::Max(SiblingTransitions.Num(), 1);
+
+	// 자기 자신으로 도는 전환은 두 기하가 같은 상자다.
+	// 사이에 낄 공간이 없어 상태 위에 그대로 얹히고, 그러면 읽히지도 눌리지도 않는다.
+	// 노드 위쪽으로 완전히 빼낸다.
+	if (PrevState == NextNode)
+	{
+		const FVector2D NodeSize = (*PrevWidget)->GetDesiredSize();
+		const FVector2D PillSize = GetDesiredSize();
+
+		const double CenterX = PrevState->NodePosX + (NodeSize.X * 0.5) - (PillSize.X * 0.5);
+		const double AboveY = PrevState->NodePosY - PillSize.Y - 28.0;
+
+		// 자기 루프가 여러 개면 위로 한 줄씩 쌓는다.
+		const double StackOffset = MyIndex * (PillSize.Y + 6.0);
+
+		GraphNode->NodePosX = static_cast<int32>(CenterX);
+		GraphNode->NodePosY = static_cast<int32>(AboveY - StackOffset);
+
+		return;
+	}
 
 	PositionBetweenTwoNodes(StartGeom, EndGeom, MyIndex, SiblingCount);
 }

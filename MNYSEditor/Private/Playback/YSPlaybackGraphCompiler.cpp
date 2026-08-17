@@ -132,14 +132,32 @@ void FYSPlaybackGraphCompiler::Compile(UYSPlaybackGraphAsset* Asset)
 
 		for (const UYSPlaybackGraphNode_Transition* Transition : Transitions)
 		{
-			FYSPlaybackEdge Edge = Transition->Edge;
+			FYSPlaybackEdge Edge = Transition->BuildEdge();
 
-			// 연결이 곧 다음 노드다. 노드에 적혀 있던 값은 여기서 덮어쓴다.
-			const UYSPlaybackGraphNode_State* NextState = Transition->GetNextState();
-			const int32* NextIndex = (NextState != nullptr) ? NodeToIndex.Find(NextState) : nullptr;
+			// 목적지 노드가 곧 전환의 뜻이다. 노드 프로퍼티에 적혀 있던 값은 여기서 덮어쓴다.
+			// TriggerGameplayData 는 건드리지 않는다 — 이벤트 발행은 목적지와 무관한 속성이다.
+			const UYSPlaybackGraphNode_Base* Target = Transition->GetTargetNode();
 
-			// 연결이 없으면 체인 종료다. 기존 규약대로 -1.
-			Edge.NextNodeIndex = (NextIndex != nullptr) ? *NextIndex : INDEX_NONE;
+			if (const UYSPlaybackGraphNode_State* NextState = Cast<UYSPlaybackGraphNode_State>(Target))
+			{
+				const int32* NextIndex = NodeToIndex.Find(NextState);
+
+				Edge.NextNodeIndex = (NextIndex != nullptr) ? *NextIndex : INDEX_NONE;
+				Edge.bFireEventOnly = false;
+			}
+			else if (Target != nullptr && Target->IsA<UYSPlaybackGraphNode_Stay>())
+			{
+				// 전환하지 않는다. NextNodeIndex 는 읽히지 않지만 쓰레기 값을 남기지 않는다.
+				Edge.NextNodeIndex = INDEX_NONE;
+				Edge.bFireEventOnly = true;
+			}
+			else
+			{
+				// 종료 노드로 갔거나, 아무 데도 안 닿았다.
+				// 둘 다 런타임 결과는 같지만 후자는 그래프에서 붉게 표시돼 실수임이 드러난다.
+				Edge.NextNodeIndex = INDEX_NONE;
+				Edge.bFireEventOnly = false;
+			}
 
 			Edges.Add(Edge);
 		}

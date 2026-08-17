@@ -21,7 +21,7 @@ public:
 	 *
 	 * 0번은 항상 시작 노드가 가리키는 플레이백이다 — 컴파일러가 그렇게 정렬한다.
 	 * 기존 어빌리티의 Playbacks 배열과 형태가 같아서 런타임 로직이 바뀌지 않는다.
-	 */
+	 */	
 	UPROPERTY(VisibleAnywhere, Instanced, Category = "YS | Compiled", meta = (DisplayName = "컴파일된 플레이백 (읽기 전용)"))
 	TArray<TObjectPtr<UYSAbilityPlaybackBase>> Playbacks;
 

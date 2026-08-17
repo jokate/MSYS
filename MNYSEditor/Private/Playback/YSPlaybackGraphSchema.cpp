@@ -60,6 +60,27 @@ void UYSPlaybackGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& Co
 
 		ContextMenuBuilder.AddAction(Action);
 	}
+
+	// 흐름 노드. 전환이 어디서 끝나는지를 그림으로 말해준다.
+	{
+		const TSharedPtr<FEdGraphSchemaAction_NewNode> ExitAction = MakeShared<FEdGraphSchemaAction_NewNode>(
+			LOCTEXT("FlowCategory", "흐름"),
+			LOCTEXT("ExitMenuDesc", "종료"),
+			LOCTEXT("ExitMenuTooltip", "여기로 들어온 전환은 어빌리티를 끝낸다."),
+			0);
+
+		ExitAction->NodeTemplate = NewObject<UYSPlaybackGraphNode_Exit>(ContextMenuBuilder.OwnerOfTemporaries);
+		ContextMenuBuilder.AddAction(ExitAction);
+
+		const TSharedPtr<FEdGraphSchemaAction_NewNode> StayAction = MakeShared<FEdGraphSchemaAction_NewNode>(
+			LOCTEXT("FlowCategory", "흐름"),
+			LOCTEXT("StayMenuDesc", "유지"),
+			LOCTEXT("StayMenuTooltip", "전환하지 않고 현재 플레이백을 계속 재생한다."),
+			0);
+
+		StayAction->NodeTemplate = NewObject<UYSPlaybackGraphNode_Stay>(ContextMenuBuilder.OwnerOfTemporaries);
+		ContextMenuBuilder.AddAction(StayAction);
+	}
 }
 
 const FPinConnectionResponse UYSPlaybackGraphSchema::CanCreateConnection(const UEdGraphPin* A, const UEdGraphPin* B) const
@@ -80,13 +101,24 @@ const FPinConnectionResponse UYSPlaybackGraphSchema::CanCreateConnection(const U
 	}
 
 	// 시작 노드는 전환을 끼지 않는다. 어디서 시작하는지는 조건이 아니라 사실이다.
+	// 대신 시작점은 반드시 상태여야 한다 — 종료나 유지로 시작하는 체인은 말이 안 된다.
 	if (A->GetOwningNode()->IsA<UYSPlaybackGraphNode_Entry>())
 	{
+		if (B->GetOwningNode()->IsA<UYSPlaybackGraphNode_State>() == false)
+		{
+			return FPinConnectionResponse(CONNECT_RESPONSE_DISALLOW, LOCTEXT("EntryNeedsState", "시작은 상태 노드에만 연결할 수 있다"));
+		}
+
 		return FPinConnectionResponse(CONNECT_RESPONSE_BREAK_OTHERS_A, LOCTEXT("EntryLink", "시작 지점을 옮긴다"));
 	}
 
 	if (B->GetOwningNode()->IsA<UYSPlaybackGraphNode_Entry>())
 	{
+		if (A->GetOwningNode()->IsA<UYSPlaybackGraphNode_State>() == false)
+		{
+			return FPinConnectionResponse(CONNECT_RESPONSE_DISALLOW, LOCTEXT("EntryNeedsStateB", "시작은 상태 노드에만 연결할 수 있다"));
+		}
+
 		return FPinConnectionResponse(CONNECT_RESPONSE_BREAK_OTHERS_B, LOCTEXT("EntryLinkB", "시작 지점을 옮긴다"));
 	}
 

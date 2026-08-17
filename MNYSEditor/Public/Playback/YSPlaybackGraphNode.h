@@ -54,12 +54,21 @@ public:
 	UPROPERTY()
 	TSubclassOf<UYSAbilityPlaybackBase> PlaybackClass;
 
+	/**
+	 * 화면에 뜨는 이름. 비어 있으면 플레이백 클래스 이름을 쓴다.
+	 * 클래스 이름만으로는 같은 종류가 여럿일 때 구분이 안 된다 — "돌진", "마무리" 처럼 붙인다.
+	 */
+	UPROPERTY()
+	FString StateName;
+
 	//~ UEdGraphNode
 	virtual void AllocateDefaultPins() override;
 	virtual void PostPlacedNewNode() override;
 	virtual FText GetNodeTitle(ENodeTitleType::Type TitleType) const override;
 	virtual FLinearColor GetNodeTitleColor() const override;
 	virtual FText GetTooltipText() const override;
+	virtual bool GetCanRenameNode() const override { return true; }
+	virtual void OnRenameNode(const FString& NewName) override;
 	//~ End
 };
 
@@ -82,6 +91,50 @@ public:
 
 
 /**
+ * 체인의 끝. 여기로 들어온 전환은 어빌리티를 종료시킨다.
+ *
+ * 예전에는 NextNodeIndex = -1 이 그 뜻이었는데, 그건 그래프에서 '아무 데도 안 닿은 선'과
+ * 똑같이 보였다. 종료를 노드로 만들면 "여기서 끝난다"가 의도임이 드러나고,
+ * 진짜 실수(연결 안 함)와 구분된다.
+ *
+ * 여러 개 놓아도 된다. 선이 길어지는 것보다 종료 노드가 여럿인 편이 읽기 쉽다.
+ */
+UCLASS()
+class UYSPlaybackGraphNode_Exit : public UYSPlaybackGraphNode_Base
+{
+	GENERATED_BODY()
+
+public:
+	//~ UEdGraphNode
+	virtual void AllocateDefaultPins() override;
+	virtual FText GetNodeTitle(ENodeTitleType::Type TitleType) const override;
+	virtual FText GetTooltipText() const override;
+	//~ End
+};
+
+
+/**
+ * 전환하지 않고 현재 플레이백을 유지한다. 런타임의 bFireEventOnly 에 대응한다.
+ *
+ * 이름이 '이벤트만'이 아니라 '유지'인 이유 —
+ * 이 플래그가 실제로 하는 일은 전환을 막는 것뿐이다. 이벤트 발행은 전환에 붙은
+ * TriggerGameplayData 가 따로 처리하며, 전환하는 경우에도 똑같이 발행된다.
+ */
+UCLASS()
+class UYSPlaybackGraphNode_Stay : public UYSPlaybackGraphNode_Base
+{
+	GENERATED_BODY()
+
+public:
+	//~ UEdGraphNode
+	virtual void AllocateDefaultPins() override;
+	virtual FText GetNodeTitle(ENodeTitleType::Type TitleType) const override;
+	virtual FText GetTooltipText() const override;
+	//~ End
+};
+
+
+/**
  * 전환 = 노드.
  *
  * 화면에서는 화살표로 보이지만 실제로는 상태 A 와 상태 B 사이에 낀 노드다.
@@ -97,13 +150,38 @@ class UYSPlaybackGraphNode_Transition : public UYSPlaybackGraphNode_Base
 
 public:
 	/**
-	 * 전환 규칙.
+	 * 이 전환을 깨우는 사건.
 	 *
-	 * NextNodeIndex 는 여기서 의미가 없다 — 연결이 곧 다음 노드다.
-	 * 컴파일 때 연결을 보고 채워 넣는다. Details 에 뜨더라도 건드리지 마라.
+	 * 아래 필드들은 FYSPlaybackEdge 를 그대로 들고 있지 않고 따로 선언한다.
+	 * 그 구조체의 NextNodeIndex 와 bFireEventOnly 는 그래프가 결정하는 값이라
+	 * 편집란에 띄우면 "고쳐도 덮어써지는 칸"이 생긴다. 아예 없는 편이 낫다.
 	 */
-	UPROPERTY(EditAnywhere, Category = "YS | Transition", meta = (DisplayName = "전환 규칙"))
+	UPROPERTY(EditAnywhere, Category = "YS | Transition", meta = (DisplayName = "발화 조건"))
+	EYSPlaybackEvent RequiredResult = EYSPlaybackEvent::Completed;
+
+	UPROPERTY(EditAnywhere, Category = "YS | Transition",
+		meta = (DisplayName = "전환 조건", BaseStruct = "/Script/MNYS.YSPlaybackCondition", ExcludeBaseStruct))
+	TArray<FInstancedStruct> TransitionConditions;
+
+	UPROPERTY(EditAnywhere, Category = "YS | Transition", meta = (DisplayName = "입력 즉시 전환 (몽타주 완료를 기다리지 않음)"))
+	bool bImmediateTransition = false;
+
+	/** 비워두면 아무것도 쏘지 않는다. 목적지와 무관하게 발행된다. */
+	UPROPERTY(EditAnywhere, Category = "YS | Transition", meta = (DisplayName = "트리거 할 이벤트 데이터"))
+	FGameplayEventSendData TriggerGameplayData;
+
+	/**
+	 * 구버전 그래프가 값을 넣어둔 슬롯. 이름을 바꾸면 이미 저장된 에셋이 값을 잃으므로 그대로 둔다.
+	 * PostLoad 에서 한 번만 위 필드들로 옮긴다.
+	 */
+	UPROPERTY()
 	FYSPlaybackEdge Edge;
+
+	UPROPERTY()
+	bool bEdgeUpgraded = false;
+
+	/** 편집한 값들을 런타임 구조체로 모은다. 목적지는 컴파일러가 채운다. */
+	FYSPlaybackEdge BuildEdge() const;
 
 	/**
 	 * 같은 노드에서 나가는 전환이 여럿일 때의 우선순위. 작을수록 먼저 평가된다.
@@ -115,7 +193,13 @@ public:
 	/** From 의 출력 → 이 노드 → To 의 입력으로 잇는다. */
 	void CreateConnections(UYSPlaybackGraphNode_Base* From, UYSPlaybackGraphNode_Base* To);
 
-	/** 이 전환이 향하는 상태. 연결이 없으면 nullptr — 체인 종료를 뜻한다. */
+	/** 이 전환이 향하는 노드. 상태일 수도, 종료·유지일 수도, 아무것도 아닐 수도 있다. */
+	UYSPlaybackGraphNode_Base* GetTargetNode() const;
+
+	/** 목적지가 아예 없다. 의도인지 실수인지 알 수 없으므로 그래프에서 붉게 표시한다. */
+	bool IsDangling() const { return GetTargetNode() == nullptr; }
+
+	/** 이 전환이 향하는 상태. 종료·유지로 가거나 연결이 없으면 nullptr. */
 	UYSPlaybackGraphNode_State* GetNextState() const;
 
 	/** 이 전환이 나온 상태. 전환 위젯이 두 상태 사이에 자리를 잡을 때 쓴다. */
@@ -123,6 +207,7 @@ public:
 
 	//~ UEdGraphNode
 	virtual void AllocateDefaultPins() override;
+	virtual void PostLoad() override;
 	virtual FText GetNodeTitle(ENodeTitleType::Type TitleType) const override;
 	virtual FLinearColor GetNodeTitleColor() const override;
 	virtual FText GetTooltipText() const override;

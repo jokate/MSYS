@@ -33,6 +33,15 @@ public:
 	/** 위치는 연결된 상태들이 정한다. 드래그로 옮길 수 없다. */
 	virtual void MoveTo(const FVector2f& NewPosition, FNodeSet& NodeFilter, bool bMarkDirty = true) override {}
 
+	/**
+	 * 상태 노드보다 뒤에 정렬시킨다.
+	 *
+	 * SNodePanel 은 이 값 오름차순으로 자식을 배치하고, 히트 테스트는 그 역순으로 훑는다.
+	 * 기본값(0)이면 전환이 상태보다 먼저 배치돼 겹치는 순간 클릭을 상태가 먹는다.
+	 * 자기 자신으로 도는 전환은 늘 상태 위에 얹히므로 항상 그 상황이 된다.
+	 */
+	virtual int32 GetSortDepth() const override { return 1; }
+
 	virtual bool RequiresSecondPassLayout() const override { return true; }
 	virtual void PerformSecondPassLayout(const TMap<UObject*, TSharedRef<SNode>>& NodeToWidgetLookup) const override;
 
@@ -45,4 +54,7 @@ private:
 	void PositionBetweenTwoNodes(const FGeometry& StartGeom, const FGeometry& EndGeom, int32 NodeIndex, int32 MaxNodes) const;
 
 	FText GetTransitionTitle() const;
+
+	/** 조건이 붙은 전환과 그냥 흘러가는 전환을 색으로 가른다. */
+	FSlateColor GetTransitionColor() const;
 };

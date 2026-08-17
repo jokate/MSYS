@@ -81,12 +81,23 @@ void UYSPlaybackGraphNode_State::PostPlacedNewNode()
 
 FText UYSPlaybackGraphNode_State::GetNodeTitle(ENodeTitleType::Type TitleType) const
 {
+	if (StateName.IsEmpty() == false)
+	{
+		return FText::FromString(StateName);
+	}
+
 	if (Playback == nullptr)
 	{
 		return LOCTEXT("EmptyState", "빈 플레이백");
 	}
 
 	return Playback->GetClass()->GetDisplayNameText();
+}
+
+void UYSPlaybackGraphNode_State::OnRenameNode(const FString& NewName)
+{
+	Modify();
+	StateName = NewName;
 }
 
 FLinearColor UYSPlaybackGraphNode_State::GetNodeTitleColor() const
@@ -118,12 +129,79 @@ FLinearColor UYSPlaybackGraphNode_Entry::GetNodeTitleColor() const
 }
 
 
+// ── 종료 / 유지 노드 ─────────────────────────────────────────────────────
+
+void UYSPlaybackGraphNode_Exit::AllocateDefaultPins()
+{
+	CreatePin(EGPD_Input, UYSPlaybackGraphSchema::PC_Transition, TEXT("In"));
+}
+
+FText UYSPlaybackGraphNode_Exit::GetNodeTitle(ENodeTitleType::Type TitleType) const
+{
+	return LOCTEXT("ExitTitle", "종료");
+}
+
+FText UYSPlaybackGraphNode_Exit::GetTooltipText() const
+{
+	return LOCTEXT("ExitTooltip", "여기로 들어온 전환은 체인을 끝낸다. 어빌리티가 EndAbility 된다.");
+}
+
+void UYSPlaybackGraphNode_Stay::AllocateDefaultPins()
+{
+	CreatePin(EGPD_Input, UYSPlaybackGraphSchema::PC_Transition, TEXT("In"));
+}
+
+FText UYSPlaybackGraphNode_Stay::GetNodeTitle(ENodeTitleType::Type TitleType) const
+{
+	return LOCTEXT("StayTitle", "유지");
+}
+
+FText UYSPlaybackGraphNode_Stay::GetTooltipText() const
+{
+	return LOCTEXT("StayTooltip",
+		"전환하지 않고 현재 플레이백을 계속 재생한다.\n"
+		"전환에 이벤트가 달려 있으면 그 이벤트는 그대로 발행된다.");
+}
+
+
 // ── 전환 노드 ────────────────────────────────────────────────────────────
 
 void UYSPlaybackGraphNode_Transition::AllocateDefaultPins()
 {
 	CreatePin(EGPD_Input, UYSPlaybackGraphSchema::PC_Transition, TEXT("In"));
 	CreatePin(EGPD_Output, UYSPlaybackGraphSchema::PC_Transition, TEXT("Out"));
+}
+
+void UYSPlaybackGraphNode_Transition::PostLoad()
+{
+	Super::PostLoad();
+
+	// 예전 그래프는 FYSPlaybackEdge 하나에 전부 넣어 저장했다. 한 번만 옮긴다.
+	// 매번 옮기면 이후에 고친 값이 저장된 옛 값으로 되돌아간다.
+	if (bEdgeUpgraded)
+	{
+		return;
+	}
+
+	RequiredResult = Edge.RequiredResult;
+	TransitionConditions = Edge.TransitionConditions;
+	bImmediateTransition = Edge.bImmediateTransition;
+	TriggerGameplayData = Edge.TriggerGameplayData;
+
+	bEdgeUpgraded = true;
+}
+
+FYSPlaybackEdge UYSPlaybackGraphNode_Transition::BuildEdge() const
+{
+	FYSPlaybackEdge Result;
+
+	Result.RequiredResult = RequiredResult;
+	Result.TransitionConditions = TransitionConditions;
+	Result.bImmediateTransition = bImmediateTransition;
+	Result.TriggerGameplayData = TriggerGameplayData;
+
+	// NextNodeIndex 와 bFireEventOnly 는 목적지가 정한다. 컴파일러가 채운다.
+	return Result;
 }
 
 void UYSPlaybackGraphNode_Transition::CreateConnections(UYSPlaybackGraphNode_Base* From, UYSPlaybackGraphNode_Base* To)
@@ -161,7 +239,7 @@ void UYSPlaybackGraphNode_Transition::CreateConnections(UYSPlaybackGraphNode_Bas
 	}
 }
 
-UYSPlaybackGraphNode_State* UYSPlaybackGraphNode_Transition::GetNextState() const
+UYSPlaybackGraphNode_Base* UYSPlaybackGraphNode_Transition::GetTargetNode() const
 {
 	const UEdGraphPin* MyOutput = GetOutputPin();
 
@@ -170,7 +248,12 @@ UYSPlaybackGraphNode_State* UYSPlaybackGraphNode_Transition::GetNextState() cons
 		return nullptr;
 	}
 
-	return Cast<UYSPlaybackGraphNode_State>(MyOutput->LinkedTo[0]->GetOwningNode());
+	return Cast<UYSPlaybackGraphNode_Base>(MyOutput->LinkedTo[0]->GetOwningNode());
+}
+
+UYSPlaybackGraphNode_State* UYSPlaybackGraphNode_Transition::GetNextState() const
+{
+	return Cast<UYSPlaybackGraphNode_State>(GetTargetNode());
 }
 
 UYSPlaybackGraphNode_State* UYSPlaybackGraphNode_Transition::GetPreviousState() const
@@ -190,12 +273,21 @@ FText UYSPlaybackGraphNode_Transition::GetNodeTitle(ENodeTitleType::Type TitleTy
 	// 발화 조건이 곧 이 전환의 정체다. 화살표 위에 이것만 떠도 그래프가 읽힌다.
 	const UEnum* EventEnum = StaticEnum<EYSPlaybackEvent>();
 
-	if (EventEnum == nullptr)
+	const FText EventText = (EventEnum != nullptr)
+		? EventEnum->GetDisplayNameTextByValue(static_cast<int64>(RequiredResult))
+		: LOCTEXT("TransitionTitle", "전환");
+
+	// 이벤트를 쏘는 전환은 그 사실이 선 위에 드러나야 한다.
+	// 목적지와 무관하게 발행되므로 노드 모양만으로는 알 수 없다.
+	if (TriggerGameplayData.IsValid())
 	{
-		return LOCTEXT("TransitionTitle", "전환");
+		return FText::Format(
+			LOCTEXT("TransitionTitleWithEvent", "{0}  ▸ {1}"),
+			EventText,
+			FText::FromName(TriggerGameplayData.TargetToTrigger.GetTagName()));
 	}
 
-	return EventEnum->GetDisplayNameTextByValue(static_cast<int64>(Edge.RequiredResult));
+	return EventText;
 }
 
 FLinearColor UYSPlaybackGraphNode_Transition::GetNodeTitleColor() const

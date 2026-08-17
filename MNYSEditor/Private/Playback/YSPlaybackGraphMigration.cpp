@@ -131,6 +131,11 @@ int32 FYSPlaybackGraphMigration::ImportFromSourceAbility(UYSPlaybackGraphAsset* 
 
 		const TArray<FYSPlaybackEdge>& Edges = SourcePlaybacks[Index]->Transitions;
 
+		// 종료·유지 노드는 상태 하나당 하나씩만 만들고 돌려 쓴다.
+		// 전환마다 만들면 노드가 두 배로 불어나 오히려 안 읽힌다.
+		UYSPlaybackGraphNode_Exit* SharedExitNode = nullptr;
+		UYSPlaybackGraphNode_Stay* SharedStayNode = nullptr;
+
 		for (int32 EdgeIndex = 0; EdgeIndex < Edges.Num(); ++EdgeIndex)
 		{
 			const FYSPlaybackEdge& Edge = Edges[EdgeIndex];
@@ -145,20 +150,45 @@ int32 FYSPlaybackGraphMigration::ImportFromSourceAbility(UYSPlaybackGraphAsset* 
 
 			NodeCreator.Finalize();
 
-			// 목적지가 없으면(-1) 출력을 비워 둔다. 그게 체인 종료의 그림이다.
-			UYSPlaybackGraphNode_State* NextState = StateNodes.IsValidIndex(Edge.NextNodeIndex) ? StateNodes[Edge.NextNodeIndex] : nullptr;
+			// 목적지를 노드로 바꾼다. -1 과 bFireEventOnly 는 이제 그림으로 표현된다.
+			UYSPlaybackGraphNode_Base* TargetNode = nullptr;
 
-			if (NextState != nullptr)
+			if (Edge.bFireEventOnly)
 			{
-				TransitionNode->CreateConnections(StateNodes[Index], NextState);
-			}
-			else if (UEdGraphPin* FromOutput = StateNodes[Index]->GetOutputPin())
-			{
-				if (UEdGraphPin* TransitionInput = TransitionNode->GetInputPin())
+				if (SharedStayNode == nullptr)
 				{
-					FromOutput->MakeLinkTo(TransitionInput);
+					FGraphNodeCreator<UYSPlaybackGraphNode_Stay> StayCreator(Graph);
+
+					SharedStayNode = StayCreator.CreateNode(false);
+					SharedStayNode->NodePosX = StateNodes[Index]->NodePosX + 120;
+					SharedStayNode->NodePosY = YSPlaybackMigration::StateRowY - 220;
+
+					StayCreator.Finalize();
 				}
+
+				TargetNode = SharedStayNode;
 			}
+			else if (StateNodes.IsValidIndex(Edge.NextNodeIndex))
+			{
+				TargetNode = StateNodes[Edge.NextNodeIndex];
+			}
+			else
+			{
+				if (SharedExitNode == nullptr)
+				{
+					FGraphNodeCreator<UYSPlaybackGraphNode_Exit> ExitCreator(Graph);
+
+					SharedExitNode = ExitCreator.CreateNode(false);
+					SharedExitNode->NodePosX = StateNodes[Index]->NodePosX + 120;
+					SharedExitNode->NodePosY = YSPlaybackMigration::StateRowY + 320;
+
+					ExitCreator.Finalize();
+				}
+
+				TargetNode = SharedExitNode;
+			}
+
+			TransitionNode->CreateConnections(StateNodes[Index], TargetNode);
 
 			// 위치는 출발 상태 아래쪽. 전환 위젯이 붙으면 2차 배치가 다시 잡는다.
 			TransitionNode->NodePosX = StateNodes[Index]->NodePosX + (YSPlaybackMigration::StateSpacingX / 2);
