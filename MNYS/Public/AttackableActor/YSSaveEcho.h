@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
 #include "GameplayAbilitySpecHandle.h"
+#include "Character/Components/YSSaveComponent.h"
 #include "GameFramework/Character.h"
 #include "Interface/YSDamageProxy.h"
 #include "Interface/YSSpawnInitializable.h"
@@ -39,6 +40,7 @@ public :
 	void Initialize(ACharacter* InMaster, const FYSSavedTechnique& InTechnique);
 
 protected :
+	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	UFUNCTION()
@@ -65,4 +67,6 @@ protected :
 private :
 	FGameplayAbilitySpecHandle ReplayHandle;
 	FTimerHandle LifeTimerHandle;
+	
+	FYSSavedTechnique SavedTechnique;
 };

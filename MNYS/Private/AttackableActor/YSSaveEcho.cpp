@@ -19,8 +19,9 @@ AYSSaveEcho::AYSSaveEcho()
 	
 	AbilitySystemComponent = CreateDefaultSubobject<UYSAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 
-	// 애초에 이놈 충돌하면 안됨.
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	// NoCollision 이면 PhysWalking 이 쿼리 콜리전 게이트에서 즉시 리턴해 루트모션이 위치를 못 옮긴다.
+	// 바닥 스윕만 살리고 나머지는 EchoBody 프로파일에서 전부 무시한다.
+	GetCapsuleComponent()->SetCollisionProfileName(TEXT("EchoBody"));
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	// 루트모션은 살린다 — 발도의 돌진을 재현해야 하기 때문이다.
@@ -57,23 +58,28 @@ void AYSSaveEcho::Initialize(ACharacter* InMaster, const FYSSavedTechnique& InTe
 
 	AbilitySystemComponent->OnAbilityEnded.AddUObject(this, &AYSSaveEcho::OnReplayEnded);
 
-	// 이벤트로 활성하는 이유 — TryActivateAbility 로는 시작 노드를 전달할 방법이 없다.
-	// 활성 후에 ActivePlayback 을 따로 부르면 0번 몽타주가 한 프레임 재생됐다 끊긴다.
-	FGameplayEventData EventData;
-	EventData.EventTag = YSTags::Event_Replay;
-	EventData.EventMagnitude = InTechnique.PlaybackIndex;
-	EventData.Instigator = InMaster;
-	EventData.Target = this;
-
-	AbilitySystemComponent->TriggerAbilityFromGameplayEvent(
-		ReplayHandle, AbilitySystemComponent->AbilityActorInfo.Get(),
-		YSTags::Event_Replay, &EventData, *AbilitySystemComponent);
-
 	GetWorldTimerManager().SetTimer(LifeTimerHandle, FTimerDelegate::CreateWeakLambda(this, [this]()
 	{
 		Destroy();
 	}), MaxLifeTime, false);
 	
+	SavedTechnique = InTechnique;
+}
+
+void AYSSaveEcho::BeginPlay()
+{
+	Super::BeginPlay();
+	// 이벤트로 활성하는 이유 — TryActivateAbility 로는 시작 노드를 전달할 방법이 없다.
+	// 활성 후에 ActivePlayback 을 따로 부르면 0번 몽타주가 한 프레임 재생됐다 끊긴다.
+	FGameplayEventData EventData;
+	EventData.EventTag = YSTags::Event_Replay;
+	EventData.EventMagnitude = SavedTechnique.PlaybackIndex;
+	EventData.Instigator = Master.Get();
+	EventData.Target = this;
+
+	AbilitySystemComponent->TriggerAbilityFromGameplayEvent(
+		ReplayHandle, AbilitySystemComponent->AbilityActorInfo.Get(),
+		YSTags::Event_Replay, &EventData, *AbilitySystemComponent);
 }
 
 void AYSSaveEcho::MirrorAppearance(const ACharacter* InMaster)
