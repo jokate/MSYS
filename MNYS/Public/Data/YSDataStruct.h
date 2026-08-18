@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "General/YSEnum.h"
+#include "StructUtils/InstancedStruct.h"
 #include "YSDataStruct.generated.h"
 
 /**
@@ -21,6 +22,7 @@ enum class EYSDamageType : uint8
 	Range,
 	Melee,
 };
+
 
 // Purpose : 데미지 처리를 위한, 데이터 ( 어빌리티에 대한 데미지 정보를 근간으로 합니다. )
 USTRUCT()
@@ -46,6 +48,9 @@ public :
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSubclassOf<UCameraShakeBase> HitCameraShake;
+	
+	UPROPERTY(EditAnywhere, meta = (DisplayName = "히트 이벤트", BaseStruct = "/Script/MNYS.YSDamageEffectBase", ExcludeBaseStruct))
+	TArray<FInstancedStruct> DamageEffects;
 };
 
 

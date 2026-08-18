@@ -13,6 +13,7 @@
 #include "Ability/YSGameplayAbility.h"
 #include "Ability/AbilityComponent/YSAbilityPlayback.h"
 #include "AttackableActor/YSAttackableBase.h"
+#include "AttackableActor/DamageEffect/YSDamageEffect.h"
 #include "Character/YSCharacterBase.h"
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
 #include "Character/Components/YSCameraManageComponent.h"
@@ -313,3 +314,29 @@ FTransform UYSBlueprintFunctionLibrary::CalculateSpawnTransform(UObject* WorldCo
 
 	return FTransform(Rotation, Position);
 }
+
+void UYSBlueprintFunctionLibrary::ApplyHitEffects(AActor* Source, AActor* Instigator, AActor* Target,
+	const FName& SkillID, const FHitResult& HitResult)
+{
+	const FYSDamageInfo* DamageInfo = UYSDeveloperSettings::GetDamageInfo(SkillID);
+
+	// 데미지 정보가 없으면 의미 X
+	if ( DamageInfo == nullptr || DamageInfo->DamageEffects.Num() == 0 )
+		return;
+	
+	FYSDamageEffectContext Context;
+	
+	Context.Source = Source;
+	Context.Instigator = Instigator;
+	Context.Target = Target;
+	Context.HitResult = HitResult;
+	
+	for ( const FInstancedStruct& Instanced : DamageInfo->DamageEffects )
+	{
+		if ( const FYSDamageEffectBase* Effect = Instanced.GetPtr<FYSDamageEffectBase>() )
+		{
+			Effect->Apply(Context);
+		}
+	}
+}
+

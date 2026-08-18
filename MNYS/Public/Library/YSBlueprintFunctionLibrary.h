@@ -7,6 +7,8 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "YSBlueprintFunctionLibrary.generated.h"
 
+struct FYSDamageEffectContext;
+struct FYSDamageInfo;
 struct FYSAbilityHitContext;
 struct FYSSpawnActorConfig;
 class UYSGameplayAbility;
@@ -42,6 +44,6 @@ public :
 	
 	static AActor* SpawnByConfig(UObject* WorldContext, const FYSSpawnActorConfig& Config, AActor* OwnerActor, AActor* TargetActor, AActor* AttachParent = nullptr, const TSharedPtr<FYSAbilityHitContext>& HitContext = nullptr);
 	static FTransform CalculateSpawnTransform(UObject* WorldContext, const FYSSpawnActorConfig& Config, AActor* OwnerActor, AActor* TargetActor);
-
+	static void ApplyHitEffects(AActor* Source, AActor* Instigator, AActor* Target, const FName& SkillID, const FHitResult& HitResult);
 };
 

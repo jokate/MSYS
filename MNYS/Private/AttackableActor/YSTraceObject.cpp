@@ -277,8 +277,8 @@ void UYSTraceObject::_ProcessValidHit(const TArray<FHitResult>& InProcessedHits)
 
 		// 데미지 이벤트 전송
 		UYSBlueprintFunctionLibrary::SendHitEventToTarget(Instigator, HitActor, TraceConfig.DamageRow);
-		
 		UYSBlueprintFunctionLibrary::SpawnEffects(Instigator, TraceConfig.DamageRow, HitResult.ImpactPoint, EffectRotation);
+		UYSBlueprintFunctionLibrary::ApplyHitEffects(OwnerActor, Instigator, HitActor, TraceConfig.DamageRow, HitResult);
 		
 		ValidHits.Add(HitResult);
 		
