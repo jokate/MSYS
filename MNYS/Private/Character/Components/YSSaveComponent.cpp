@@ -43,7 +43,7 @@ void UYSSaveComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SavedTechniques.Reserve(MaxSlotCount);
+	SavedTechniques.SetNum(MaxSlotCount);
 	RefreshStateTags();
 	
 	if ( UYSInputStateMachineComponent* InputStateMachine = UYSInputStateMachineComponent::Get(GetOwner()) )
@@ -52,6 +52,32 @@ void UYSSaveComponent::BeginPlay()
 	}
 
 	RefreshStateTags();
+}
+
+bool UYSSaveComponent::HasSavedTechnique() const
+{
+	for (const FYSSavedTechniqueSlot& Slot : SavedTechniques)
+	{
+		if ( Slot.SavedTechnique.IsValid() )
+		{
+			return true;
+		}
+	}
+	
+	return false;
+}
+
+bool UYSSaveComponent::IsSlotFull() const
+{
+	for ( const FYSSavedTechniqueSlot& Slot : SavedTechniques )
+	{
+		if ( Slot.SavedTechnique.IsValid() == false )
+		{
+			return false;
+		}
+	}
+	
+	return true;
 }
 
 void UYSSaveComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -96,7 +122,22 @@ bool UYSSaveComponent::TryCommitPending()
 		return false;
 	}
 
-	SavedTechniques.Add(PendingTechnique);
+	bool bIsSavedComplete = false;
+	for ( FYSSavedTechniqueSlot& Slot : SavedTechniques )
+	{
+		
+		bool bTimeCondition = Slot.LastUsedTime == 0 || (GetWorld()->GetTimeSeconds() - Slot.LastUsedTime) >= SaveCooldown;
+		if ( Slot.SavedTechnique.IsValid() == false && bTimeCondition )
+		{
+			Slot.SavedTechnique = PendingTechnique;
+			bIsSavedComplete = true;
+			break;
+		}
+	}
+	
+	if (!bIsSavedComplete)
+		return false;
+	
 	RefreshStateTags();
 	OnSaveStateChanged.Broadcast();
 
@@ -105,13 +146,21 @@ bool UYSSaveComponent::TryCommitPending()
 
 bool UYSSaveComponent::TryConsumeSlot(FYSSavedTechnique& OutTechnique)
 {
-	if ( SavedTechniques.Num() <= 0 )
+	if ( HasSavedTechnique() == false )
 	{
 		return false;
 	}
 	
-	OutTechnique = SavedTechniques[0];
-	SavedTechniques.RemoveAt(0);
+	for ( FYSSavedTechniqueSlot& Slot : SavedTechniques )
+	{
+		if ( Slot.SavedTechnique.IsValid() )
+		{
+			OutTechnique = Slot.SavedTechnique;
+			Slot.SavedTechnique.Reset();
+			Slot.LastUsedTime = GetWorld()->GetTimeSeconds();
+			break;
+		}
+	}
 
 	RefreshStateTags();
 	OnSaveStateChanged.Broadcast();

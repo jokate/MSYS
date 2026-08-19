@@ -43,6 +43,19 @@ public :
 	void Reset();
 };
 
+USTRUCT(BlueprintType)
+struct FYSSavedTechniqueSlot
+{
+	GENERATED_BODY();
+
+public : 
+	UPROPERTY(VisibleAnywhere, Category = "YS | Save", meta = (DisplayName = "저장된 동작"))
+	FYSSavedTechnique SavedTechnique;
+
+	UPROPERTY(VisibleAnywhere, Category = "YS | Save", meta = (DisplayName = "슬롯 인덱스"))
+	float LastUsedTime = 0.f;
+};
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSaveStateChanged);
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -68,8 +81,8 @@ protected:
 	virtual void BeginPlay() override;
 	
 	
-	bool HasSavedTechnique() const { return SavedTechniques.Num() > 0; }
-	bool IsSlotFull() const { return SavedTechniques.Num() >= MaxSlotCount; }
+	bool HasSavedTechnique() const;
+	bool IsSlotFull() const;
 	bool HasPending() const { return PendingTechnique.IsValid(); }
 
 	int32 GetSavedCount() const { return SavedTechniques.Num(); }
@@ -99,11 +112,14 @@ protected:
 protected:
 	// 혼의 세이브는 컨셉상 2개 2개만 저장해야 한다./
 	UPROPERTY(VisibleAnywhere, Category = "YS | Save", meta = (DisplayName = "저장된 동작들"))
-	TArray<FYSSavedTechnique> SavedTechniques;
+	TArray<FYSSavedTechniqueSlot> SavedTechniques;
 	
 	UPROPERTY(VisibleAnywhere, Category = "YS | Save", meta = (DisplayName = "저장 가능한 직전 동작"))
 	FYSSavedTechnique PendingTechnique;
 
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Save", meta = (DisplayName = "세이브 쿨타임"))
+	float SaveCooldown = 2.f;
+	
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Save", meta = (DisplayName = "최대 슬롯 수"))
 	int32 MaxSlotCount = 2;
 };
