@@ -134,20 +134,34 @@ void UYSInputStateMachineComponent::ConsumeInputHistory(const FGameplayTag& Tag,
 // 콤보의 경우에는 State에 의존하지 않는 순수 인풋이기 때문에 사실상 의미가 없음.
 FGameplayTag UYSInputStateMachineComponent::FindBestCombo(const FGameplayTag& Tag)
 {
-	FGameplayTag BestTag = Tag;
 	FYSTagHistory ComboInputTag = FYSTagHistory(Tag, GetWorld()->GetTimeSeconds());
 	ComboInputTags.Add(ComboInputTag);
+
+	// 첫 일치가 아니라 가장 긴 일치를 고른다.
+	// 접미 매칭에서는 짧은 커맨드가 긴 커맨드의 꼬리에 항상 포함되므로,
+	// 행 순서에 우선순위를 맡기면 긴 커맨드가 영영 나오지 않는다.
+	const FYSCommandSequence* BestSequence = nullptr;
+
 	for ( const FYSCommandSequence* ComboSequence : AllCommandSequence )
 	{
-		if ( ComboSequence->IsSatisfiedCommand(ComboInputTags) == true )
+		if ( ComboSequence->IsSatisfiedCommand(ComboInputTags) == false )
 		{
-			BestTag = ComboSequence->Command;
-			ComboInputTags.Empty();
-			break;
+			continue;
+		}
+
+		if ( BestSequence == nullptr || ComboSequence->CommandSequence.Num() > BestSequence->CommandSequence.Num() )
+		{
+			BestSequence = ComboSequence;
 		}
 	}
 
-	return BestTag;
+	if ( BestSequence == nullptr )
+	{
+		return Tag;
+	}
+
+	ComboInputTags.Empty();
+	return BestSequence->Command;
 }
 
 void UYSInputStateMachineComponent::OnTagUpdated(const FGameplayTag& Tag, bool bActive)
