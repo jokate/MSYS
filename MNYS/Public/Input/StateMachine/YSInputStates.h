@@ -89,6 +89,7 @@ public :
 		TransitionRule.Add(EYSInputStatesType::Idle);
 		TransitionRule.Add(EYSInputStatesType::Skill);
 		TransitionRule.Add(EYSInputStatesType::Dodge);
+		TransitionRule.Add(EYSInputStatesType::Aim);
 	}
 };
 
