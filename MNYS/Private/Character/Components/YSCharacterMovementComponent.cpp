@@ -4,6 +4,7 @@
 #include "Character/Components/YSCharacterMovementComponent.h"
 
 #include "Character/YSCharacterBase.h"
+#include "Input/StateMachine/YSInputStateMachineComponent.h"
 
 
 // Sets default values for this component's properties
@@ -74,5 +75,28 @@ bool UYSCharacterMovementComponent::HandlePendingLaunch()
 	}
 
 	return false;
+}
+
+void UYSCharacterMovementComponent::OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode)
+{
+	Super::OnMovementModeChanged(PreviousMovementMode, PreviousCustomMode);
+	
+	if ( MovementMode == MOVE_Falling )
+	{
+		UYSInputStateMachineComponent* InputStateMachine = UYSInputStateMachineComponent::Get(GetOwner());
+		if ( IsValid(InputStateMachine) )
+		{
+			InputStateMachine->AddStateStack(EYSInputStatesType::Falling);
+		}
+	}
+	
+	if ( PreviousMovementMode == MOVE_Falling )
+	{
+		UYSInputStateMachineComponent* InputStateMachine = UYSInputStateMachineComponent::Get(GetOwner());
+		if ( IsValid(InputStateMachine) )
+		{
+			InputStateMachine->RemoveStateStack(EYSInputStatesType::Falling);
+		}
+	}
 }
 

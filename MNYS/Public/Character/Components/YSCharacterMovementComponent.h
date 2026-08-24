@@ -29,6 +29,8 @@ public:
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 
 	virtual bool HandlePendingLaunch() override;
+	
+	virtual void OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode) override;
 	void SetGravityScale(float InGravityScale)
 	{
 		GravityScale = InGravityScale;
