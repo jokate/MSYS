@@ -146,6 +146,20 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 		}
 	}
 
+	if ( bFreezeInAirDuringAbility )
+	{
+		UYSCharacterMovementComponent* MovementComponent = UYSCharacterMovementComponent::Get(OwnerActor);
+
+		// 지상에서 켜면 의미가 없고, 복구 대상만 늘어난다.
+		if ( IsValid(MovementComponent) && MovementComponent->IsFalling() )
+		{
+			CachedGravityScale = MovementComponent->GravityScale;
+			MovementComponent->SetGravityScale(0.f);
+			MovementComponent->Velocity = FVector::ZeroVector;
+			bAirFrozen = true;
+		}
+	}
+	
 	_PrepareForAbilityEvent();
 	
 	HitContext = MakeShared<FYSAbilityHitContext>(GetOwningActorFromActorInfo());
@@ -209,6 +223,18 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 		{
 			MovementComponent->SetMovementBlocked(false);
 		}
+	}
+	
+	if ( bAirFrozen )
+	{
+		UYSCharacterMovementComponent* MovementComponent = UYSCharacterMovementComponent::Get(OwnerActor);
+
+		if ( IsValid(MovementComponent) )
+		{
+			MovementComponent->SetGravityScale(CachedGravityScale);
+		}
+
+		bAirFrozen = false;
 	}
 	
 	if ( UYSTargetingComponent* Targeting = UYSTargetingComponent::Get(OwnerActor) )

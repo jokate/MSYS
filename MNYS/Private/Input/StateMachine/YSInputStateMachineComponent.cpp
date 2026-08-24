@@ -228,11 +228,6 @@ void UYSInputStateMachineComponent::AcceptInput(const FGameplayTag& Tag, EYSInpu
 
 void UYSInputStateMachineComponent::TransitionState(EYSInputStatesType NewInputState)
 {
-	if ( IsValid(CurrentInputState) && CurrentInputState->IsEnableTransition(NewInputState) == false )
-	{
-		return;
-	}
-	
 	UYSInputStates** NextState = InputStates.Find(NewInputState);
 
 	if ( NextState == nullptr )

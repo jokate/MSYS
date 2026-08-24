@@ -165,7 +165,6 @@ private :
 	
 	UPROPERTY()
 	TObjectPtr<ULevelSequencePlayer> LevelSequencePlayer = nullptr;
-	
 };
 
 UCLASS(DisplayName = "히트 첫번째 타겟 기준 플레이 백")

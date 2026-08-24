@@ -22,7 +22,6 @@ class MNYS_API UYSInputStates : public UObject
 public :
 	virtual void ProcessInput(const FGameplayTag& InputGameplayTag, EYSInputPhase InputPhase);
 	void InitState(AActor* Owner);
-	bool IsEnableTransition(EYSInputStatesType NextState) const { return TransitionRule.Contains(NextState); }
 	EYSInputStatesType GetStateType() const { return State; }
 	
 public :
@@ -43,10 +42,6 @@ protected :
 	FGameplayTag ResolveStateTag(const FGameplayTag& InputGameplayTag);
 
 protected :
-
-	UPROPERTY()
-	TSet<EYSInputStatesType> TransitionRule;
-
 	EYSInputStatesType State;
 
 private :
@@ -65,11 +60,6 @@ public :
 	{
 		StateName = TEXT("Idle");
 
-		for ( int32 i = 0; i < static_cast<int32>(EYSInputStatesType::End); ++i )
-		{
-			TransitionRule.Add(static_cast<EYSInputStatesType>(i));
-		}
-
 		State = EYSInputStatesType::Idle;
 	}
 };
@@ -86,10 +76,6 @@ public :
 	{
 		StateName = TEXT("Attack");
 		State = EYSInputStatesType::Attack;
-		TransitionRule.Add(EYSInputStatesType::Idle);
-		TransitionRule.Add(EYSInputStatesType::Skill);
-		TransitionRule.Add(EYSInputStatesType::Dodge);
-		TransitionRule.Add(EYSInputStatesType::Aim);
 	}
 };
 
@@ -103,9 +89,6 @@ public :
 	{
 		StateName = TEXT("JustAvoid");
 		State = EYSInputStatesType::JustAvoid;
-		TransitionRule.Add(EYSInputStatesType::Idle);
-		TransitionRule.Add(EYSInputStatesType::Skill);
-		TransitionRule.Add(EYSInputStatesType::Attack);
 	}
 };
 
@@ -120,7 +103,6 @@ public :
 	{
 		StateName = TEXT("Skill");
 		State = EYSInputStatesType::Skill;
-		TransitionRule.Add(EYSInputStatesType::Idle);
 	}
 };
 
@@ -134,9 +116,6 @@ public :
 	{
 		StateName = TEXT("Falling");
 		State = EYSInputStatesType::Falling;
-		TransitionRule.Add(EYSInputStatesType::Idle);
-		TransitionRule.Add(EYSInputStatesType::Attack);
-		TransitionRule.Add(EYSInputStatesType::Skill);
 	}
 };
 
@@ -150,12 +129,6 @@ public :
 	{
 		StateName = TEXT("Dodge");
 		State = EYSInputStatesType::Dodge;
-		TransitionRule.Add(EYSInputStatesType::Idle);
-		TransitionRule.Add(EYSInputStatesType::Attack);
-		TransitionRule.Add(EYSInputStatesType::Falling);
-		TransitionRule.Add(EYSInputStatesType::JustAvoid);
-		// 구르기 직후 조준. Idle을 한 번 거치게 만들면 회피-반격 리듬이 한 박자 늦는다.
-		TransitionRule.Add(EYSInputStatesType::Aim);
 	}
 };
 
@@ -169,8 +142,6 @@ public :
 	{
 		StateName = TEXT("Ready");
 		State = EYSInputStatesType::Ready;
-		TransitionRule.Add(EYSInputStatesType::Idle);
-		TransitionRule.Add(EYSInputStatesType::Skill);
 	}
 };
 
@@ -183,8 +154,6 @@ class UYSJumpAttackState : public UYSInputStates
 	{
 		StateName = TEXT("JumpAttack");
 		State = EYSInputStatesType::JumpAttack;
-		TransitionRule.Add(EYSInputStatesType::Idle);
-		TransitionRule.Add(EYSInputStatesType::Falling);
 	}
 };
 
@@ -197,8 +166,6 @@ class UYSDamagedState : public UYSInputStates
 	{
 		StateName = TEXT("Damaged");
 		State = EYSInputStatesType::Damaged;
-		TransitionRule.Add(EYSInputStatesType::Idle);
-		TransitionRule.Add(EYSInputStatesType::Falling);
 	}
 };
 
@@ -224,10 +191,5 @@ class UYSAimState : public UYSInputStates
 	{
 		StateName = TEXT("Aim");
 		State = EYSInputStatesType::Aim;
-		TransitionRule.Add(EYSInputStatesType::Idle);
-		TransitionRule.Add(EYSInputStatesType::Falling);
-		// 조준 중 회피. Aim.Input.Dodge 태그는 이미 있어 어빌리티는 켜지는데
-		// 여기가 비어 있으면 인풋 상태만 Aim에 남아 실제 상태와 어긋난다.
-		TransitionRule.Add(EYSInputStatesType::Dodge);
 	}
 };

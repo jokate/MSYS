@@ -262,6 +262,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Tag")
 	FGameplayTagContainer WorldTagContainer;
 	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Movement", meta = (DisplayName = "어빌리티 동안 공중 정지"))
+	bool bFreezeInAirDuringAbility = false;
+	
 protected :
 	FYSGameplayAbility_RuntimeData RuntimeData;
 	
@@ -279,4 +282,8 @@ protected :
 
 	UPROPERTY()
 	UYSAT_Trace* TraceTask = nullptr;
+	
+private :
+	float CachedGravityScale = 1.f;
+	bool bAirFrozen = false;
 };
