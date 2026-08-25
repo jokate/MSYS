@@ -59,6 +59,12 @@ public:
 		return GetRemaining(Ability) > 0.f;
 	}
 
+	void AddAirUsage(const FGameplayAbilitySpecHandle& Ability)
+	{
+		AirUsedHandles.Add(Ability);
+	}
+	void ClearAirUsage();
+	
 	float GetRemaining(TSubclassOf<UGameplayAbility> Ability) const
 	{
 		for (const FYSCooldownEntry& Entry : CooldownEntries)
@@ -96,4 +102,7 @@ public :
 	
 	UPROPERTY()
 	FActiveGameplayEffectHandle ResourceRechargeHandle;
+	
+	UPROPERTY()
+	TSet<FGameplayAbilitySpecHandle> AirUsedHandles;
 };

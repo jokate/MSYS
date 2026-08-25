@@ -8,6 +8,7 @@
 #include "Ability/YSGameplayAbility.h"
 #include "Character/YSCharacterPlayer.h"
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
+#include "Character/Components/YSCharacterMovementComponent.h"
 #include "Data/YSAbilityDataAsset.h"
 #include "General/YSGameplayTag.h"
 #include "General/YSGeneratedGameplayTags.h"
@@ -137,6 +138,11 @@ void UYSAbilitySystemComponent::AllocateSkillToAbilityTag(const FGameplayTag& Sk
 	}
 }
 
+void UYSAbilitySystemComponent::ClearAirUsage()
+{
+	AirUsedHandles.Reset();
+}
+
 
 void UYSAbilitySystemComponent::OnRemoveAbility(FGameplayAbilitySpec& AbilitySpec)
 {
@@ -146,21 +152,25 @@ void UYSAbilitySystemComponent::OnRemoveAbility(FGameplayAbilitySpec& AbilitySpe
 
 bool UYSAbilitySystemComponent::ProcessSkillActive(const FGameplayTag& InputTag)
 {
+	const UYSCharacterMovementComponent* Movement = UYSCharacterMovementComponent::Get(GetOwner());
+	const bool bAirborne = IsValid(Movement) && Movement->IsFalling();
+
 	for ( FGameplayAbilitySpecHandle& AbilitySpecHandle : AbilitySpecHandles )
 	{
 		FGameplayAbilitySpec* AbilitySpec = FindAbilitySpecFromHandle(AbilitySpecHandle);
 
-		if ( AbilitySpec == nullptr )
+		if ( AbilitySpec == nullptr || AbilitySpec->IsActive() )
 			continue;
 
-        if ( AbilitySpec->IsActive() )
-        	continue;
-        
-		if ( AbilitySpec->GetDynamicSpecSourceTags().HasTagExact(InputTag))
-		{
-			TryActivateAbility(AbilitySpecHandle);
-			return true;
-		}
+		if ( AbilitySpec->GetDynamicSpecSourceTags().HasTagExact(InputTag) == false )
+			continue;
+		
+		if ( bAirborne && AirUsedHandles.Contains(AbilitySpecHandle) )
+			return false;
+
+		TryActivateAbility(AbilitySpecHandle);
+
+		return true;
 	}
 
 	return false;

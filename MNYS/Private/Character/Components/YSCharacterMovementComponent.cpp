@@ -3,6 +3,7 @@
 
 #include "Character/Components/YSCharacterMovementComponent.h"
 
+#include "YSAbilitySystemComponent.h"
 #include "Character/YSCharacterBase.h"
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
 
@@ -96,6 +97,13 @@ void UYSCharacterMovementComponent::OnMovementModeChanged(EMovementMode Previous
 		if ( IsValid(InputStateMachine) )
 		{
 			InputStateMachine->RemoveStateStack(EYSInputStatesType::Falling);
+		}
+		
+		UYSAbilitySystemComponent* ASC = UYSAbilitySystemComponent::Get(GetOwner());
+		
+		if ( IsValid(ASC) )
+		{
+			ASC->ClearAirUsage();
 		}
 	}
 }
