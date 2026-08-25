@@ -47,6 +47,13 @@ input_tags = [
     if tag_name.startswith("Input.")
 ]
 
+# 대분류. 여러 상태를 한 태그로 묶어 "어느 상태에서든" 을 표현한다.
+# 실제 상태가 아니므로 enum 이 아니라 여기서 관리한다.
+CATEGORIES = ["Alive", "Actionable", "Grounded"]
+
+scopes = states + CATEGORIES
+
+
 def make_var_name(state_name, input_var_name):
     # Attack + InputAttack = AttackInputAttack
     return f"{state_name}{input_var_name}"
@@ -61,7 +68,7 @@ namespace YSTags
 {
 """
 
-for state in states:
+for state in scopes:
     for input_var, input_tag in input_tags:
         var_name = make_var_name(state, input_var)
         header += f"\tUE_DECLARE_GAMEPLAY_TAG_EXTERN({var_name});\n"
@@ -75,7 +82,7 @@ namespace YSTags
 {
 """
 
-for state in states:
+for state in scopes:
     for input_var, input_tag in input_tags:
         var_name = make_var_name(state, input_var)
         tag_name = f"{state}.{input_tag}"

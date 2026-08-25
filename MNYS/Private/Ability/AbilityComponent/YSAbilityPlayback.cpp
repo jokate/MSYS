@@ -39,6 +39,11 @@ void UYSAbilityPlaybackBase::SetPlayback(TSharedPtr<FYSPlaybackContext> Context)
 	// 예약은 노드보다 오래 사는 컨텍스트에 있으므로, 물려받으면 엉뚱한 엣지로 점프한다.
 	CapturedContext->ContextTags.Reset();
 	CapturedContext->PendingEvaluatedEdgeIndex = INDEX_NONE;
+	
+	if ( PlaybackType == EYSAbilityPlaybackType::None )
+	{
+		DispatchNext(EYSPlaybackEvent::Completed);
+	}
 }
 
 void UYSAbilityPlaybackBase::OnSequencePlayed()

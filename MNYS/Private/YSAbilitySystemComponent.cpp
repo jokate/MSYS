@@ -221,15 +221,28 @@ void UYSAbilitySystemComponent::StartCoolDown(TSubclassOf<UGameplayAbility> Abil
 	Entry->EndTime = TargetToCooldownTime;
 }
 
-void UYSAbilitySystemComponent::ProcessAbilityByInputPass(const FGameplayTag& InputTag, EYSInputPhase InputPhase)
+void UYSAbilitySystemComponent::ProcessAbilityByInputPass(const TArray<FGameplayTag>& InputTags, EYSInputPhase InputPhase)
 {
-	if ( ProcessAlreadyActiveAbility(InputTag, InputPhase))
+	if ( InputTags.Num() == 0 )
+	{
 		return;
-	
+	}
+
+	// 활성 어빌리티는 태그가 아니라 자기 플레이백 그래프로 판정하므로 세부 태그 한 번이면 된다.
+	if ( ProcessAlreadyActiveAbility(InputTags[0], InputPhase) )
+		return;
+
 	if ( InputPhase != EYSInputPhase::Pressed )
 		return;
 
-	ProcessSkillActive(InputTag);
+	// 세부 → 대분류 순. 먼저 맞는 하나만 켠다.
+	for ( const FGameplayTag& InputTag : InputTags )
+	{
+		if ( ProcessSkillActive(InputTag) )
+		{
+			return;
+		}
+	}
 }
 
 

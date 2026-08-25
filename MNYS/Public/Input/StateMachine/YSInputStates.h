@@ -20,6 +20,13 @@ class MNYS_API UYSInputStates : public UObject
 	GENERATED_BODY()
 
 public :
+	UYSInputStates()
+	{
+		// 대분류. 세부 상태 다음 순위로 태그 해석에 참여한다.
+		// 좁은 것부터 넣는다 — 먼저 맞는 하나가 채택되기 때문이다.
+		CategoryNames = { TEXT("Grounded"), TEXT("Actionable"), TEXT("Alive") };
+	}
+
 	virtual void ProcessInput(const FGameplayTag& InputGameplayTag, EYSInputPhase InputPhase);
 	void InitState(AActor* Owner);
 	EYSInputStatesType GetStateType() const { return State; }
@@ -38,16 +45,23 @@ public :
 	TWeakObjectPtr<UYSInputStateMachineComponent> OwnerStateMachineManager;
 
 protected :
-	/** "StateName.InputTag" 조합 태그를 해석한다. 최초 1회만 문자열을 만들고 이후엔 캐시를 탄다. */
-	FGameplayTag ResolveStateTag(const FGameplayTag& InputGameplayTag);
+	/**
+	 * "StateName.InputTag" 와 "Category.InputTag" 후보를 세부 → 대분류 순으로 만든다.
+	 * 최초 1회만 문자열을 만들고 이후엔 캐시를 탄다.
+	 */
+	void ResolveStateTags(const FGameplayTag& InputGameplayTag, TArray<FGameplayTag>& OutTags);
 
 protected :
+	// 이 상태가 속한 대분류. 상태마다 좁히거나 비운다.
+	UPROPERTY()
+	TArray<FString> CategoryNames;
+
 	EYSInputStatesType State;
 
 private :
-	// InputTag → "StateName.InputTag" 결과 캐시.
-	// 무효 태그(미등록 조합)도 그대로 캐시해 재조회를 막는다.
-	TMap<FGameplayTag, FGameplayTag> ResolvedTagCache;
+	// InputTag → 후보 태그 목록 캐시.
+	// 빈 결과(미등록 조합)도 그대로 캐시해 재조회를 막는다.
+	TMap<FGameplayTag, TArray<FGameplayTag>> ResolvedTagCache;
 };
 
 UCLASS()
@@ -116,6 +130,7 @@ public :
 	{
 		StateName = TEXT("Falling");
 		State = EYSInputStatesType::Falling;
+		CategoryNames = { TEXT("Actionable"), TEXT("Alive") };   // 공중
 	}
 };
 
@@ -154,6 +169,7 @@ class UYSJumpAttackState : public UYSInputStates
 	{
 		StateName = TEXT("JumpAttack");
 		State = EYSInputStatesType::JumpAttack;
+		CategoryNames = { TEXT("Actionable"), TEXT("Alive") };   // 공중
 	}
 };
 
@@ -166,6 +182,7 @@ class UYSDamagedState : public UYSInputStates
 	{
 		StateName = TEXT("Damaged");
 		State = EYSInputStatesType::Damaged;
+		CategoryNames = { TEXT("Alive") };                       // 경직 중엔 카운터류만
 	}
 };
 
@@ -179,6 +196,7 @@ class UYSDeathState : public UYSInputStates
 	{
 		StateName = TEXT("Death");
 		State = EYSInputStatesType::Death;
+		CategoryNames.Empty();                                   // 사망은 무엇도 받지 않는다
 	}
 };
 

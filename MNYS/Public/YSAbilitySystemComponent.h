@@ -38,7 +38,7 @@ public:
 	static UYSAbilitySystemComponent* Get(AActor* Owner);
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	void ProcessAbilityByInputPass(const FGameplayTag& InputTag, EYSInputPhase InputPhase);
+	void ProcessAbilityByInputPass(const TArray<FGameplayTag>& InputTags, EYSInputPhase InputPhase);
 	void ApplyStatInitialization();
 	void ApplyResourceRecharge(const FYSCharacterInfo* CharacterInfo);
 
