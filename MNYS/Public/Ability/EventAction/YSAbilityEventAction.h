@@ -70,17 +70,14 @@ private :
 	TWeakObjectPtr<AActor> DestroyTarget;
 };
 
-UCLASS(DisplayName = "(플레이어) 입력 State 전환")
+// 정지 되었다는 것을 의미.
+UCLASS(DisplayName = "(플레이어) State 제거.")
 class MNYS_API UYSAbilityEventAction_TransitionState : public UYSAbilityEventAction
 {
 	GENERATED_BODY()
 	
 public : 
 	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
-	
-public : 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "전환할 State"))
-	EYSInputStatesType NextState;
 };
 
 UCLASS(DisplayName = "Gameplay Cue 트리거")

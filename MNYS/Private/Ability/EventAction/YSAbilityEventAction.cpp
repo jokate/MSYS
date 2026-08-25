@@ -94,7 +94,7 @@ bool UYSAbilityEventAction_TransitionState::Execute_Implementation(UYSGameplayAb
 	if ( IsValid(StateMachineComponent) == false )
 		return false;
 	
-	StateMachineComponent->AddStateStack(NextState);
+	StateMachineComponent->RemoveStateStack(OwningAbility->ChangeInputStateType);
 	
 	return true;
 	
