@@ -27,6 +27,7 @@ AYSSaveEcho::AYSSaveEcho()
 	// 루트모션은 살린다 — 발도의 돌진을 재현해야 하기 때문이다.
 	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 	GetCharacterMovement()->bRunPhysicsWithNoController = true;
+	GetCharacterMovement()->GravityScale = 0.f;
 }
 
 UAbilitySystemComponent* AYSSaveEcho::GetAbilitySystemComponent() const
