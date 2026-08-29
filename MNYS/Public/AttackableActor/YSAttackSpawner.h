@@ -30,9 +30,6 @@ public:
 #endif
 
 protected:
-	virtual void BeginPlay() override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	
 	virtual void OnActivate_Implementation() override;
 	void SpawnActorByConfig(FYSSpawnActorConfig SpawnConfig);
 	virtual void TrySpawnActor();

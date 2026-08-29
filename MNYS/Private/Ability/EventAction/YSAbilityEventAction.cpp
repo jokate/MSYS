@@ -143,9 +143,10 @@ bool UYSAbilityEventAction_GameplayEffect::Execute_GameplayEffectToSelf(UYSGamep
 	EffectContextHandle.AddInstigator(OwningAbility->GetAvatarActorFromActorInfo(), OwningAbility->GetOwningActorFromActorInfo());
 	FGameplayEffectSpec Spec(GameplayEffect.GetDefaultObject(), EffectContextHandle);	
 	
+	const FActiveGameplayEffectHandle Handle = OwnerASC->ApplyGameplayEffectSpecToSelf(Spec);
 	if ( bRemoveWhenFinished )
 	{
-		OwningAbility->AddRuntimeEffectSpecHandle(OwnerASC->ApplyGameplayEffectSpecToSelf(Spec));
+		OwningAbility->AddRuntimeEffectSpecHandle(Handle);
 	}
 	return true;
 }
@@ -172,9 +173,11 @@ bool UYSAbilityEventAction_GameplayEffect::Execute_GameplayEffectFromInstigator(
 	EffectContextHandle.AddInstigator(OwningAbility->GetAvatarActorFromActorInfo(), OwningAbility->GetOwningActorFromActorInfo());
 	FGameplayEffectSpec Spec(GameplayEffect.GetDefaultObject(), EffectContextHandle);	
 	
+	const FActiveGameplayEffectHandle Handle = OwnerASC->ApplyGameplayEffectSpecToSelf(Spec);
+	
 	if (bRemoveWhenFinished)
 	{
-		OwningAbility->AddRuntimeEffectSpecHandle(TargetASC->ApplyGameplayEffectSpecToTarget(Spec, OwnerASC));	
+		OwningAbility->AddRuntimeEffectSpecHandle(Handle);	
 	}
 	
 	return true;

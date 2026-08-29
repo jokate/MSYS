@@ -39,17 +39,18 @@ public :
 	 */
 	void Initialize(ACharacter* InMaster, const FYSSavedTechnique& InTechnique);
 
+	virtual void SetPoolActive(bool bActive) override;
+
 protected :
-	virtual void BeginPlay() override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	UFUNCTION()
 	void OnReplayEnded(const FAbilityEndedData& EndedData);
 
 	/** 주인의 메시·애님BP를 그대로 가져온다. 분신은 늘 지금의 혼과 같아 보여야 한다. */
 	void MirrorAppearance(const ACharacter* InMaster);
-	virtual void OnSpawnInitialize(AActor* InOwnerActor, AActor* InInstigator, const TSharedPtr<FYSAbilityHitContext>& HitContext) override;
+	virtual bool OnSpawnInitialize(AActor* InOwnerActor, AActor* InInstigator, const TSharedPtr<FYSAbilityHitContext>& HitContext) override;
 
+	void ReturnToPoolActor();
 protected :
 	UPROPERTY(VisibleAnywhere, Category = "YS | Echo", meta = (DisplayName = "어빌리티 시스템"))
 	TObjectPtr<UYSAbilitySystemComponent> AbilitySystemComponent;

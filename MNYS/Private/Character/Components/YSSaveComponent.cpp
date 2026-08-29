@@ -53,6 +53,11 @@ void UYSSaveComponent::BeginPlay()
 		InputStateMachine->OnRawInputAccepted.AddUniqueDynamic(this, &UYSSaveComponent::HandleRawInput);
 	}
 
+	if ( UYSAbilitySystemComponent* ASC = GetOwnerASC() )
+	{
+		ASC->OnGameplayTagStateChanged.AddUniqueDynamic(this, &UYSSaveComponent::HandleTagStateChanged);
+	}
+
 	RefreshStateTags();
 }
 
@@ -88,6 +93,14 @@ void UYSSaveComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	{
 		InputStateMachine->OnRawInputAccepted.RemoveDynamic(this, &UYSSaveComponent::HandleRawInput);
 	}
+
+	if ( UYSAbilitySystemComponent* ASC = GetOwnerASC() )
+	{
+		ASC->OnGameplayTagStateChanged.RemoveDynamic(this, &UYSSaveComponent::HandleTagStateChanged);
+	}
+
+	CancelPendingEchoes();
+
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -172,39 +185,46 @@ bool UYSSaveComponent::TryConsumeSlot(FYSSavedTechnique& OutTechnique)
 
 void UYSSaveComponent::ExecuteTripleEcho(const FYSSavedTechnique& Technique)
 {
-	ACharacter* MasterActor = GetOwner<ACharacter>();
-	if ( IsValid(MasterActor) == false || Technique.IsValid() == false )
-	{
-		return;
-	}
-
 	UWorld* World = GetWorld();
-	if ( IsValid(World) == false )
+
+	if ( TripleEchoSpawnConfig.SpawnDelay <= 0.f || IsValid(World) == false )
+	{
+		ExecuteTripleEcho_Internal(Technique);
+		return;
+	}
+
+	FTimerManager& TimerManager = World->GetTimerManager();
+
+	PendingEchoTimers.RemoveAll([&TimerManager](const FTimerHandle& Handle)
+	{
+		return TimerManager.IsTimerActive(Handle) == false;
+	});
+
+	FTimerHandle& TimerHandle = PendingEchoTimers.AddDefaulted_GetRef();
+	TimerManager.SetTimer(TimerHandle, FTimerDelegate::CreateUObject(this, &UYSSaveComponent::ExecuteTripleEcho_Internal, Technique), TripleEchoSpawnConfig.SpawnDelay, false);
+}
+
+void UYSSaveComponent::CancelPendingEchoes()
+{
+	if ( UWorld* World = GetWorld() )
+	{
+		for ( FTimerHandle& TimerHandle : PendingEchoTimers )
+		{
+			World->GetTimerManager().ClearTimer(TimerHandle);
+		}
+	}
+
+	PendingEchoTimers.Empty();
+}
+
+void UYSSaveComponent::HandleTagStateChanged(const FGameplayTag& Tag, bool bTagExists)
+{
+	if ( Tag != YSTags::State_Save_TripleEcho || bTagExists )
 	{
 		return;
 	}
 
-	if ( TripleEchoSpawnConfig.ActorClass == nullptr || TripleEchoSpawnConfig.ActorClass->IsChildOf(AYSSaveEcho::StaticClass()) == false )
-	{
-		return;
-	}
-
-	const FTransform SpawnTransform = UYSBlueprintFunctionLibrary::CalculateSpawnTransform(this, TripleEchoSpawnConfig, MasterActor, nullptr);
-
-	// Initialize 는 BeginPlay 보다 먼저 끝나야 한다 — BeginPlay 가 SavedTechnique 로 재생을 건다.
-	AYSSaveEcho* Echo = World->SpawnActorDeferred<AYSSaveEcho>(TripleEchoSpawnConfig.ActorClass, SpawnTransform);
-	if ( IsValid(Echo) == false )
-	{
-		return;
-	}
-
-	Echo->Initialize(MasterActor, Technique);
-	if ( IsValid(Echo) == false )
-	{
-		return;
-	}
-
-	Echo->FinishSpawning(SpawnTransform);
+	CancelPendingEchoes();
 }
 
 void UYSSaveComponent::SetMaxSlotCount(int32 NewMax)
@@ -258,4 +278,43 @@ void UYSSaveComponent::RefreshStateTags()
 UYSAbilitySystemComponent* UYSSaveComponent::GetOwnerASC() const
 {
 	return UYSAbilitySystemComponent::Get(GetOwner());
+}
+
+void UYSSaveComponent::ExecuteTripleEcho_Internal(FYSSavedTechnique Technique)
+{
+	ACharacter* MasterActor = GetOwner<ACharacter>();
+	if ( IsValid(MasterActor) == false || Technique.IsValid() == false )
+	{
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if ( IsValid(World) == false )
+	{
+		return;
+	}
+
+	if ( TripleEchoSpawnConfig.ActorClass == nullptr || TripleEchoSpawnConfig.ActorClass->IsChildOf(AYSSaveEcho::StaticClass()) == false )
+	{
+		return;
+	}
+
+	const FTransform SpawnTransform = UYSBlueprintFunctionLibrary::CalculateSpawnTransform(this, TripleEchoSpawnConfig, MasterActor, nullptr);
+
+	// 슬롯은 이미 소비된 뒤다. OnSpawnInitialize 가 한 번 더 꺼내면 안 되므로
+	// SpawnByConfig 대신 액터 확보만 빌려 쓰고 기술을 직접 넘긴다.
+	AYSSaveEcho* Echo = Cast<AYSSaveEcho>(UYSBlueprintFunctionLibrary::AcquirePooledActor(World, TripleEchoSpawnConfig.ActorClass, SpawnTransform));
+	
+	if ( IsValid(Echo) == false )
+	{
+		return;
+	}
+
+	Echo->Initialize(MasterActor, Technique);
+	if ( IsValid(Echo) == false )
+	{
+		return;
+	}
+
+	Echo->SetPoolActive(true);
 }

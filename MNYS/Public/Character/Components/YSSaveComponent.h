@@ -13,6 +13,7 @@
  * 혼은 세이브를 이용한 공격을 전제로 합니다.
  */
 
+class AYSSaveEcho;
 struct FGameplayTag;
 class UYSAbilitySystemComponent;
 class UYSGameplayAbility;
@@ -96,6 +97,9 @@ protected:
 protected:
 	UFUNCTION()
 	void HandleRawInput(const FGameplayTag& InputTag, EYSInputPhase InputPhase);
+
+	UFUNCTION()
+	void HandleTagStateChanged(const FGameplayTag& Tag, bool bTagExists);
 	
 public:
 	UPROPERTY(BlueprintAssignable, Category = "YS | Save", meta = (DisplayName = "세이브 상태 변경"))
@@ -111,6 +115,12 @@ protected:
 	void RefreshStateTags();
 
 	UYSAbilitySystemComponent* GetOwnerASC() const;
+	
+	/** 타이머 페이로드로 넘어가므로 값으로 받는다. CreateUObject 가 VarTypes 를 값으로 추론한다. */
+	void ExecuteTripleEcho_Internal(FYSSavedTechnique Technique);
+
+	/** 궁극기가 끝나면 예약분은 나가지 않는다. 버프 밖에서 참격이 나오면 안 된다. */
+	void CancelPendingEchoes();
 	
 protected:
 	// 혼의 세이브는 컨셉상 2개 2개만 저장해야 한다./
@@ -128,4 +138,8 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "삼백의 참격 분신 스폰 설정"))
 	FYSSpawnActorConfig TripleEchoSpawnConfig;
+	
+private :
+	TArray<FTimerHandle> PendingEchoTimers;
+	
 };

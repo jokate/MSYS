@@ -52,14 +52,6 @@ void AYSDamagableActor::BeginPlay()
 
 void AYSDamagableActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	if (IsValid(TraceObject))
-	{
-		HitContext->RemoveTraceEntry(TraceObject);
-		TraceObject->OnHitCountDepleted.RemoveAll(this);
-		TraceObject->OnTraceHit.RemoveAll(this);
-		TraceObject = nullptr;
-	}
-	
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -100,6 +92,22 @@ void AYSDamagableActor::OnActivate_Implementation()
 			Destroy();
 		}	
 	}
+}
+
+void AYSDamagableActor::SetPoolActive(bool bActive)
+{
+	if ( !bActive )
+	{
+		if (IsValid(TraceObject))
+		{
+			HitContext->RemoveTraceEntry(TraceObject);
+			TraceObject->OnHitCountDepleted.RemoveAll(this);
+			TraceObject->OnTraceHit.RemoveAll(this);
+			TraceObject = nullptr;
+		}
+	}
+	
+	Super::SetPoolActive(bActive);
 }
 
 // Called every frame

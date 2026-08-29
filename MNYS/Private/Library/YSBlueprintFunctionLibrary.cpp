@@ -21,6 +21,7 @@
 #include "General/YSDefine.h"
 #include "General/YSGameplayTag.h"
 #include "Interface/YSDamageProxy.h"
+#include "Subsystem/YSObjectPoolingSubsystem.h"
 
 float UYSBlueprintFunctionLibrary::GetFinalDamage(const UYSCharacterAttributeSetBase* Owner,
                                                   const UYSCharacterAttributeSetBase* Target, const FName& SkillID)
@@ -247,6 +248,36 @@ FVector UYSBlueprintFunctionLibrary::GetAbilityEventPosition(EYSPositionPolicy P
 	return GetEventPosition(PositionPolicy, OwningAbility->GetOwningActorFromActorInfo(), SocketName, RelativeOffset);
 }
 
+AActor* UYSBlueprintFunctionLibrary::AcquirePooledActor(UWorld* World, TSubclassOf<AActor> ActorClass,
+	const FTransform& SpawnTransform)
+{
+	UYSObjectPoolingSubsystem* ObjectPooling = UYSObjectPoolingSubsystem::Get(World);
+	if ( IsValid(ObjectPooling) == false || ActorClass == nullptr )
+	{
+		return nullptr;
+	}
+
+	if ( AActor* PooledActor = ObjectPooling->GetPooledActor(ActorClass) )
+	{
+		PooledActor->SetActorTransform(SpawnTransform);
+		return PooledActor;
+	}
+
+	AActor* SpawnedActor = World->SpawnActorDeferred<AActor>(ActorClass, SpawnTransform);
+	if ( IsValid(SpawnedActor) == false )
+	{
+		return nullptr;
+	}
+
+	ObjectPooling->AddPooledActor(SpawnedActor);
+
+	// 컴포넌트 등록과 BeginPlay 는 여기서 끝난다. 초기화·활성화보다 반드시 먼저여야 한다.
+	SpawnedActor->FinishSpawning(SpawnTransform);
+
+	// FinishSpawning 이 스폰 콜리전 정책이나 컨스트럭션 스크립트로 액터를 파괴할 수 있다.
+	return IsValid(SpawnedActor) ? SpawnedActor : nullptr;
+}
+
 AActor* UYSBlueprintFunctionLibrary::SpawnByConfig(UObject* WorldContext, const FYSSpawnActorConfig& Config,
 	AActor* OwnerActor, AActor* TargetActor, AActor* AttachParent, const TSharedPtr<FYSAbilityHitContext>& HitContext)
 {
@@ -254,13 +285,14 @@ AActor* UYSBlueprintFunctionLibrary::SpawnByConfig(UObject* WorldContext, const 
 		return nullptr;
 
 	UWorld* World = WorldContext->GetWorld();
-	if (IsValid(World) == false)
-		return nullptr;
-
-	if (Config.ActorClass == nullptr)
+	if (IsValid(World) == false || Config.ActorClass == nullptr )
 		return nullptr;
 
 	const FTransform SpawnTransform = CalculateSpawnTransform(WorldContext, Config, OwnerActor, TargetActor);
+
+	AActor* PooledActor = AcquirePooledActor(World, Config.ActorClass, SpawnTransform);
+	if (IsValid(PooledActor) == false)
+		return nullptr;
 
 	AActor* Instigator = OwnerActor;
 	if ( const IYSDamageProxy* Proxy = Cast<IYSDamageProxy>(OwnerActor) )
@@ -268,27 +300,26 @@ AActor* UYSBlueprintFunctionLibrary::SpawnByConfig(UObject* WorldContext, const 
 		Instigator = Proxy->GetDamageInstigator();
 	}
 	
-	AActor* SpawnedActor = World->SpawnActorDeferred<AActor>(Config.ActorClass, SpawnTransform);
-	if (IsValid(SpawnedActor) == false)
-		return nullptr;
-
-	if ( IYSSpawnInitializable* Initializable = Cast<IYSSpawnInitializable>(SpawnedActor) )
-	{
-		Initializable->OnSpawnInitialize(OwnerActor, Instigator, HitContext);
-	}
-	
-	if ( IsValid(SpawnedActor) == false )
-	{
-		return nullptr;
-	}
-
 	if (Config.bAttachToActor && IsValid(AttachParent))
 	{
-		SpawnedActor->AttachToActor(AttachParent, FAttachmentTransformRules::KeepWorldTransform);
+		PooledActor->AttachToActor(AttachParent, FAttachmentTransformRules::KeepWorldTransform);
 	}
-
-	SpawnedActor->FinishSpawning(SpawnTransform);
-	return SpawnedActor;
+	
+	if ( IYSSpawnInitializable* Initializable = Cast<IYSSpawnInitializable>(PooledActor) )
+	{
+		if ( Initializable->OnSpawnInitialize(OwnerActor, Instigator, HitContext) == false )
+		{
+			if ( UYSObjectPoolingSubsystem* ObjectPooling = UYSObjectPoolingSubsystem::Get(World) )
+			{
+				ObjectPooling->ReturnPooledActor(PooledActor);
+			}
+			return nullptr;
+		}
+		
+		Initializable->SetPoolActive(true);
+	}
+	
+	return PooledActor;
 }
 
 FTransform UYSBlueprintFunctionLibrary::CalculateSpawnTransform(UObject* WorldContext,

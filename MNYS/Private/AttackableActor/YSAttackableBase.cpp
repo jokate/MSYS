@@ -6,6 +6,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "AttackableActor/YSTelegraphActor.h"
+#include "Subsystem/YSObjectPoolingSubsystem.h"
 
 
 // Sets default values
@@ -26,26 +27,31 @@ void AYSAttackableBase::AllocateInstigator(AActor* InInstigator)
 	InstigatorActor = InInstigator;
 }
 
-void AYSAttackableBase::OnSpawnInitialize(AActor* InOwnerActor, AActor* InInstigator, const TSharedPtr<FYSAbilityHitContext>& InHitContext)
+bool AYSAttackableBase::OnSpawnInitialize(AActor* InOwnerActor, AActor* InInstigator, const TSharedPtr<FYSAbilityHitContext>& InHitContext)
 {
 	AllocateInstigator(InOwnerActor);
 	if (InHitContext.IsValid())
 	{
 		InitializeHitContext(InHitContext);    
 	}
+	
+	return true;
 }
 
-void AYSAttackableBase::BeginPlay()
+void AYSAttackableBase::SetPoolActive(bool bActive)
 {
-	Super::BeginPlay();
-	ProcessActivationType();
-}
-
-void AYSAttackableBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	HitContext = nullptr;
-	DeprocessActivationType();
-	Super::EndPlay(EndPlayReason);
+	IYSSpawnInitializable::SetPoolActive(bActive);
+	
+	if ( bActive )
+	{
+		ProcessActivationType();
+	}
+	else
+	{
+		HitContext = nullptr;
+		DeprocessActivationType();
+		GetWorldTimerManager().ClearTimer(DestroyTimerHandle);
+	}
 }
 
 void AYSAttackableBase::OnActivate_Implementation()
@@ -124,5 +130,13 @@ void AYSAttackableBase::OnActivateTagCallback(const FGameplayEventData* Gameplay
 
 void AYSAttackableBase::DestroyActor()
 {
-	Destroy();
+	UYSObjectPoolingSubsystem* ObjectPoolingSubsystem = UYSObjectPoolingSubsystem::Get(GetWorld());
+	if ( IsValid(ObjectPoolingSubsystem) )
+	{
+		ObjectPoolingSubsystem->ReturnPooledActor(this);
+	}
+	else
+	{
+		Destroy();
+	}
 }

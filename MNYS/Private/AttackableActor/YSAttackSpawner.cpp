@@ -81,20 +81,6 @@ void AYSAttackSpawner::OnConstruction(const FTransform& Transform)
 	_RefreshSpawnPreview();
 }
 
-void AYSAttackSpawner::BeginPlay()
-{
-	Super::BeginPlay();
-	
-	ProcessActivationType();
-}
-
-void AYSAttackSpawner::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	DeprocessActivationType();
-	
-	Super::EndPlay(EndPlayReason);
-}
-
 void AYSAttackSpawner::_RefreshSpawnPreview()
 {
 	for (UArrowComponent* Arrow : SpawnPreviewArrows)

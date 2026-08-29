@@ -10,6 +10,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Ability/YSGameplayAbility.h"
 #include "General/YSGameplayTag.h"
+#include "Subsystem/YSObjectPoolingSubsystem.h"
 
 // Sets default values
 AYSSaveEcho::AYSSaveEcho()
@@ -51,7 +52,12 @@ void AYSSaveEcho::Initialize(ACharacter* InMaster, const FYSSavedTechnique& InTe
 	Master = InMaster;
 	MirrorAppearance(InMaster);
 	
-	AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	if ( AbilitySystemComponent->AbilityActorInfo.IsValid() == false )
+	{
+		// 이미 BeginPlay 가 끝난 상태라면, AbilitySystemComponent 초기화가 끝났을 것이다.
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	}
+	
 	AbilitySystemComponent->SetLooseGameplayTagCount(YSTags::State_Echo, 1);
 
 	FGameplayAbilitySpec Spec(InTechnique.AbilityClass, 1);
@@ -61,27 +67,12 @@ void AYSSaveEcho::Initialize(ACharacter* InMaster, const FYSSavedTechnique& InTe
 
 	GetWorldTimerManager().SetTimer(LifeTimerHandle, FTimerDelegate::CreateWeakLambda(this, [this]()
 	{
-		Destroy();
+		ReturnToPoolActor();
 	}), MaxLifeTime, false);
 	
 	SavedTechnique = InTechnique;
 }
 
-void AYSSaveEcho::BeginPlay()
-{
-	Super::BeginPlay();
-	// 이벤트로 활성하는 이유 — TryActivateAbility 로는 시작 노드를 전달할 방법이 없다.
-	// 활성 후에 ActivePlayback 을 따로 부르면 0번 몽타주가 한 프레임 재생됐다 끊긴다.
-	FGameplayEventData EventData;
-	EventData.EventTag = YSTags::Event_Replay;
-	EventData.EventMagnitude = SavedTechnique.PlaybackIndex;
-	EventData.Instigator = Master.Get();
-	EventData.Target = this;
-
-	AbilitySystemComponent->TriggerAbilityFromGameplayEvent(
-		ReplayHandle, AbilitySystemComponent->AbilityActorInfo.Get(),
-		YSTags::Event_Replay, &EventData, *AbilitySystemComponent);
-}
 
 void AYSSaveEcho::MirrorAppearance(const ACharacter* InMaster)
 {
@@ -111,7 +102,7 @@ void AYSSaveEcho::MirrorAppearance(const ACharacter* InMaster)
 	SetActorLocation(ActorLocation);
 }
 
-void AYSSaveEcho::OnSpawnInitialize(AActor* InOwnerActor, AActor* InInstigator, const TSharedPtr<FYSAbilityHitContext>& HitContext)
+bool AYSSaveEcho::OnSpawnInitialize(AActor* InOwnerActor, AActor* InInstigator, const TSharedPtr<FYSAbilityHitContext>& HitContext)
 {
 	ACharacter* InMaster = Cast<ACharacter>(InOwnerActor);
 	UYSSaveComponent* SaveComponent = UYSSaveComponent::Get(InOwnerActor);
@@ -120,11 +111,51 @@ void AYSSaveEcho::OnSpawnInitialize(AActor* InOwnerActor, AActor* InInstigator, 
 
 	if ( IsValid(InMaster) == false || IsValid(SaveComponent) == false || SaveComponent->TryConsumeSlot(Technique) == false )
 	{
-		Destroy();
-		return;
+		return false;
 	}
 
 	Initialize(InMaster, Technique);
+	return true;
+}
+
+void AYSSaveEcho::SetPoolActive(bool bActive)
+{
+	IYSSpawnInitializable::SetPoolActive(bActive);
+
+	if ( bActive )
+	{
+		// 이벤트로 활성하는 이유 — TryActivateAbility 로는 시작 노드를 전달할 방법이 없다.
+		// 활성 후에 ActivePlayback 을 따로 부르면 0번 몽타주가 한 프레임 재생됐다 끊긴다.
+		FGameplayEventData EventData;
+		EventData.EventTag = YSTags::Event_Replay;
+		EventData.EventMagnitude = SavedTechnique.PlaybackIndex;
+		EventData.Instigator = Master.Get();
+		EventData.Target = this;
+
+		AbilitySystemComponent->TriggerAbilityFromGameplayEvent(
+			ReplayHandle, AbilitySystemComponent->AbilityActorInfo.Get(),
+			YSTags::Event_Replay, &EventData, *AbilitySystemComponent);
+	}
+	else
+	{
+		AbilitySystemComponent->RemoveLooseGameplayTag(YSTags::State_Echo);
+		AbilitySystemComponent->OnAbilityEnded.RemoveAll(this);	
+		AbilitySystemComponent->ClearAbility(ReplayHandle);	
+		GetWorldTimerManager().ClearTimer(LifeTimerHandle);
+	}
+}
+
+void AYSSaveEcho::ReturnToPoolActor()
+{
+	UYSObjectPoolingSubsystem* PoolingSubsystem = GetWorld()->GetSubsystem<UYSObjectPoolingSubsystem>();
+	if ( IsValid(PoolingSubsystem) )
+	{
+		PoolingSubsystem->ReturnPooledActor(this);
+	}
+	else
+	{
+		Destroy();
+	}
 }
 
 void AYSSaveEcho::OnReplayEnded(const FAbilityEndedData& EndedData)
@@ -134,17 +165,5 @@ void AYSSaveEcho::OnReplayEnded(const FAbilityEndedData& EndedData)
 		return;
 	}
 
-	Destroy();
-}
-
-void AYSSaveEcho::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	GetWorldTimerManager().ClearTimer(LifeTimerHandle);
-
-	if ( IsValid(AbilitySystemComponent) )
-	{
-		AbilitySystemComponent->OnAbilityEnded.RemoveAll(this);
-	}
-
-	Super::EndPlay(EndPlayReason);
+	ReturnToPoolActor();
 }

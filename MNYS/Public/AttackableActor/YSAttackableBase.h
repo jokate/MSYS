@@ -22,16 +22,16 @@ public:
 	AYSAttackableBase();
 	virtual void AllocateInstigator(AActor* InInstigator);
 	
-	virtual void OnSpawnInitialize(AActor* InOwnerActor, AActor* InInstigator, const TSharedPtr<FYSAbilityHitContext>& InHitContext) override;
+	virtual bool OnSpawnInitialize(AActor* InOwnerActor, AActor* InInstigator, const TSharedPtr<FYSAbilityHitContext>& InHitContext) override;
 	
 	void InitializeHitContext(const TSharedPtr<FYSAbilityHitContext>& InHitContext)
 	{
 		HitContext = InHitContext;
 	}
-protected : 
-	virtual void BeginPlay() override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;;
 	
+	virtual void SetPoolActive(bool bActive) override;
+	
+protected : 
 	UFUNCTION(BlueprintNativeEvent)
 	void OnActivate();
 	virtual void OnActivate_Implementation();

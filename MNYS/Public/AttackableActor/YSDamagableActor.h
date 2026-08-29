@@ -31,6 +31,7 @@ protected:
 	UFUNCTION()
 	void _OnTraceHit(const TArray<FHitResult>& HitResults, const FName& DamageRow);
 	virtual void OnActivate_Implementation() override;
+	virtual void SetPoolActive(bool bActive) override;
 	
 public:
 	// Called every frame

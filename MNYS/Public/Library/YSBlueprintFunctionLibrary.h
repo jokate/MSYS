@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "General/YSEnum.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "Templates/SubclassOf.h"
 #include "YSBlueprintFunctionLibrary.generated.h"
 
 struct FYSDamageEffectContext;
@@ -14,6 +15,7 @@ struct FYSSpawnActorConfig;
 class UYSGameplayAbility;
 class UAbilitySystemComponent;
 class UYSCharacterAttributeSetBase;
+class UWorld;
 
 /**
  *
@@ -41,6 +43,9 @@ public :
 	UFUNCTION(BlueprintCallable)
 	static FVector GetAbilityEventPosition(EYSPositionPolicy PositionPolicy, UYSGameplayAbility* OwningAbility,
 		const FName& SocketName, const FVector& RelativeOffset);
+	
+	/** 풀에서 꺼내거나 새로 스폰한다. 어느 쪽이든 FinishSpawning 까지 끝난 액터가 나온다. */
+	static AActor* AcquirePooledActor(UWorld* World, TSubclassOf<AActor> ActorClass, const FTransform& SpawnTransform);
 	
 	static AActor* SpawnByConfig(UObject* WorldContext, const FYSSpawnActorConfig& Config, AActor* OwnerActor, AActor* TargetActor, AActor* AttachParent = nullptr, const TSharedPtr<FYSAbilityHitContext>& HitContext = nullptr);
 	static FTransform CalculateSpawnTransform(UObject* WorldContext, const FYSSpawnActorConfig& Config, AActor* OwnerActor, AActor* TargetActor);
