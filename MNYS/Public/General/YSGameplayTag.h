@@ -72,6 +72,7 @@ namespace YSTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Save_HasSlot);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Save_Full);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Echo);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Save_TripleEcho);
 
 	// AI 억제 — 캐릭터 고유 (ASC에 부여, ActivationOwnedTags/루즈 태그)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AISuppress);

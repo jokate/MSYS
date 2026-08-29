@@ -10,6 +10,7 @@
 #include "YSAbilityEventAction.generated.h"
 
 class AYSSaveEcho;
+struct FYSSavedTechnique;
 class UYSAbilityTriggerPayload_Velocity;
 class UGameplayEffect;
 struct FYSComboTransition;
@@ -226,4 +227,7 @@ class MNYS_API UYSAbilityEventAction_SaveAbilityRecord : public UYSAbilityEventA
 	
 public : 
 	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
+
+protected :
+	bool Execute_TripleEcho(UYSGameplayAbility* OwningAbility, AActor* AvatarActor, const FYSSavedTechnique& Technique);
 };

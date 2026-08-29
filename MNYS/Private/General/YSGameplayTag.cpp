@@ -61,6 +61,7 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Save_HasSlot, "State.Save.HasSlot");
 	UE_DEFINE_GAMEPLAY_TAG(State_Save_Full, "State.Save.Full");
 	UE_DEFINE_GAMEPLAY_TAG(State_Echo, "State.Echo");
+	UE_DEFINE_GAMEPLAY_TAG(State_Save_TripleEcho, "State.Save.TripleEcho");
 
 	UE_DEFINE_GAMEPLAY_TAG(AISuppress, "AI.Suppress");
 	UE_DEFINE_GAMEPLAY_TAG(AISuppress_HitReact, "AI.Suppress.HitReact");

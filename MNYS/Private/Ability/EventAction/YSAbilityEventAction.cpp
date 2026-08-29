@@ -13,12 +13,14 @@
 #include "Ability/Task/YSAT_RunEQSQuery.h"
 #include "Ability/Task/YSAT_Trace.h"
 #include "AttackableActor/YSDamagableActor.h"
+#include "AttackableActor/YSSaveEcho.h"
 #include "Character/YSCharacterBase.h"
 #include "Character/YSPlayerController.h"
 #include "Character/Components/YSCharacterMovementComponent.h"
 #include "Character/Components/YSCameraManageComponent.h"
 #include "Character/Components/YSSaveComponent.h"
 #include "General/YSDefine.h"
+#include "General/YSGameplayTag.h"
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
 
@@ -448,10 +450,30 @@ bool UYSAbilityEventAction_SaveAbilityRecord::Execute_Implementation(UYSGameplay
 		return false;
 	}
 	
+	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(AvatarActor);
+	if ( IsValid(ASC) == false )
+	{
+		return false;
+	}
+
+	// 분신이 재현 중 다시 Record 를 쏘면 분신이 분신을 낳는다. 여기서 끊는다.
+	if ( ASC->HasMatchingGameplayTag(YSTags::State_Echo) )
+	{
+		return false;
+	}
+
 	UYSSaveComponent* SaveComponent = UYSSaveComponent::Get(AvatarActor);
 	if ( IsValid(SaveComponent) == false )
 	{
 		return false;
+	}
+	
+	
+	if ( ASC->HasMatchingGameplayTag(YSTags::State_Save_TripleEcho) )
+	{
+		const FYSSavedTechnique Technique(OwningAbility->GetClass(), OwningAbility->GetCurrentPlaybackIndex(), 1.0f);
+		SaveComponent->ExecuteTripleEcho(Technique);
+		return true;
 	}
 	
 	SaveComponent->MarkSavable(OwningAbility->GetClass(), OwningAbility->GetCurrentPlaybackIndex(), 1.0f);

@@ -5,9 +5,11 @@
 
 #include "YSAbilitySystemComponent.h"
 #include "Ability/YSGameplayAbility.h"
+#include "AttackableActor/YSSaveEcho.h"
 #include "General/YSGameplayTag.h"
 #include "General/YSInputGameplayTags.h"
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
+#include "Library/YSBlueprintFunctionLibrary.h"
 
 
 bool FYSSavedTechnique::IsValid() const
@@ -166,6 +168,43 @@ bool UYSSaveComponent::TryConsumeSlot(FYSSavedTechnique& OutTechnique)
 	OnSaveStateChanged.Broadcast();
 
 	return true;
+}
+
+void UYSSaveComponent::ExecuteTripleEcho(const FYSSavedTechnique& Technique)
+{
+	ACharacter* MasterActor = GetOwner<ACharacter>();
+	if ( IsValid(MasterActor) == false || Technique.IsValid() == false )
+	{
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if ( IsValid(World) == false )
+	{
+		return;
+	}
+
+	if ( TripleEchoSpawnConfig.ActorClass == nullptr || TripleEchoSpawnConfig.ActorClass->IsChildOf(AYSSaveEcho::StaticClass()) == false )
+	{
+		return;
+	}
+
+	const FTransform SpawnTransform = UYSBlueprintFunctionLibrary::CalculateSpawnTransform(this, TripleEchoSpawnConfig, MasterActor, nullptr);
+
+	// Initialize 는 BeginPlay 보다 먼저 끝나야 한다 — BeginPlay 가 SavedTechnique 로 재생을 건다.
+	AYSSaveEcho* Echo = World->SpawnActorDeferred<AYSSaveEcho>(TripleEchoSpawnConfig.ActorClass, SpawnTransform);
+	if ( IsValid(Echo) == false )
+	{
+		return;
+	}
+
+	Echo->Initialize(MasterActor, Technique);
+	if ( IsValid(Echo) == false )
+	{
+		return;
+	}
+
+	Echo->FinishSpawning(SpawnTransform);
 }
 
 void UYSSaveComponent::SetMaxSlotCount(int32 NewMax)

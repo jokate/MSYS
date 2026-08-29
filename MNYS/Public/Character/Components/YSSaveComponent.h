@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "General/YSStruct.h"
 #include "YSSaveComponent.generated.h"
 
 
@@ -76,6 +77,8 @@ public:
 	/** 배치 시 호출. 가장 오래된 슬롯 1건을 꺼내 비운다. */
 	bool TryConsumeSlot(FYSSavedTechnique& OutTechnique);
 
+	void ExecuteTripleEcho(const FYSSavedTechnique& Technique);
+	
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -122,4 +125,7 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Save", meta = (DisplayName = "최대 슬롯 수"))
 	int32 MaxSlotCount = 2;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "삼백의 참격 분신 스폰 설정"))
+	FYSSpawnActorConfig TripleEchoSpawnConfig;
 };
