@@ -186,10 +186,16 @@ bool UYSSaveComponent::TryConsumeSlot(FYSSavedTechnique& OutTechnique)
 void UYSSaveComponent::ExecuteTripleEcho(const FYSSavedTechnique& Technique)
 {
 	UWorld* World = GetWorld();
-
-	if ( TripleEchoSpawnConfig.SpawnDelay <= 0.f || IsValid(World) == false )
+	AActor* Owner = GetOwner();
+	if ( IsValid(World) == false || IsValid(Owner) == false || Technique.IsValid() == false )
 	{
-		ExecuteTripleEcho_Internal(Technique);
+		return;
+	}
+	
+	const FTransform SpawnTransform = UYSBlueprintFunctionLibrary::CalculateSpawnTransform(this, TripleEchoSpawnConfig, Owner, nullptr);
+	if ( TripleEchoSpawnConfig.SpawnDelay <= 0.f  )
+	{
+		ExecuteTripleEcho_Internal(SpawnTransform, Technique);
 		return;
 	}
 
@@ -201,7 +207,7 @@ void UYSSaveComponent::ExecuteTripleEcho(const FYSSavedTechnique& Technique)
 	});
 
 	FTimerHandle& TimerHandle = PendingEchoTimers.AddDefaulted_GetRef();
-	TimerManager.SetTimer(TimerHandle, FTimerDelegate::CreateUObject(this, &UYSSaveComponent::ExecuteTripleEcho_Internal, Technique), TripleEchoSpawnConfig.SpawnDelay, false);
+	TimerManager.SetTimer(TimerHandle, FTimerDelegate::CreateUObject(this, &UYSSaveComponent::ExecuteTripleEcho_Internal, SpawnTransform, Technique), TripleEchoSpawnConfig.SpawnDelay, false);
 }
 
 void UYSSaveComponent::CancelPendingEchoes()
@@ -280,7 +286,7 @@ UYSAbilitySystemComponent* UYSSaveComponent::GetOwnerASC() const
 	return UYSAbilitySystemComponent::Get(GetOwner());
 }
 
-void UYSSaveComponent::ExecuteTripleEcho_Internal(FYSSavedTechnique Technique)
+void UYSSaveComponent::ExecuteTripleEcho_Internal(const FTransform SpawnTransform, const FYSSavedTechnique Technique)
 {
 	ACharacter* MasterActor = GetOwner<ACharacter>();
 	if ( IsValid(MasterActor) == false || Technique.IsValid() == false )
@@ -298,8 +304,6 @@ void UYSSaveComponent::ExecuteTripleEcho_Internal(FYSSavedTechnique Technique)
 	{
 		return;
 	}
-
-	const FTransform SpawnTransform = UYSBlueprintFunctionLibrary::CalculateSpawnTransform(this, TripleEchoSpawnConfig, MasterActor, nullptr);
 
 	// 슬롯은 이미 소비된 뒤다. OnSpawnInitialize 가 한 번 더 꺼내면 안 되므로
 	// SpawnByConfig 대신 액터 확보만 빌려 쓰고 기술을 직접 넘긴다.

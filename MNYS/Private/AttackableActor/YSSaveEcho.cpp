@@ -135,6 +135,9 @@ void AYSSaveEcho::SetPoolActive(bool bActive)
 		AbilitySystemComponent->TriggerAbilityFromGameplayEvent(
 			ReplayHandle, AbilitySystemComponent->AbilityActorInfo.Get(),
 			YSTags::Event_Replay, &EventData, *AbilitySystemComponent);
+		
+		GetCharacterMovement()->StopMovementImmediately();
+		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 	}
 	else
 	{
@@ -142,6 +145,9 @@ void AYSSaveEcho::SetPoolActive(bool bActive)
 		AbilitySystemComponent->OnAbilityEnded.RemoveAll(this);	
 		AbilitySystemComponent->ClearAbility(ReplayHandle);	
 		GetWorldTimerManager().ClearTimer(LifeTimerHandle);
+		
+		GetCharacterMovement()->DisableMovement();
+		GetCharacterMovement()->StopMovementImmediately();
 	}
 }
 

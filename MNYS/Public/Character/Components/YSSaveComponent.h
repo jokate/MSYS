@@ -117,7 +117,7 @@ protected:
 	UYSAbilitySystemComponent* GetOwnerASC() const;
 	
 	/** 타이머 페이로드로 넘어가므로 값으로 받는다. CreateUObject 가 VarTypes 를 값으로 추론한다. */
-	void ExecuteTripleEcho_Internal(FYSSavedTechnique Technique);
+	void ExecuteTripleEcho_Internal(const FTransform SpawnTransform, const FYSSavedTechnique Technique);
 
 	/** 궁극기가 끝나면 예약분은 나가지 않는다. 버프 밖에서 참격이 나오면 안 된다. */
 	void CancelPendingEchoes();

@@ -39,7 +39,7 @@ private :
 	
 	// 2분마다 미사용 액터가 존재하는 케이스에는 놓아주자.
 	UPROPERTY()
-	float RefreshTime = 120.f;
+	float RefreshTime = 30.f;
 	
 	float AccumulatedTime = 0.f;
 };
