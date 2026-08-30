@@ -26,6 +26,12 @@ namespace YSTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Hit_Big);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Hit_Medium);
 	
+	// 4방향 태그. 공격자가 실어보내는 값이 아니라, 피격/이동 시점에 로컬에서 계산해 조회 태그로 합성한다.
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Direction_Forward);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Direction_Backward);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Direction_Left);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Direction_Right);
+	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(JustAvoid_Window);
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Invincible);
@@ -44,6 +50,7 @@ namespace YSTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Replay);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_DeployEcho);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_TransitionState);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_OnLand);
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Buff_JustAvoid);
 

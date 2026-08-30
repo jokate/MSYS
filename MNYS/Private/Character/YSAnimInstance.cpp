@@ -11,6 +11,19 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 
+UYSAnimInstance* UYSAnimInstance::GetAnimInstance(AActor* Owner)
+{
+	if ( IsValid(Owner) == false )
+		return nullptr;
+
+	USkeletalMeshComponent* SkeletalMesh = Owner->FindComponentByClass<USkeletalMeshComponent>();
+
+	if ( IsValid(SkeletalMesh) == false )
+		return nullptr;
+
+	return Cast<UYSAnimInstance>(SkeletalMesh->GetAnimInstance());
+}
+
 void UYSAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();

@@ -48,3 +48,31 @@ protected :
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | GameplayAbility", meta = (DisplayName = "스탯 GE"))
 	TSubclassOf<UGameplayEffect> StatInitEffect;
 };
+
+USTRUCT(BlueprintType)
+struct FYSTaggedMontageEntry
+{
+    GENERATED_BODY()
+
+    // 이 몽타주가 뽑히기 위해 조회 태그가 전부 만족해야 하는 조건
+    UPROPERTY(EditDefaultsOnly, meta = (DisplayName = "필요 태그"))
+    FGameplayTagContainer RequiredTags;
+
+    UPROPERTY(EditDefaultsOnly, meta = (DisplayName = "몽타주"))
+    TSoftObjectPtr<UAnimMontage> Montage;
+};
+
+
+UCLASS()
+class MNYS_API UYSTaggedMontageAsset : public UDataAsset
+{
+	GENERATED_BODY()
+	
+public : 
+	static UYSTaggedMontageAsset* GetMontageAsset(AActor* InActor);
+	TSoftObjectPtr<UAnimMontage> SelectBest(const FGameplayTagContainer& Query) const;
+	
+public : 
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Montage", meta = (DisplayName = "태그"))
+	TArray<FYSTaggedMontageEntry> MontageEntries;
+};

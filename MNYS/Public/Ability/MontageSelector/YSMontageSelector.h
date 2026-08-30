@@ -115,7 +115,26 @@ public :
 	virtual EYSMoveDirection GetMontageDirection(const UYSGameplayAbility* Ability) const override;
 };
 
-// 태그별 몽타주 셀렉터
+// ─── 방향 태그 산출 기준 ──────────────────────────────────────────────────────
+UENUM(BlueprintType)
+enum class EYSDirectionSource : uint8
+{
+	// 이벤트를 보낸 상대(공격자)가 내 로컬 기준 어느 쪽에 있는가. 히트 리액션용.
+	Instigator   UMETA(DisplayName = "공격자 기준"),
+
+	// 내가 지금 어느 쪽으로 입력을 넣고 있는가. 회피/스텝용.
+	ControlInput UMETA(DisplayName = "입력 기준"),
+};
+
+
+// ─── 태그별 몽타주 셀렉터 ─────────────────────────────────────────────────────
+//
+//  조회 태그를 런타임에 조립해서 UYSTaggedMontageAsset::SelectBest 에 넘긴다.
+//  조회 태그 = 이벤트 태그(Hit.Big 등) + 추가 태그 + (옵션) 4방향 태그.
+//
+//  방향은 공격자가 실어보낼 수 없는 값이다 — 공격자는 피격자가 어딜 보는지 모른다.
+//  그래서 저작하는 태그가 아니라 피격 시점에 계산해 합성하는 태그로 다룬다.
+
 USTRUCT(BlueprintType, DisplayName = "태그별 몽타주 선택")
 struct MNYS_API FYSMontageSelector_ByTag : public FYSMontageSelector
 {
@@ -124,8 +143,18 @@ struct MNYS_API FYSMontageSelector_ByTag : public FYSMontageSelector
 public:
 	virtual UAnimMontage* SelectMontage(const UYSGameplayAbility* Ability) const override;
 
+	// 이번 재생에 쓸 조회 태그를 조립한다.
+	FGameplayTagContainer BuildQueryTags(const UYSGameplayAbility* Ability) const;
+
 public:
-	// 태그별 몽타주. 비어있는 태그는 없음 처리.
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, DisplayName = "태그별 몽타주")
-	TMap<FGameplayTag, TSoftObjectPtr<UAnimMontage>> TagMontages;
+	// 조회 태그에 방향을 얹을지
+	UPROPERTY(EditAnywhere, meta = (DisplayName = "방향 태그 사용"))
+	bool bUseDirectionTag = false;
+
+	UPROPERTY(EditAnywhere, meta = (DisplayName = "방향 기준", EditCondition = "bUseDirectionTag", EditConditionHides))
+	EYSDirectionSource DirectionSource = EYSDirectionSource::Instigator;
+
+	// 항상 조회 태그에 얹을 태그. 이벤트가 실어주지 않는 상황(공중 피격 등)을 데이터에서 강제할 때 쓴다.
+	UPROPERTY(EditAnywhere, meta = (DisplayName = "추가 태그"))
+	FGameplayTagContainer ExtraTags;
 };

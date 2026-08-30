@@ -14,6 +14,7 @@
 #include "Ability/Task/YSAT_Trace.h"
 #include "AttackableActor/YSDamagableActor.h"
 #include "AttackableActor/YSSaveEcho.h"
+#include "Character/YSAnimInstance.h"
 #include "Character/YSCharacterBase.h"
 #include "Character/YSPlayerController.h"
 #include "Character/Components/YSCharacterMovementComponent.h"
@@ -481,4 +482,38 @@ bool UYSAbilityEventAction_SaveAbilityRecord::Execute_Implementation(UYSGameplay
 	
 	SaveComponent->MarkSavable(OwningAbility->GetClass(), OwningAbility->GetCurrentPlaybackIndex(), 1.0f);
 	return true;
+}
+
+bool UYSAbilityEventAction_LandingEvent::Execute_Implementation(UYSGameplayAbility* OwningAbility,
+	const FGameplayEventData& EventData)
+{
+	if ( IsValid(OwningAbility) == false )
+		return false;
+	
+	AActor* AvatarActor = OwningAbility->GetAvatarActorFromActorInfo();
+	
+	if ( IsValid(AvatarActor) == false )
+	{
+		return false;
+	}
+	
+	Execute_JumpToLanding(AvatarActor);
+	
+	return true;
+}
+
+void UYSAbilityEventAction_LandingEvent::Execute_JumpToLanding(AActor* OwnerActor)
+{
+	if ( IsValid(OwnerActor) == false )
+	{
+		return;
+	}
+	
+	UYSAnimInstance* AnimInstance = UYSAnimInstance::GetAnimInstance(OwnerActor);
+	if ( IsValid(AnimInstance) == false )
+	{
+		return;
+	}
+	
+	AnimInstance->Montage_JumpToSection(MontageSectionName);
 }

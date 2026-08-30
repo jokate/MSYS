@@ -18,6 +18,8 @@ class MNYS_API UYSAnimInstance : public UAnimInstance
 	GENERATED_BODY()
 
 public :
+	static UYSAnimInstance* GetAnimInstance(AActor* Owner);
+	
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 	

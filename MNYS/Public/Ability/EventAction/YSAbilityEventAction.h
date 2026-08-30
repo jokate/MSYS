@@ -227,7 +227,19 @@ class MNYS_API UYSAbilityEventAction_SaveAbilityRecord : public UYSAbilityEventA
 	
 public : 
 	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
+};
 
-protected :
-	bool Execute_TripleEcho(UYSGameplayAbility* OwningAbility, AActor* AvatarActor, const FYSSavedTechnique& Technique);
+UCLASS(DisplayName = "랜딩 이벤트 발생")
+class MNYS_API UYSAbilityEventAction_LandingEvent : public UYSAbilityEventAction
+{
+	GENERATED_BODY()
+
+public :
+	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;	
+	
+protected : 
+	virtual void Execute_JumpToLanding(AActor* OwnerActor);
+public : 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "몽타주 섹션 점프"))
+	FName MontageSectionName = TEXT("Landing");
 };

@@ -5,6 +5,7 @@
 
 #include "YSAbilitySystemComponent.h"
 #include "Character/YSCharacterBase.h"
+#include "General/YSGameplayTag.h"
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
 
 
@@ -105,6 +106,10 @@ void UYSCharacterMovementComponent::OnMovementModeChanged(EMovementMode Previous
 		{
 			ASC->ClearAirUsage();
 		}
+		
+		FGameplayEventData EventData;
+		// 이벤트 발생.
+		ASC->HandleGameplayEvent(YSTags::Event_OnLand, &EventData);
 	}
 }
 

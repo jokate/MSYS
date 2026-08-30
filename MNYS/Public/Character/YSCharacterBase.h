@@ -15,6 +15,7 @@ class UYSMotionWarpingComponent;
 class UYSAbilitySystemComponent;
 class UCameraComponent;
 class USpringArmComponent;
+class UYSTaggedMontageAsset;
 
 UCLASS()
 class MNYS_API AYSCharacterBase : public ACharacter, public IAbilitySystemInterface, public IGenericTeamAgentInterface, public IYSBattleActor
@@ -54,6 +55,9 @@ public :
 	
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Weapon")
 	TObjectPtr<USkeletalMeshComponent> WeaponMeshComponent;
+	
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "AnimationAsset")
+	TObjectPtr<UYSTaggedMontageAsset> TaggedMontageAsset;
 	
 	UPROPERTY(EditDefaultsOnly, meta = (RowType = "/Script/MNYS.YSCharacterInfo"))
 	FDataTableRowHandle CharacterInfo;

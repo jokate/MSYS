@@ -31,10 +31,16 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(Event_Replay, "Event.Replay");
 	UE_DEFINE_GAMEPLAY_TAG(Event_DeployEcho, "Event.DeployEcho");
 	UE_DEFINE_GAMEPLAY_TAG(Event_TransitionState, "Event.TransitionState");
+	UE_DEFINE_GAMEPLAY_TAG(Event_OnLand, "Event.OnLand");
 	
 	UE_DEFINE_GAMEPLAY_TAG(Hit_Normal, "Hit.Normal");
 	UE_DEFINE_GAMEPLAY_TAG(Hit_Big, "Hit.Big");
 	UE_DEFINE_GAMEPLAY_TAG(Hit_Medium, "Hit.Medium");
+	
+	UE_DEFINE_GAMEPLAY_TAG(Direction_Forward,  "Direction.Forward");
+	UE_DEFINE_GAMEPLAY_TAG(Direction_Backward, "Direction.Backward");
+	UE_DEFINE_GAMEPLAY_TAG(Direction_Left,     "Direction.Left");
+	UE_DEFINE_GAMEPLAY_TAG(Direction_Right,    "Direction.Right");
 	
 	UE_DEFINE_GAMEPLAY_TAG(JustAvoid_Window, "JustAvoid.Window");
 	UE_DEFINE_GAMEPLAY_TAG(Invincible, "Invincible");
