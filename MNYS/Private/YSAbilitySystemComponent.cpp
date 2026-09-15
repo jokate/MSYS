@@ -36,6 +36,16 @@ UYSAbilitySystemComponent* UYSAbilitySystemComponent::Get(AActor* Owner)
 void UYSAbilitySystemComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	OnGameplayEffectAppliedDelegateToSelf.AddUObject(this, &ThisClass::OnEffectAppliedToSelf);
+}
+
+void UYSAbilitySystemComponent::OnEffectAppliedToSelf(UAbilitySystemComponent* Source, const FGameplayEffectSpec& Spec, FActiveGameplayEffectHandle Handle)
+{
+	// 저스트 회피 판정 GE 는 YSTraceObject 가 공격자를 Instigator 로 넣어 건다. 그 순간이 공격자를 알 수 있는 유일한 지점이다.
+	if ( Spec.GetDynamicAssetTags().HasTagExact(YSTags::Event_JustAvoid) == false )
+		return;
+
+	LastJustAvoidInstigator = Spec.GetContext().GetInstigator();
 }
 
 void UYSAbilitySystemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)

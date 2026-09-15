@@ -24,6 +24,9 @@
 #include "General/YSGameplayTag.h"
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
+#include "YSBattleActor.h"
+#include "Components/PrimitiveComponent.h"
+#include "Engine/HitResult.h"
 
 bool UYSAbilityEventAction_StartTrace::Execute_Implementation(UYSGameplayAbility* OwningAbility,
                                                               const FGameplayEventData& EventData)
@@ -56,6 +59,59 @@ bool UYSAbilityEventAction_StopTrace::Execute_Implementation(UYSGameplayAbility*
 	
 	TraceTask->EndTask();
 	
+	return true;
+}
+
+bool UYSAbilityEventAction_HitContextTarget::Execute_Implementation(UYSGameplayAbility* OwningAbility,
+	const FGameplayEventData& EventData)
+{
+	if ( IsValid(OwningAbility) == false )
+		return false;
+
+	const UYSAbilityTriggerPayload_DirectHit* Payload = UYSAbilityTriggerPayload::GetPayload<UYSAbilityTriggerPayload_DirectHit>(&EventData);
+
+	if ( IsValid(Payload) == false )
+		return false;
+
+	const TSharedPtr<FYSPlaybackContext>& Context = OwningAbility->GetAbilityPlaybackContext();
+
+	if ( Context.IsValid() == false )
+		return false;
+
+	AActor* Instigator = Context->Instigator;
+	AActor* Target = Context->Target;
+
+	if ( IsValid(Instigator) == false || IsValid(Target) == false )
+		return false;
+
+	const IYSBattleActor* BattleActor = Cast<IYSBattleActor>(Target);
+
+	if ( BattleActor != nullptr && BattleActor->IsDead() )
+		return false;
+
+	// 시퀀스가 두 액터의 위치를 쥐고 있으므로 스윕 대신 타겟 위치를 히트 지점으로 쓴다.
+	const FVector HitLocation = Target->GetActorLocation();
+	const FVector HitDirection = (HitLocation - Instigator->GetActorLocation()).GetSafeNormal2D();
+	const FHitResult HitResult(Target, Cast<UPrimitiveComponent>(Target->GetRootComponent()), HitLocation, -HitDirection);
+
+	UYSBlueprintFunctionLibrary::SendHitEventToTarget(Instigator, Target, Payload->DamageRow);
+	UYSBlueprintFunctionLibrary::SpawnEffects(Instigator, Payload->DamageRow, HitLocation, HitDirection.ToOrientationRotator());
+	UYSBlueprintFunctionLibrary::ApplyHitEffects(Instigator, Instigator, Target, Payload->DamageRow, HitResult);
+
+	TArray<FHitResult> HitResults;
+	HitResults.Add(HitResult);
+
+	if ( FYSAbilityHitContext* HitContext = OwningAbility->GetHitContext().Get() )
+	{
+		HitContext->AddHitActor(Target);
+		HitContext->UpdateHitResult(this, HitResult);
+	}
+
+	if ( UYSAbilityPlaybackBase* Playback = OwningAbility->GetCurrentPlayback() )
+	{
+		Playback->OnHit(HitResults);
+	}
+
 	return true;
 }
 

@@ -51,6 +51,15 @@ public :
 	FYSTraceConfig TraceConfig;
 };
 
+UCLASS(BlueprintType, EditInlineNew, DisplayName = "확정 히트")
+class MNYS_API UYSAbilityTriggerPayload_DirectHit : public UYSAbilityTriggerPayload
+{
+	GENERATED_BODY()
+public :
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="YS|DirectHit", meta = (DisplayName = "데미지 정보", GetOptions = "MNYS.YSDeveloperSettings.GetDamageRowOptions"))
+	FName DamageRow;
+};
+
 // 사실상 AbiityTask에 필요한 파라미터 모두 세팅.
 UCLASS(BlueprintType, EditInlineNew, DisplayName = "속도 적용")
 class MNYS_API UYSAbilityTriggerPayload_Velocity : public UYSAbilityTriggerPayload

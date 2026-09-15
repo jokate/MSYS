@@ -12,6 +12,7 @@
 #include "MovieSceneSequencePlaybackSettings.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Ability/YSGameplayAbility.h"
+#include "YSAbilitySystemComponent.h"
 #include "Ability/MontageSelector/YSMontageSelector.h"
 #include "Ability/Payload/YSAbilityTriggerPayload.h"
 #include "Ability/AbilityComponent/YSPlaybackCondition.h"
@@ -75,10 +76,10 @@ void UYSAbilityPlaybackBase::EndPlay()
 		PlayMontageAndWaitTask->EndTask();
 	}
 	
-	if ( IsValid(LevelSequencePlayer) )
+	if ( IsValid(ActiveSequenceActor) )
 	{
-		LevelSequencePlayer->OnFinished.RemoveAll(this);
-		LevelSequencePlayer->Stop();
+		ActiveSequenceActor->SetLifeSpan(0.01f);
+		ActiveSequenceActor = nullptr;
 	}
 	
 	CapturedContext = nullptr;
@@ -187,7 +188,9 @@ void UYSAbilityPlaybackBase::SetupSequence()
 	
 	FMovieSceneSequencePlaybackSettings Settings;
 	Settings.PlayRate = SequenceSettings.PlayRate;
-	Settings.bPauseAtEnd = false;
+	Settings.bDisableCameraCuts = !SequenceSettings.bOverrideCameraBySequence;
+	// 끝에 닿아도 마지막 프레임을 쥔 채 OnFinished 만 쏜다.
+	// 포즈·카메라 복원은 다음 노드가 시작되는 EndPlay 의 Stop 에서 일어나므로 노드 경계에서 AnimBP 포즈가 새지 않는다.
 	ALevelSequenceActor* SequenceActor = nullptr;
 	LevelSequencePlayer = ULevelSequencePlayer::CreateLevelSequencePlayer( this, Sequence , Settings, SequenceActor);
 	
@@ -197,6 +200,14 @@ void UYSAbilityPlaybackBase::SetupSequence()
 	}
 	
 	ActiveSequenceActor = SequenceActor;
+
+	// 시퀀스는 시전자 로컬 공간(원점 = 시전자 위치, +X = 정면)으로 저작한다.
+	// 어태치 대신 Transform Origin 을 쓰는 이유: 어태치는 플레이어가 움직이면 적·카메라가 같이 끌려가고, CMC 와도 충돌한다.
+	ActiveSequenceActor->bOverrideInstanceData = true;
+	if (UDefaultLevelSequenceInstanceData* InstanceData = Cast<UDefaultLevelSequenceInstanceData>(ActiveSequenceActor->DefaultInstanceData))
+	{
+		InstanceData->TransformOrigin = FTransform(Instigator->GetActorRotation(), Instigator->GetActorLocation());
+	}
 
 	ActiveSequenceActor->SetBindingByTag(TEXT("Player"), { Instigator });
 	
@@ -214,12 +225,6 @@ void UYSAbilityPlaybackBase::SetupSequence()
 			
         	ActiveSequenceActor->SetBindingByTag(TEXT("Enemy"), { CapturedTarget });	
 		}
-	}
-	
-	if (!SequenceSettings.bOverrideCameraBySequence && IsValid(ActiveSequenceActor))
-	{
-		// 카메라 컷 트랙 비활성화
-		ActiveSequenceActor->bOverrideInstanceData = false;
 	}
 	
 	LevelSequencePlayer->OnFinished.AddDynamic(this, &ThisClass::OnSequencePlayed);
@@ -448,6 +453,25 @@ void UYSAbilityPlayback_FirstHitTarget::ProcessContextBeforePlay()
 	}
 	
 	CapturedContext->Target = HitActors[0];
+}
+
+void UYSAbilityPlayback_JustAvoidTarget::ProcessContextBeforePlay()
+{
+	UYSAbilitySystemComponent* ASC = UYSAbilitySystemComponent::Get(CapturedContext->Instigator);
+
+	if ( IsValid(ASC) == false )
+	{
+		return;
+	}
+
+	AActor* Attacker = ASC->GetLastJustAvoidInstigator();
+
+	if ( IsValid(Attacker) == false )
+	{
+		return;
+	}
+
+	CapturedContext->Target = Attacker;
 }
 
 void UYSAbilityPlayback_ReleaseBuff::ProcessContextBeforePlay()

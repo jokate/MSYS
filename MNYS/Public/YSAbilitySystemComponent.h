@@ -78,6 +78,9 @@ public:
 	}
 	
 	void StartCoolDown(TSubclassOf<UGameplayAbility> Ability, float TargetToCooldownTime);
+
+	/** 마지막 저스트 회피로 흘려보낸 공격의 주인. 파생 기술이 시퀀스 타겟으로 쓴다. */
+	AActor* GetLastJustAvoidInstigator() const { return LastJustAvoidInstigator.Get(); }
 	
 protected:
 	virtual void OnGiveAbility(FGameplayAbilitySpec& AbilitySpec) override;
@@ -85,6 +88,8 @@ protected:
 	
 	bool ProcessSkillActive(const FGameplayTag& InputTag);
 	bool ProcessAlreadyActiveAbility(const FGameplayTag& InputTag, EYSInputPhase InputPhase);
+
+	void OnEffectAppliedToSelf(UAbilitySystemComponent* Source, const FGameplayEffectSpec& Spec, FActiveGameplayEffectHandle Handle);
 	
 	
 	
@@ -105,4 +110,7 @@ public :
 	
 	UPROPERTY()
 	TSet<FGameplayAbilitySpecHandle> AirUsedHandles;
+
+private:
+	TWeakObjectPtr<AActor> LastJustAvoidInstigator;
 };

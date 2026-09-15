@@ -215,6 +215,9 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 	if ( IsValid(CurrentPlayback.Get()) )
 	{
 		CurrentPlayback.Get()->ReleaseMotionWarp();
+		// 시퀀스 플레이어는 어빌리티 태스크가 아니라 어빌리티가 끝나도 스스로 멈추지 않는다.
+		// 여기서 끊지 않으면 OnFinished 가 null 컨텍스트로 되돌아오거나, bPauseAtEnd 상태로 영영 굳는다.
+		CurrentPlayback.Get()->EndPlay();
 	}
 	
 	if ( bBlockMovementDuringAbility )

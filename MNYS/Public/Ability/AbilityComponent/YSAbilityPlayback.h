@@ -177,6 +177,16 @@ protected :
 };
 
 
+UCLASS(DisplayName = "저스트 회피 공격자 기준 플레이 백")
+class MNYS_API UYSAbilityPlayback_JustAvoidTarget : public UYSAbilityPlaybackBase
+{
+	GENERATED_BODY()
+	
+protected :
+	virtual void ProcessContextBeforePlay() override;
+};
+
+
 UCLASS(DisplayName = "플레이 백 시작 시, 버프 해제 / 버프 추가")
 class MNYS_API UYSAbilityPlayback_ReleaseBuff : public UYSAbilityPlaybackBase
 {

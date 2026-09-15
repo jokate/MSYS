@@ -53,7 +53,7 @@ void UYSGameplayCueAction_SequencePlay::StopSequenceSafely()
 {
 	if (!SequenceToPlay.IsValid()) { return; }
 	ULevelSequencePlayer* Player = SequenceToPlay->GetSequencePlayer();
-	if (IsValid(Player) == false)
+	if (IsValid(Player))
 	{
 		Player->OnStop.RemoveDynamic(this, &ThisClass::OnSequenceFinished);
 		Player->Stop();

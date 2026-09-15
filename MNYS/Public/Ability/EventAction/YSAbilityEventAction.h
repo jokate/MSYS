@@ -51,6 +51,15 @@ public :
 	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;	
 };
 
+UCLASS(DisplayName = "컨텍스트 타겟 확정 히트")
+class MNYS_API UYSAbilityEventAction_HitContextTarget : public UYSAbilityEventAction
+{
+	GENERATED_BODY()
+	
+public : 
+	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
+};
+
 UCLASS(DisplayName = "파괴")
 class MNYS_API UYSAbilityEventAction_Destroy : public UYSAbilityEventAction
 {

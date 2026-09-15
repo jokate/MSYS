@@ -55,10 +55,10 @@ struct FYSTaggedMontageEntry
     GENERATED_BODY()
 
     // 이 몽타주가 뽑히기 위해 조회 태그가 전부 만족해야 하는 조건
-    UPROPERTY(EditDefaultsOnly, meta = (DisplayName = "필요 태그"))
+    UPROPERTY(EditAnywhere, meta = (DisplayName = "필요 태그"))
     FGameplayTagContainer RequiredTags;
 
-    UPROPERTY(EditDefaultsOnly, meta = (DisplayName = "몽타주"))
+    UPROPERTY(EditAnywhere, meta = (DisplayName = "몽타주"))
     TSoftObjectPtr<UAnimMontage> Montage;
 };
 
@@ -73,6 +73,6 @@ public :
 	TSoftObjectPtr<UAnimMontage> SelectBest(const FGameplayTagContainer& Query) const;
 	
 public : 
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Montage", meta = (DisplayName = "태그"))
+	UPROPERTY(EditAnywhere, Category = "YS | Montage", meta = (DisplayName = "태그별 몽타주"))
 	TArray<FYSTaggedMontageEntry> MontageEntries;
 };

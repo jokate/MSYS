@@ -14,7 +14,6 @@
 struct FYSPlaybackContext;
 class UYSAbilityPlaybackBase;
 class UYSPlaybackGraphAsset;
-class ALevelSequenceActor;
 class UYSAT_Trace;
 struct FYSMontageSelector;
 class UYSAbilityEventAction;
@@ -270,9 +269,6 @@ protected :
 	
 	TSharedPtr<FYSAbilityHitContext> HitContext;
 	TSharedPtr<FYSPlaybackContext> PlaybackContext;
-	
-	UPROPERTY()
-	TObjectPtr<ALevelSequenceActor> ActiveSequenceActor = nullptr;
 	
 	// 인풋에 대한 어셉팅 여부
 	bool bIsInputAcceptable = false;
