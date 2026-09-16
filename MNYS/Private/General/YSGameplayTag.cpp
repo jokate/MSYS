@@ -47,6 +47,7 @@ namespace YSTags
 	
 	
 	UE_DEFINE_GAMEPLAY_TAG(Buff_JustAvoid, "Buff.JustAvoid");
+	UE_DEFINE_GAMEPLAY_TAG(Passive_RelativeEvaluation, "Passive.RelativeEvaluation");
 
 	UE_DEFINE_GAMEPLAY_TAG(Input_Phase_Pressed, "Input.Phase.Pressed");
 	UE_DEFINE_GAMEPLAY_TAG(Input_Phase_Released, "Input.Phase.Released");

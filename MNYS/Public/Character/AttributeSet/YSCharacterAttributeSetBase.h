@@ -42,11 +42,13 @@ public :
 	ATTRIBUTE_ACCESSORS(UYSCharacterAttributeSetBase, StatSCL);
 	ATTRIBUTE_ACCESSORS(UYSCharacterAttributeSetBase, StatSYN);
 	ATTRIBUTE_ACCESSORS(UYSCharacterAttributeSetBase, IncomingDamage);
+	ATTRIBUTE_ACCESSORS(UYSCharacterAttributeSetBase, IncomingDamageMultiplier);
 	
  
 	/** Health 가 0에 도달했을 때. 스쿼드가 구독해 강제 태그를 건다. */
 	FYSOnCharacterDowned OnCharacterDowned;
 
+	virtual void PreAttributeBaseChange(const FGameplayAttribute& Attribute, float& NewValue) const override;
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
 	virtual void PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue) override;
 	virtual void PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data) override;
@@ -55,6 +57,7 @@ public :
 	
 protected :
 	void AutoRegisterHandler();
+	void CallHandler(const FGameplayAttribute& Attribute, float& NewValue) const;
 	
 protected :
 	
@@ -72,6 +75,8 @@ protected :
 	FGameplayAttributeData TagGaugeRate;
 	UPROPERTY(BlueprintReadOnly, Category = "YS | Combat")
 	FGameplayAttributeData MoveSpeed;
+	UPROPERTY(BlueprintReadOnly, Category = "YS | Combat")
+	FGameplayAttributeData IncomingDamageMultiplier;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "YS | Stat")
 	FGameplayAttributeData StatHP;

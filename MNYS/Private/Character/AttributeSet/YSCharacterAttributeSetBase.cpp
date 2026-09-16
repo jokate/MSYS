@@ -27,6 +27,7 @@ UYSCharacterAttributeSetBase::UYSCharacterAttributeSetBase()
 	InitMoveSpeed(600.f);
 	InitTagGaugeRate(1.f);
 	InitIncomingDamage(0.f);
+	InitIncomingDamageMultiplier(1.f);
 }
 
 void UYSCharacterAttributeSetBase::PostInitProperties()
@@ -36,14 +37,24 @@ void UYSCharacterAttributeSetBase::PostInitProperties()
 	AutoRegisterHandler();
 }
 
+void UYSCharacterAttributeSetBase::PreAttributeBaseChange(const FGameplayAttribute& Attribute, float& NewValue) const
+{
+	Super::PreAttributeBaseChange(Attribute, NewValue);
+	
+	// 안정성 보장을 위한 처리.
+	CallHandler(Attribute, NewValue);
+}
+
 void UYSCharacterAttributeSetBase::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
 {
 	Super::PreAttributeChange(Attribute, NewValue);
 	
-    if (const FClampHandler* Handler = ClampRegistry.Find(Attribute))
-    {
-        (*Handler)(NewValue);
-    }
+    CallHandler(Attribute, NewValue);
+
+	if (Attribute == GetIncomingDamageMultiplierAttribute())
+	{
+		NewValue = FMath::Max(NewValue, 0.f);
+	}
 }
 
 void UYSCharacterAttributeSetBase::PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue,
@@ -178,5 +189,13 @@ void UYSCharacterAttributeSetBase::AutoRegisterHandler()
 		{
 			V = FMath::Clamp(V, 0.f, MaxData->GetCurrentValue());
 		});
+	}
+}
+
+void UYSCharacterAttributeSetBase::CallHandler(const FGameplayAttribute& Attribute, float& NewValue) const
+{
+	if (const FClampHandler* Handler = ClampRegistry.Find(Attribute))
+	{
+		(*Handler)(NewValue);
 	}
 }

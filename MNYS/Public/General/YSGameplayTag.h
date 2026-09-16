@@ -53,6 +53,7 @@ namespace YSTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_OnLand);
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Buff_JustAvoid);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Passive_RelativeEvaluation);
 
 	// 입력 위상 — 플레이백 컨텍스트 태그로만 쓰인다.
 	// 어빌리티 라우팅은 EYSInputPhase 파라미터가 담당하고, 이 두 태그는
