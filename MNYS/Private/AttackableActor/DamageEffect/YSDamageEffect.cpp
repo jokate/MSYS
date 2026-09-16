@@ -3,6 +3,8 @@
 
 #include "AttackableActor/DamageEffect/YSDamageEffect.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
 #include "GameFramework/Character.h"
 
 void FYSDamageEffect_Knockback::Apply(const FYSDamageEffectContext& Context) const
@@ -35,4 +37,43 @@ void FYSDamageEffect_Knockback::Apply(const FYSDamageEffectContext& Context) con
 	}
 
 	TargetCharacter->LaunchCharacter(Direction.GetSafeNormal() * Strength + FVector::UpVector * Lift, true, true);
+}
+
+void FYSDamageEffect_ApplyGameplayEffect::Apply(const FYSDamageEffectContext& Context) const
+{
+	if ( GameplayEffectToTarget == nullptr && GameplayEffectToInstigator == nullptr )
+	{
+		return;
+	}
+	
+	AActor* Instigator = Context.Instigator;
+	if (IsValid(Instigator) == false)
+	{
+		return;
+	}
+	
+	UAbilitySystemComponent* OwnerASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Instigator);
+	
+	if ( IsValid(OwnerASC) == false )
+	{
+		return;
+	}
+	
+	FGameplayEffectContextHandle EffectContextHandle = OwnerASC->MakeEffectContext();
+	EffectContextHandle.AddInstigator(Instigator, Instigator);
+	
+	if (IsValid(Context.Target) && IsValid(GameplayEffectToTarget))
+	{
+		UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Context.Target);	
+		FGameplayEffectSpec Spec(GameplayEffectToTarget.GetDefaultObject(), EffectContextHandle);	
+		OwnerASC->ApplyGameplayEffectSpecToTarget(Spec, TargetASC);
+	}
+	
+	if ( IsValid(GameplayEffectToInstigator) == false )
+	{
+		return;
+	}
+	
+	FGameplayEffectSpec EffectSpec(GameplayEffectToInstigator.GetDefaultObject(), EffectContextHandle);	
+	OwnerASC->ApplyGameplayEffectSpecToSelf(EffectSpec);
 }

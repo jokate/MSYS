@@ -10,6 +10,8 @@
  * 
  */
 
+class UGameplayEffect;
+
 USTRUCT()
 struct FYSDamageEffectContext
 {
@@ -53,4 +55,19 @@ struct FYSDamageEffect_Knockback : public FYSDamageEffectBase
 
 	UPROPERTY(EditAnywhere, Category = "YS | Damage Effect", meta = (DisplayName = "히트 지점 기준 (끄면 소스 위치 기준)"))
 	bool bUseImpactNormal = false;
+};
+
+
+USTRUCT(DisplayName = "게임 플레이 이펙트 적용")
+struct FYSDamageEffect_ApplyGameplayEffect : public FYSDamageEffectBase
+{
+	GENERATED_BODY()
+
+	virtual void Apply(const FYSDamageEffectContext& Context) const override;
+
+	UPROPERTY(EditAnywhere, Category = "YS | Damage Effect", meta = (DisplayName = "히트 타겟에게 적용할 게임 플레이 이펙트"))
+	TSubclassOf<UGameplayEffect> GameplayEffectToTarget;
+	
+	UPROPERTY(EditAnywhere, Category = "YS | Damage Effect", meta = (DisplayName = "히트 주체에게 적용할 게임 플레이 이펙트"))
+	TSubclassOf<UGameplayEffect> GameplayEffectToInstigator;
 };
