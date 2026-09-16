@@ -1,6 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Ability/MontageSelector/YSMontageSelector.h"
+
+#include "AbilitySystemComponent.h"
 #include "Ability/YSGameplayAbility.h"
 #include "Ability/MotionWarp/YSMotionWarpParam.h"
 #include "Character/YSCharacterBase.h"
@@ -148,6 +150,21 @@ FGameplayTagContainer FYSMontageSelector_ByTag::BuildQueryTags(const UYSGameplay
 	FGameplayTagContainer Query;
 
 	// 공격자가 실어준 히트 강도 등 (Hit.Big / Hit.Normal ...)
+	if (IsValid(Ability) == false )
+	{
+		return Query;
+	}
+	
+	UAbilitySystemComponent* ASC = Ability->GetAbilitySystemComponentFromActorInfo();
+
+	if (IsValid(ASC))
+	{
+		FGameplayTagContainer TagContainer = ASC->GetOwnedGameplayTags();
+		
+		FGameplayTagContainer Filtered = TagContainer.Filter(OwnedTagFilter);
+		Query.AppendTags(Filtered);
+	}
+	
 	if ( const FGameplayEventData* EventData = Ability->GetEventData() )
 		Query.AppendTags(EventData->TargetTags);
 

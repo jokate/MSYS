@@ -175,10 +175,14 @@ bool UYSAbilitySystemComponent::ProcessSkillActive(const FGameplayTag& InputTag)
 		if ( AbilitySpec->GetDynamicSpecSourceTags().HasTagExact(InputTag) == false )
 			continue;
 		
+		// 에어본 + 에어본 스킬 사용이 이미 된 경우에는 굳이 사용하지 말자
 		if ( bAirborne && AirUsedHandles.Contains(AbilitySpecHandle) )
-			return false;
+			continue;
 
-		TryActivateAbility(AbilitySpecHandle);
+		if ( !TryActivateAbility(AbilitySpecHandle) )
+		{
+			continue;
+		}
 
 		return true;
 	}

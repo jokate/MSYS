@@ -157,4 +157,7 @@ public:
 	// 항상 조회 태그에 얹을 태그. 이벤트가 실어주지 않는 상황(공중 피격 등)을 데이터에서 강제할 때 쓴다.
 	UPROPERTY(EditAnywhere, meta = (DisplayName = "추가 태그"))
 	FGameplayTagContainer ExtraTags;
+	
+	UPROPERTY(EditAnywhere, meta = (DisplayName = "옵션 태그"))
+	FGameplayTagContainer OwnedTagFilter;
 };
