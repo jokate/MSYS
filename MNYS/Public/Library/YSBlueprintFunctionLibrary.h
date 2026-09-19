@@ -12,6 +12,7 @@ struct FYSDamageEffectContext;
 struct FYSDamageInfo;
 struct FYSAbilityHitContext;
 struct FYSSpawnActorConfig;
+struct FYSTransformPolicyContext;
 class UYSGameplayAbility;
 class UAbilitySystemComponent;
 class UYSCharacterAttributeSetBase;
@@ -33,22 +34,12 @@ public :
 	static void SendHitEventToTarget(AActor* Instigator, AActor* Target, const FName& SkillID);
 	
 	static void SpawnEffects(UObject* WorldContextObject, const FName& DamageRow, const FVector& Location, const FRotator& Rotation);
-
-	static FRotator GetEventRotation(EYSDirectionPolicy DirectionPolicy, AActor* OwnerActor, const FName& SocketName, const FRotator& RelativeOffset, AActor* PlaybackTarget = nullptr);
-	static FVector GetEventPosition(EYSPositionPolicy PositionPolicy, AActor* OwnerActor, const FName& SocketName, const FVector& RelativeOffset);
-
-	UFUNCTION(BlueprintCallable)
-	static FRotator GetAbilityEventRotation(EYSDirectionPolicy DirectionPolicy, UYSGameplayAbility* OwningAbility, const FName& SocketName, const FRotator& RelativeOffset);
-
-	UFUNCTION(BlueprintCallable)
-	static FVector GetAbilityEventPosition(EYSPositionPolicy PositionPolicy, UYSGameplayAbility* OwningAbility,
-		const FName& SocketName, const FVector& RelativeOffset);
 	
 	/** 풀에서 꺼내거나 새로 스폰한다. 어느 쪽이든 FinishSpawning 까지 끝난 액터가 나온다. */
 	static AActor* AcquirePooledActor(UWorld* World, TSubclassOf<AActor> ActorClass, const FTransform& SpawnTransform);
 	
-	static AActor* SpawnByConfig(UObject* WorldContext, const FYSSpawnActorConfig& Config, AActor* OwnerActor, AActor* TargetActor, AActor* AttachParent = nullptr, const TSharedPtr<FYSAbilityHitContext>& HitContext = nullptr);
-	static FTransform CalculateSpawnTransform(UObject* WorldContext, const FYSSpawnActorConfig& Config, AActor* OwnerActor, AActor* TargetActor);
+	static AActor* SpawnByConfig(UObject* WorldContext, const FYSSpawnActorConfig& Config, const FYSTransformPolicyContext& PolicyContext, AActor* AttachParent = nullptr, const TSharedPtr<FYSAbilityHitContext>& HitContext = nullptr);
+	static FTransform CalculateSpawnTransform(UObject* WorldContext, const FYSSpawnActorConfig& Config, const FYSTransformPolicyContext& PolicyContext);
 	static void ApplyHitEffects(AActor* Source, AActor* Instigator, AActor* Target, const FName& SkillID, const FHitResult& HitResult);
 };
 

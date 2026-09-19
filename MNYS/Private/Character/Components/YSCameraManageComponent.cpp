@@ -7,6 +7,7 @@
 #include "Camera/CameraComponent.h"
 #include "Character/YSCharacterPlayer.h"
 #include "Character/YSPlayerController.h"
+#include "Data/YSTransformPolicy.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "General/YSGameplayTag.h"
@@ -112,7 +113,7 @@ void UYSCameraManageComponent::ForceSetLockOn(AActor* TargetToLockOn)
 		return;
 	}
 
-	FRotator CharacterRotation = UYSBlueprintFunctionLibrary::GetEventRotation(EYSDirectionPolicy::UseTowardLockOnTarget, OwnerPlayer.Get(), NAME_None, FRotator::ZeroRotator);
+	const FRotator CharacterRotation = FYSRotationPolicy_LockOnTarget().GetRotation(FYSTransformPolicyContext(OwnerPlayer.Get()));
 	OwnerPlayer->SetActorRotation(CharacterRotation);
 
 	// 락온도 카메라 모드의 요청자 중 하나다. 조준·연계기가 위에 얹히면 그쪽이 이기고,

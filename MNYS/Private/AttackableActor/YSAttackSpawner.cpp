@@ -32,8 +32,7 @@ void AYSAttackSpawner::SpawnActorByConfig(FYSSpawnActorConfig SpawnConfig)
 	UYSBlueprintFunctionLibrary::SpawnByConfig(
 		this,
 		SpawnConfig,
-		OwnerForPolicy,
-		TargetActor.Get(),
+		FYSTransformPolicyContext(OwnerForPolicy, TargetActor.Get()),
 		/*AttachParent*/ this, HitContext);
 
 	if ( SpawnCount >= SpawnActorConfigs.Num() )
@@ -115,11 +114,8 @@ void AYSAttackSpawner::_RefreshSpawnPreview()
 		Arrow->ArrowSize = 0.75f;
 		Arrow->ArrowLength = 80.f;
 
-		if (Config.PositionPolicy == EYSPositionPolicy::UseRelativeOffset)
-		{
-			Arrow->SetRelativeLocation(Config.RelativeOffset);
-			Arrow->SetRelativeRotation(Config.RelativeRotator);
-		}
+		const FTransform PreviewTransform = Config.TransformPolicy.GetFinalTransform(FYSTransformPolicyContext(this));
+		Arrow->SetWorldLocationAndRotation(PreviewTransform.GetLocation(), PreviewTransform.GetRotation());
 
 		SpawnPreviewArrows.Add(Arrow);
 	}

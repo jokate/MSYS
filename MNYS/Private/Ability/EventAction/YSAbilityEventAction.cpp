@@ -259,7 +259,16 @@ bool UYSAbilityEventAction_ApplyVelocity::Execute_Implementation(UYSGameplayAbil
 	
 	OwningActor = OwningAbility->GetOwningActorFromActorInfo();
 	
-	FRotator DirectionRotation = UYSBlueprintFunctionLibrary::GetAbilityEventRotation(VelocityData->VelocityDirectionPolicy, OwningAbility, NAME_None, VelocityData->RelativeRotator);	
+	AActor* PlaybackTarget = nullptr;
+	if (const UYSAbilityPlaybackBase* Playback = OwningAbility->GetCurrentPlayback())
+	{
+		PlaybackTarget = Playback->GetCurrentPlaybackTarget();
+	}
+
+	const FYSRotationPolicyBase* DirectionPolicy = VelocityData->VelocityDirectionPolicy.GetPtr<FYSRotationPolicyBase>();
+	const FRotator DirectionRotation = DirectionPolicy
+		? DirectionPolicy->GetRotation(FYSTransformPolicyContext(OwningActor, PlaybackTarget))
+		: OwningActor->GetActorRotation();
 	FVector DirectionVector = DirectionRotation.Vector();
 	const FVector TargetLocation = OwningActor->GetActorLocation() 
 		+ DirectionVector
@@ -319,9 +328,11 @@ bool UYSAbilityEventAction_SpawnActor::Execute_Implementation(UYSGameplayAbility
 		PlaybackTarget = Playback->GetCurrentPlaybackTarget();
 	}
 
+	const FYSTransformPolicyContext PolicyContext(OwningActor, PlaybackTarget);
+
 	for (const FYSSpawnActorConfig& SpawnActorConfig : SpawnActorPayload->SpawnActorConfigs)
 	{
-		UYSBlueprintFunctionLibrary::SpawnByConfig(OwningAbility, SpawnActorConfig,	OwningActor, PlaybackTarget,OwningActor, OwningAbility->GetHitContext());
+		UYSBlueprintFunctionLibrary::SpawnByConfig(OwningAbility, SpawnActorConfig, PolicyContext, OwningActor, OwningAbility->GetHitContext());
 	}
 
 	return true;

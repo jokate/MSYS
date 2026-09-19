@@ -61,19 +61,28 @@ void FYSDamageEffect_ApplyGameplayEffect::Apply(const FYSDamageEffectContext& Co
 	
 	FGameplayEffectContextHandle EffectContextHandle = OwnerASC->MakeEffectContext();
 	EffectContextHandle.AddInstigator(Instigator, Instigator);
-	
+
 	if (IsValid(Context.Target) && IsValid(GameplayEffectToTarget))
 	{
-		UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Context.Target);	
-		FGameplayEffectSpec Spec(GameplayEffectToTarget.GetDefaultObject(), EffectContextHandle);	
-		OwnerASC->ApplyGameplayEffectSpecToTarget(Spec, TargetASC);
+		UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Context.Target);
+		if (IsValid(TargetASC))
+		{
+			FGameplayEffectSpecHandle SpecHandle = OwnerASC->MakeOutgoingSpec(GameplayEffectToTarget, Level, EffectContextHandle);
+			if (SpecHandle.IsValid())
+			{
+				OwnerASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
+			}
+		}
 	}
-	
+
 	if ( IsValid(GameplayEffectToInstigator) == false )
 	{
 		return;
 	}
-	
-	FGameplayEffectSpec EffectSpec(GameplayEffectToInstigator.GetDefaultObject(), EffectContextHandle);	
-	OwnerASC->ApplyGameplayEffectSpecToSelf(EffectSpec);
+
+	FGameplayEffectSpecHandle SelfSpecHandle = OwnerASC->MakeOutgoingSpec(GameplayEffectToInstigator, Level, EffectContextHandle);
+	if (SelfSpecHandle.IsValid())
+	{
+		OwnerASC->ApplyGameplayEffectSpecToSelf(*SelfSpecHandle.Data.Get());
+	}
 }

@@ -119,150 +119,6 @@ void UYSBlueprintFunctionLibrary::SpawnEffects(UObject* WorldContextObject, cons
 	}
 }
 
-FRotator UYSBlueprintFunctionLibrary::GetEventRotation(EYSDirectionPolicy DirectionPolicy,
-	AActor* OwnerActor, const FName& SocketName, const FRotator& RelativeOffset, AActor* PlaybackTarget )
-{
-	if ( IsValid(OwnerActor) == false )
-	{
-		return FRotator();
-	}
-
-	switch (DirectionPolicy)
-	{
-	case EYSDirectionPolicy::UseSocketRotation:
-		{
-			AYSCharacterBase* Character = Cast<AYSCharacterBase>(OwnerActor);
-			if (IsValid(Character) && IsValid(Character->GetMesh()))
-			{
-				if (SocketName != NAME_None)
-					return Character->GetMesh()->GetSocketRotation(SocketName);
-			}
-			return OwnerActor->GetActorRotation();
-		}
-
-	case EYSDirectionPolicy::UseControlRotation:
-		{
-			if (const AController* Controller = OwnerActor->GetInstigatorController())
-				return Controller->GetControlRotation();
-
-			return OwnerActor->GetActorRotation();
-		}
-
-	case EYSDirectionPolicy::UseTowardLockOnTarget:
-		{
-			if (UYSCameraManageComponent* LockOn = UYSCameraManageComponent::Get(OwnerActor))
-			{
-				if (AActor* Target = LockOn->GetCurrentTarget())
-				{
-					const FVector Dir = (Target->GetActorLocation() - OwnerActor->GetActorLocation()).GetSafeNormal();
-					return Dir.Rotation();
-				}
-			}
-			return OwnerActor->GetActorRotation();
-		}
-
-	case EYSDirectionPolicy::UseTowardPlaybackTarget:
-		{
-			if (IsValid(PlaybackTarget))
-			{
-				const FVector Dir = (PlaybackTarget->GetActorLocation() - OwnerActor->GetActorLocation()).GetSafeNormal();
-				return Dir.Rotation();
-			}
-			return OwnerActor->GetActorRotation();
-		}
-
-	case EYSDirectionPolicy::UseRelativeOffset :
-		{
-			return OwnerActor->GetActorTransform().TransformRotation(RelativeOffset.Quaternion()).Rotator();
-		}
-	case EYSDirectionPolicy::UseTargetingDirection :
-		{
-			UYSTargetingComponent* TargetingComponent = UYSTargetingComponent::Get(OwnerActor);
-			if ( IsValid(TargetingComponent) == false )
-			{
-				return OwnerActor->GetActorRotation();
-			}
-			
-			return TargetingComponent->GetResult().Direction.Rotation();
-		}
-		
-	case EYSDirectionPolicy::UseActorForwardVector:
-	default:
-		return OwnerActor->GetActorRotation();
-	}
-}
-
-FRotator UYSBlueprintFunctionLibrary::GetAbilityEventRotation(EYSDirectionPolicy DirectionPolicy,
-                                                              UYSGameplayAbility* OwningAbility, const FName& SocketName, const FRotator& RelativeOffset)
-{
-	AActor* OwnerActor = OwningAbility->GetOwningActorFromActorInfo();
-
-	AActor* PlaybackTarget = nullptr;
-	if (const UYSAbilityPlaybackBase* Playback = OwningAbility->GetCurrentPlayback())
-	{
-		PlaybackTarget = Playback->GetCurrentPlaybackTarget();
-	}
-
-	return GetEventRotation(DirectionPolicy, OwnerActor, SocketName, RelativeOffset,  PlaybackTarget);
-}
-
-FVector UYSBlueprintFunctionLibrary::GetEventPosition(EYSPositionPolicy PositionPolicy,
-	AActor* OwnerActor, const FName& SocketName, const FVector& RelativeOffset)
-{
-	if ( IsValid(OwnerActor) == false )
-	{
-		return FVector::ZeroVector;
-	}
-
-	switch (PositionPolicy)
-	{
-	case EYSPositionPolicy::UseSocket:
-		{
-			AYSCharacterBase* Character = Cast<AYSCharacterBase>(OwnerActor);
-			if (IsValid(Character) && IsValid(Character->GetMesh()) && SocketName != NAME_None)
-			{
-				return Character->GetMesh()->GetSocketLocation(SocketName);
-			}
-			return OwnerActor->GetActorLocation();
-		}
-
-	case EYSPositionPolicy::UseRelativeOffset:
-		return OwnerActor->GetActorTransform().TransformPosition(RelativeOffset);
-
-	case EYSPositionPolicy::RandomizedPosition :
-		{
-			UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(OwnerActor);
-			if ( IsValid(NavSystem) == false )
-			{
-				return FVector::ZeroVector;
-			}
-			
-			FNavLocation RetLocation;
-			NavSystem->GetRandomPointInNavigableRadius(OwnerActor->GetActorLocation(), RelativeOffset.Size(), RetLocation);
-			return RetLocation;
-		}
-	case EYSPositionPolicy::TargetingPosition :
-		{
-			UYSTargetingComponent* TargetingComponent = UYSTargetingComponent::Get(OwnerActor);
-			if ( IsValid(TargetingComponent) == false )
-			{
-				return FVector::ZeroVector;
-			}
-			
-			return TargetingComponent->GetResult().Location;
-		}
-	case EYSPositionPolicy::UseActorLocation:
-	default:
-		return OwnerActor->GetActorLocation();
-	}
-}
-
-FVector UYSBlueprintFunctionLibrary::GetAbilityEventPosition(EYSPositionPolicy PositionPolicy,
-	UYSGameplayAbility* OwningAbility, const FName& SocketName, const FVector& RelativeOffset)
-{
-	return GetEventPosition(PositionPolicy, OwningAbility->GetOwningActorFromActorInfo(), SocketName, RelativeOffset);
-}
-
 AActor* UYSBlueprintFunctionLibrary::AcquirePooledActor(UWorld* World, TSubclassOf<AActor> ActorClass,
 	const FTransform& SpawnTransform)
 {
@@ -294,7 +150,7 @@ AActor* UYSBlueprintFunctionLibrary::AcquirePooledActor(UWorld* World, TSubclass
 }
 
 AActor* UYSBlueprintFunctionLibrary::SpawnByConfig(UObject* WorldContext, const FYSSpawnActorConfig& Config,
-	AActor* OwnerActor, AActor* TargetActor, AActor* AttachParent, const TSharedPtr<FYSAbilityHitContext>& HitContext)
+	const FYSTransformPolicyContext& PolicyContext, AActor* AttachParent, const TSharedPtr<FYSAbilityHitContext>& HitContext)
 {
 	if (IsValid(WorldContext) == false)
 		return nullptr;
@@ -303,12 +159,13 @@ AActor* UYSBlueprintFunctionLibrary::SpawnByConfig(UObject* WorldContext, const 
 	if (IsValid(World) == false || Config.ActorClass == nullptr )
 		return nullptr;
 
-	const FTransform SpawnTransform = CalculateSpawnTransform(WorldContext, Config, OwnerActor, TargetActor);
+	const FTransform SpawnTransform = CalculateSpawnTransform(WorldContext, Config, PolicyContext);
 
 	AActor* PooledActor = AcquirePooledActor(World, Config.ActorClass, SpawnTransform);
 	if (IsValid(PooledActor) == false)
 		return nullptr;
 
+	AActor* OwnerActor = PolicyContext.OwnerActor;
 	AActor* Instigator = OwnerActor;
 	if ( const IYSDamageProxy* Proxy = Cast<IYSDamageProxy>(OwnerActor) )
 	{
@@ -338,13 +195,12 @@ AActor* UYSBlueprintFunctionLibrary::SpawnByConfig(UObject* WorldContext, const 
 }
 
 FTransform UYSBlueprintFunctionLibrary::CalculateSpawnTransform(UObject* WorldContext,
-	const FYSSpawnActorConfig& Config, AActor* OwnerActor, AActor* TargetActor)
+	const FYSSpawnActorConfig& Config, const FYSTransformPolicyContext& PolicyContext)
 {
-	FVector Position = UYSBlueprintFunctionLibrary::GetEventPosition(
-	Config.PositionPolicy, OwnerActor, Config.SpawnSocket, Config.RelativeOffset);
+	const FTransform PolicyTransform = Config.TransformPolicy.GetFinalTransform(PolicyContext);
 
-	const FRotator Rotation = UYSBlueprintFunctionLibrary::GetEventRotation(
-		Config.RotationPolicy, OwnerActor, Config.RotationSocket, Config.RelativeRotator, TargetActor);
+	FVector Position = PolicyTransform.GetLocation();
+	const FRotator Rotation = PolicyTransform.Rotator();
 
 	if (Config.bStickGround)
 	{

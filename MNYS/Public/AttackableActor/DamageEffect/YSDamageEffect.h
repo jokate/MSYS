@@ -70,4 +70,7 @@ struct FYSDamageEffect_ApplyGameplayEffect : public FYSDamageEffectBase
 	
 	UPROPERTY(EditAnywhere, Category = "YS | Damage Effect", meta = (DisplayName = "히트 주체에게 적용할 게임 플레이 이펙트"))
 	TSubclassOf<UGameplayEffect> GameplayEffectToInstigator;
+
+	UPROPERTY(EditAnywhere, Category = "YS | Damage Effect", meta = (DisplayName = "GE 레벨"))
+	float Level = 1.f;
 };

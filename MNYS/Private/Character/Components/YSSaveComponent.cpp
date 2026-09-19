@@ -192,7 +192,7 @@ void UYSSaveComponent::ExecuteTripleEcho(const FYSSavedTechnique& Technique)
 		return;
 	}
 	
-	const FTransform SpawnTransform = UYSBlueprintFunctionLibrary::CalculateSpawnTransform(this, TripleEchoSpawnConfig, Owner, nullptr);
+	const FTransform SpawnTransform = UYSBlueprintFunctionLibrary::CalculateSpawnTransform(this, TripleEchoSpawnConfig, FYSTransformPolicyContext(Owner));
 	if ( TripleEchoSpawnConfig.SpawnDelay <= 0.f  )
 	{
 		ExecuteTripleEcho_Internal(SpawnTransform, Technique);

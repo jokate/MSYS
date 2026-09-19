@@ -21,6 +21,7 @@ namespace YSInputTags
 	UE_DEFINE_GAMEPLAY_TAG(InputSkill2, "Input.Skill2");
 	UE_DEFINE_GAMEPLAY_TAG(InputUltimate, "Input.Ultimate");
 	UE_DEFINE_GAMEPLAY_TAG(InputSave, "Input.Save");
+	UE_DEFINE_GAMEPLAY_TAG(InputForm, "Input.Form");
 
 	UE_DEFINE_GAMEPLAY_TAG(InputUpAttack, "Input.Command.UpAttack");
 	UE_DEFINE_GAMEPLAY_TAG(InputDownAttack, "Input.Command.DownAttack");

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "YSEnum.h"
+#include "Data/YSTransformPolicy.h"
 #include "YSStruct.generated.h"
 
 /**
@@ -256,30 +257,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn", meta = (DisplayName = "스폰할 액터 클래스"))
 	TSubclassOf<AActor> ActorClass;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn | Position", meta = (DisplayName = "위치 기준 정책"))
-	EYSPositionPolicy PositionPolicy = EYSPositionPolicy::UseSocket;
-
-	// PositionPolicy == UseSocket 일 때 사용
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn | Position",
-		meta = (DisplayName = "소켓 이름", EditCondition = "PositionPolicy == EYSPositionPolicy::UseSocket", EditConditionHides))
-	FName SpawnSocket = NAME_None;
-
-	// PositionPolicy == UseRelativeOffset 일 때 사용
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn | Position",
-		meta = (DisplayName = "상대 오프셋",	EditCondition = "PositionPolicy == EYSPositionPolicy::UseRelativeOffset || PositionPolicy == EYSPositionPolicy::RandomizedPosition", EditConditionHides))
-	FVector RelativeOffset = FVector::ZeroVector;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn | Rotation", meta = (DisplayName = "회전 기준 정책"))
-	EYSDirectionPolicy RotationPolicy = EYSDirectionPolicy::UseActorForwardVector;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn | Rotatation", meta = (DisplayName = "상대 오프셋 ( 회전 )", 
-		EditCondition = "RotationPolicy == EYSDirectionPolicy::UseRelativeOffset", EditConditionHides))
-	FRotator RelativeRotator = FRotator::ZeroRotator;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn | Rotation",
-		meta = (DisplayName = "회전 소켓 이름 (빈칸이면 위치 소켓 공유)",
-			EditCondition = "RotationPolicy == EYSDirectionPolicy::UseSocketRotation", EditConditionHides))
-	FName RotationSocket = NAME_None;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn", meta = (DisplayName = "Transform 정책"))
+	FYSTransformPolicy TransformPolicy;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn", meta = (DisplayName = "어태치 여부"))
 	bool bAttachToActor = false;
@@ -332,14 +311,6 @@ struct FYSCameraEffectParams
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "컨트롤 요 고정 사용"))
 	bool bLockControlYaw = false;
 
-	/**
-	 * 커서가 화면 중앙에서 벗어난 만큼 카메라를 그쪽으로 민다.
-	 *
-	 * 조준점이 아니라 커서의 스크린 좌표를 쓴다 —
-	 * 조준점(월드)을 기준으로 밀면 카메라가 움직인 만큼 조준점이 더 밀려나고
-	 * 그게 다시 카메라를 미는 양의 되먹임이 되어 항상 한계치까지 튀어나간다.
-	 * 스크린 좌표는 카메라 위치와 무관하므로 그 고리가 생기지 않는다.
-	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "커서 방향 카메라 이동 사용"))
 	bool bUseCursorCameraLean = false;
 

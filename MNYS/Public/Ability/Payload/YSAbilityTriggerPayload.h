@@ -73,15 +73,12 @@ public :
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "시간")
 	float Duration = 0.f;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "방향 정책")
-	EYSDirectionPolicy VelocityDirectionPolicy = EYSDirectionPolicy::UseActorForwardVector;
-	
+	UPROPERTY(EditAnywhere, meta = (DisplayName = "방향 정책", BaseStruct = "/Script/MNYS.YSRotationPolicyBase"))
+	FInstancedStruct VelocityDirectionPolicy;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "방향으로 액터 돌릴지 여부")
 	bool bRotateActorToDirection = false;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "상대 오프셋 ( 회전 )", EditCondition = "VelocityDirectionPolicy == EYSDirectionPolicy::UseRelativeOffset", EditConditionHides))
-	FRotator RelativeRotator = FRotator::ZeroRotator;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "종료 후 Velocity는 어떻게 할 것인가?")
 	ERootMotionFinishVelocityMode FinishVelocityMode = ERootMotionFinishVelocityMode::MaintainLastRootMotionVelocity;
 	

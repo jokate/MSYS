@@ -36,6 +36,9 @@ namespace YSInputTags
 	// 세이브(혼). 다른 캐릭터는 이 태그에 그랜트된 어빌리티가 없어 무반응이다.
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputSave);
 
+	// 폼 전환(마보마이 V). Form.Berserker/Form.Guardian 부여 어빌리티가 이 슬롯을 쓴다.
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputForm);
+
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputUpAttack);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputDownAttack);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputBackDodgeAttack);
