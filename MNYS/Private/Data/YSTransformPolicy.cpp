@@ -49,6 +49,10 @@ FVector FYSLocationPolicy_Targeting::GetLocation(const FYSTransformPolicyContext
 
 FVector FYSLocationPolicy_HitResult::GetLocation(const FYSTransformPolicyContext& Context) const
 {
+	if (Context.HitResult == nullptr)
+	{
+		return Super::GetLocation(Context);
+	}
 	return Context.HitResult->ImpactPoint;
 }
 
@@ -110,15 +114,30 @@ FRotator FYSRotationPolicy_Targeting::GetRotation(const FYSTransformPolicyContex
 	return TargetingComponent->GetResult().Direction.Rotation();
 }
 
+FRotator FYSRotationPolicy_TargetingAimPoint::GetRotation(const FYSTransformPolicyContext& Context) const
+{
+	const UYSTargetingComponent* TargetingComponent = UYSTargetingComponent::Get(Context.OwnerActor);
+	if ( IsValid(TargetingComponent) == false || TargetingComponent->IsTargeting() == false )
+	{
+		return Super::GetRotation(Context);
+	}
+
+	const FVector ToAim = TargetingComponent->GetResult().AimPoint - Context.ResolvedLocation;
+	return ToAim.IsNearlyZero() ? Super::GetRotation(Context) : ToAim.Rotation();
+}
+
 FTransform FYSTransformPolicy::GetFinalTransform(const FYSTransformPolicyContext& Context) const
 {
 	const FYSLocationPolicyBase* TmpLocationPolicyBase = LocationPolicy.GetPtr<FYSLocationPolicyBase>();
-	
+
 	FVector FinalLocation = TmpLocationPolicyBase ? TmpLocationPolicyBase->GetLocation(Context) : FVector::ZeroVector;
-	
+
+	FYSTransformPolicyContext RotationContext = Context;
+	RotationContext.ResolvedLocation = FinalLocation;
+
 	const FYSRotationPolicyBase* TmpRotationPolicyBase = RotationPolicy.GetPtr<FYSRotationPolicyBase>();
-	
-	FRotator FinalRotation = TmpRotationPolicyBase ? TmpRotationPolicyBase->GetRotation(Context) : FRotator::ZeroRotator;
-	
+
+	FRotator FinalRotation = TmpRotationPolicyBase ? TmpRotationPolicyBase->GetRotation(RotationContext) : FRotator::ZeroRotator;
+
 	return FTransform(FinalRotation, FinalLocation);
 }

@@ -68,4 +68,22 @@ public :
 
 	UPROPERTY(BlueprintReadWrite)
 	float DistanceToTarget = 0.f;
+
+	/** 액터 기준 조준 각도. 에임 오프셋의 Yaw/Pitch 입력으로 쓴다. */
+	UPROPERTY(BlueprintReadOnly)
+	float AimYaw = 0.f;
+
+	UPROPERTY(BlueprintReadOnly)
+	float AimPitch = 0.f;
+
+	/** 크로스헤어 조준 중이면 1 로, 아니면 0 으로 보간된다. 에임 오프셋의 Alpha 로 쓴다. */
+	UPROPERTY(BlueprintReadOnly)
+	float AimOffsetAlpha = 0.f;
+
+protected :
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Aim")
+	float AimOffsetAlphaInterpSpeed = 10.f;
+
+private :
+	void UpdateAimOffset(const AYSCharacterBase* Character, float DeltaSeconds);
 };

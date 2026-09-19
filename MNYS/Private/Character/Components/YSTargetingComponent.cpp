@@ -167,6 +167,9 @@ FYSTargetingResult UYSTargetingComponent::EvaluateTarget() const
 	const FVector Caster = GetCasterLocation();
 	const FYSTargetingShape* Shape = CurrentSpec.Shape.GetPtr<FYSTargetingShape>();
 
+	// 조준 산출에 실패해도 소비자가 원점을 겨누지 않도록 전방 끝점을 깔아둔다.
+	Result.AimPoint = Caster + GetCasterForward() * MaxTraceDistance;
+
 	if ( Shape == nullptr )
 	{
 		Result.Location  = Caster;
@@ -181,6 +184,8 @@ FYSTargetingResult UYSTargetingComponent::EvaluateTarget() const
 		Result.Direction = GetCasterForward();
 		return Result;
 	}
+
+	Result.AimPoint = Desired;
 
 	// 방향은 도형 종류와 무관하게 항상 산출한다. 직선·부채꼴은 이 값만 쓴다.
 	FVector Offset = Desired - Caster;
@@ -232,7 +237,7 @@ bool UYSTargetingComponent::GetAimScreenPosition(FVector2D& OutScreenPosition) c
 		return false;
 	}
 
-	if ( AimSource == EYSAimSource::MouseCursor )
+	if ( CurrentSpec.AimSource == EYSAimSource::MouseCursor )
 	{
 		float MouseX = 0.f;
 		float MouseY = 0.f;
@@ -274,15 +279,31 @@ bool UYSTargetingComponent::ProjectScreenToGround(FVector& OutLocation) const
 		return false;
 	}
 
-	const FVector TraceEnd = WorldOrigin + WorldDirection * MaxTraceDistance;
+	const bool bCrosshairAim = CurrentSpec.AimSource == EYSAimSource::ScreenCenter;
+
+	// 어깨너머 카메라는 시전자 뒤에 있다. 카메라와 시전자 사이에 낀 벽·바닥이 먼저 맞으면 조준점이 등 뒤에 생긴다.
+	// 지면 조준에는 쓰면 안 된다. 시전자보다 카메라에 가까운 바닥을 겨눌 수 없게 된다.
+	const float SkipDistance = bCrosshairAim
+		? FMath::Max(0.f, FVector::DotProduct(GetCasterLocation() - WorldOrigin, WorldDirection))
+		: 0.f;
+
+	const FVector TraceStart = WorldOrigin + WorldDirection * SkipDistance;
+	const FVector TraceEnd   = WorldOrigin + WorldDirection * MaxTraceDistance;
 
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(YSTargeting), false);
 	Params.AddIgnoredActor(CurrentPlayerController->GetPawn());
 
 	FHitResult Hit;
-	if ( World->LineTraceSingleByChannel(Hit, WorldOrigin, TraceEnd, TraceChannel, Params) )
+	if ( World->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, CurrentSpec.TraceChannel, Params) )
 	{
 		OutLocation = Hit.ImpactPoint;
+		return true;
+	}
+
+	// 크로스헤어는 허공도 유효한 조준이다. 발밑 평면으로 끌어내리면 위를 겨눌 때 조준점이 카메라 뒤로 간다.
+	if ( bCrosshairAim )
+	{
+		OutLocation = TraceEnd;
 		return true;
 	}
 

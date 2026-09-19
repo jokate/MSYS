@@ -7,6 +7,7 @@
 #include "AnimCharacterMovementLibrary.h"
 #include "KismetAnimationLibrary.h"
 #include "Character/YSCharacterBase.h"
+#include "Character/Components/YSTargetingComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -97,4 +98,19 @@ void UYSAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	FVector StopLocation = UAnimCharacterMovementLibrary::PredictGroundMovementStopLocation(Velocity,TempCharMove->bUseSeparateBrakingFriction, TempCharMove->BrakingFriction, TempCharMove->GroundFriction, TempCharMove->BrakingFrictionFactor, TempCharMove->BrakingDecelerationWalking);
 
 	DistanceToTarget = UKismetMathLibrary::VSizeXY(StopLocation);
+
+	UpdateAimOffset(Character, DeltaSeconds);
+}
+
+void UYSAnimInstance::UpdateAimOffset(const AYSCharacterBase* Character, float DeltaSeconds)
+{
+	const FRotator AimDelta = (Character->GetBaseAimRotation() - Character->GetActorRotation()).GetNormalized();
+	AimYaw   = AimDelta.Yaw;
+	AimPitch = FMath::Clamp(AimDelta.Pitch, -90.f, 90.f);
+
+	// 지면 조준(마우스 커서)은 카메라 피치가 조준 방향이 아니다. 크로스헤어 조준일 때만 상체를 기울인다.
+	const UYSTargetingComponent* Targeting = UYSTargetingComponent::Get(Character);
+	const bool bCrosshairAiming = IsValid(Targeting) && Targeting->IsCrosshairAiming();
+
+	AimOffsetAlpha = FMath::FInterpTo(AimOffsetAlpha, bCrosshairAiming ? 1.f : 0.f, DeltaSeconds, AimOffsetAlphaInterpSpeed);
 }

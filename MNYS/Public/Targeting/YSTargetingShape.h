@@ -21,6 +21,10 @@ struct FYSTargetingResult
 	UPROPERTY(BlueprintReadOnly, Category = "YS | Targeting")
 	FVector Direction = FVector::ForwardVector;
 
+	/** 조준 시선이 닿은 월드 지점. 도형 기준점과 무관하게 항상 채워진다. 허공이면 시선의 끝점. */
+	UPROPERTY(BlueprintReadOnly, Category = "YS | Targeting")
+	FVector AimPoint = FVector::ZeroVector;
+
 	/** 대상 지정 도형에서 잡힌 액터. 그 외 도형에서는 항상 null 이다. */
 	// 해당 부분은 현재 미구현 상태.
 	UPROPERTY(BlueprintReadOnly, Category = "YS | Targeting")

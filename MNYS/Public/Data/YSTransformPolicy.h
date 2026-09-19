@@ -20,6 +20,9 @@ struct MNYS_API FYSTransformPolicyContext
 	AActor* OwnerActor = nullptr;
 	AActor* TargetActor = nullptr;
 	const FHitResult* HitResult = nullptr;
+
+	// GetFinalTransform 이 위치 정책을 먼저 풀어 채운다. 회전 정책에서만 유효하다.
+	FVector ResolvedLocation = FVector::ZeroVector;
 };
 
 USTRUCT(BlueprintType, DisplayName = "기본 위치")
@@ -157,6 +160,15 @@ struct MNYS_API FYSRotationPolicy_Targeting : public FYSRotationPolicyBase
 };
 
 
+USTRUCT(DisplayName = "조준점을 향하는 회전")
+struct MNYS_API FYSRotationPolicy_TargetingAimPoint : public FYSRotationPolicyBase
+{
+	GENERATED_BODY()
+
+	virtual FRotator GetRotation(const FYSTransformPolicyContext& Context) const override;
+};
+
+
 USTRUCT(BlueprintType, DisplayName = "트랜스폼 정책")
 struct MNYS_API FYSTransformPolicy
 {
@@ -166,9 +178,9 @@ public :
 	FTransform GetFinalTransform(const FYSTransformPolicyContext& Context) const;
 	
 public : 
-	UPROPERTY(EditAnywhere, meta = (DisplayName = "로케이션 정책", BaseStruct = "/Script/MNYS.YSLocationPolicy"))
+	UPROPERTY(EditAnywhere, meta = (DisplayName = "로케이션 정책", BaseStruct = "/Script/MNYS.YSLocationPolicyBase"))
 	FInstancedStruct LocationPolicy;
-	
-	UPROPERTY(EditAnywhere, meta = (DisplayName = "로테이션 정책", BaseStruct = "/Script/MNYS.YSRotationPolicy"))
-	FInstancedStruct RotationPolicy;	
+
+	UPROPERTY(EditAnywhere, meta = (DisplayName = "로테이션 정책", BaseStruct = "/Script/MNYS.YSRotationPolicyBase"))
+	FInstancedStruct RotationPolicy;
 };

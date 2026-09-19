@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
+#include "General/YSStruct.h"
 #include "YSDamageEffect.generated.h"
 
 /**
@@ -73,4 +74,18 @@ struct FYSDamageEffect_ApplyGameplayEffect : public FYSDamageEffectBase
 
 	UPROPERTY(EditAnywhere, Category = "YS | Damage Effect", meta = (DisplayName = "GE 레벨"))
 	float Level = 1.f;
+};
+
+USTRUCT(DisplayName = "타격 지점 액터 스폰")
+struct FYSDamageEffect_SpawnActor : public FYSDamageEffectBase
+{
+	GENERATED_BODY()
+
+	virtual void Apply(const FYSDamageEffectContext& Context) const override;
+
+	UPROPERTY(EditAnywhere, Category = "YS | Damage Effect", meta = (DisplayName = "스폰 설정"))
+	FYSSpawnActorConfig Config;
+
+	UPROPERTY(EditAnywhere, Category = "YS | Damage Effect", meta = (DisplayName = "타겟에 어태치"))
+	bool bAttachToTarget = false;
 };

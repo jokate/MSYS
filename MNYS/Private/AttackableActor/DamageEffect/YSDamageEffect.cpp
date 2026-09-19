@@ -6,6 +6,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "GameFramework/Character.h"
+#include "Library/YSBlueprintFunctionLibrary.h"
 
 void FYSDamageEffect_Knockback::Apply(const FYSDamageEffectContext& Context) const
 {
@@ -85,4 +86,15 @@ void FYSDamageEffect_ApplyGameplayEffect::Apply(const FYSDamageEffectContext& Co
 	{
 		OwnerASC->ApplyGameplayEffectSpecToSelf(*SelfSpecHandle.Data.Get());
 	}
+}
+
+void FYSDamageEffect_SpawnActor::Apply(const FYSDamageEffectContext& Context) const
+{
+	if (IsValid(Context.Source) == false)
+	{
+		return;
+	}
+
+	FYSTransformPolicyContext PolicyContext(Context.Source, Context.Target, &Context.HitResult);
+	UYSBlueprintFunctionLibrary::SpawnByConfig(Context.Source, Config, PolicyContext, bAttachToTarget ? Context.Target : nullptr, nullptr);
 }

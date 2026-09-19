@@ -43,6 +43,12 @@ struct FYSTargetingSpec
 
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "조준 중 카메라"))
 	FYSCameraEffectParams CameraParams;
+
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "조준 트레이스 채널"))
+	TEnumAsByte<ECollisionChannel> TraceChannel = ECC_Visibility;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "조준 기준점"))
+	EYSAimSource AimSource = EYSAimSource::MouseCursor;
 };
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -61,7 +67,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "YS | Targeting")
 	bool IsTargeting() const { return CurrentRequester.IsValid(); }
-	
+
+	bool IsCrosshairAiming() const { return IsTargeting() && CurrentSpec.AimSource == EYSAimSource::ScreenCenter; }
+
 	const FYSTargetingResult& GetResult() const { return CurrentResult; }
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -96,21 +104,11 @@ protected:
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "인디케이터 클래스"))
 	TSubclassOf<AYSSkillIndicator> IndicatorClass;
-
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "조준 기준점"))
-	EYSAimSource AimSource = EYSAimSource::MouseCursor;
+	
 	
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "조준 트레이스 최대 거리"))
 	float MaxTraceDistance = 20000.f;
-
-	/**
-	 * 조준 트레이스 채널.
-	 * 기본값 Visibility 는 적과 소품에도 맞아 적 뒤를 겨누면 조준점이 몸통에 붙는다.
-	 * 지형만 잡는 전용 채널을 파서 지정하는 것을 권장한다.
-	 */
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "조준 트레이스 채널"))
-	TEnumAsByte<ECollisionChannel> TraceChannel = ECC_Visibility;
-
+	
 private:
 	// 최초 1회만 스폰하고 계속 재사용한다. 레디할 때마다 스폰/디스트로이 하지 않는다.
 	UPROPERTY()
