@@ -8,6 +8,7 @@
 #include "GenericTeamAgentInterface.h"
 #include "NavigationSystem.h"
 #include "NiagaraFunctionLibrary.h"
+#include "YSAbilitySystemComponent.h"
 #include "YSBattleActor.h"
 #include "YSDeveloperSettings.h"
 #include "Ability/YSGameplayAbility.h"
@@ -74,9 +75,20 @@ void UYSBlueprintFunctionLibrary::SendHitEventToTarget(AActor* Instigator, AActo
 	if ( IsValid(ASC) == false || IsValid(TargetASC) == false )
 		return;
 	
-	float FinalDamage = GetFinalDamage(ASC->GetSet<UYSCharacterAttributeSetBase>(), TargetASC->GetSet<UYSCharacterAttributeSetBase>(), SkillID);
+	const UYSCharacterAttributeSetBase* TargetSet = TargetASC->GetSet<UYSCharacterAttributeSetBase>();
+	const bool bWasAlive = TargetSet != nullptr && TargetSet->GetHp() > 0.f;
+
+	float FinalDamage = GetFinalDamage(ASC->GetSet<UYSCharacterAttributeSetBase>(), TargetSet, SkillID);
 	TargetASC->SetNumericAttributeBase(UYSCharacterAttributeSetBase::GetIncomingDamageAttribute(), FinalDamage);
-	
+
+	if ( bWasAlive && TargetSet->GetHp() <= 0.f )
+	{
+		FGameplayEventData EventData;
+		EventData.Instigator = Instigator;
+		EventData.Target = Target;
+		ASC->HandleGameplayEvent(YSTags::Event_OnKill, &EventData);
+	}
+
 	FGameplayEventData EventData;
 	EventData.Instigator = Instigator;
 	EventData.Target = Target;

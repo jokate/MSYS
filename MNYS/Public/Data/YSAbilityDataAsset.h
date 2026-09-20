@@ -3,8 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Ability/YSGameplayEffectHandler.h"
 #include "Engine/DataAsset.h"
 #include "General/YSStruct.h"
+#include "GameplayTagContainer.h"
 #include "YSAbilityDataAsset.generated.h"
 
 class UGameplayEffect;
@@ -22,6 +24,19 @@ public :
 	TArray<FYSGrantedAbilityData> GetAllAbilities() const;
 	TSubclassOf<UGameplayEffect> GetBackupPassiveEffect() const { return BackupPassiveEffect; }
 	TSubclassOf<UGameplayEffect> GetStatInitEffect() const { return StatInitEffect; }
+	
+	const FYSGameplayEffectHandler* GetPassiveEffect(const FGameplayTag& PassiveTag) const
+	{
+		if (const FYSGameplayEffectHandler* FoundEffect = PassiveEffects.Find(PassiveTag))
+		{
+			return FoundEffect;
+		}
+		return nullptr;
+	}
+	
+#if WITH_EDITOR
+	virtual void PostEditChangeChainProperty(struct FPropertyChangedChainEvent& PropertyChangedEvent) override;
+#endif
 	
 protected : 
 	UPROPERTY(EditDefaultsOnly, Category = "YS | GameplayAbility", meta = (DisplayName = "기본 공격"))
@@ -47,6 +62,9 @@ protected :
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | GameplayAbility", meta = (DisplayName = "스탯 GE"))
 	TSubclassOf<UGameplayEffect> StatInitEffect;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | GameplayAbility", meta = (DisplayName = "패시브 GE"))
+	TMap<FGameplayTag, FYSGameplayEffectHandler> PassiveEffects;
 };
 
 USTRUCT(BlueprintType)

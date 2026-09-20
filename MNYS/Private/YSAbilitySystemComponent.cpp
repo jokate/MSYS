@@ -6,6 +6,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "YSDeveloperSettings.h"
 #include "Ability/YSGameplayAbility.h"
+#include "Ability/YSGameplayEffectHandler.h"
 #include "Character/YSCharacterPlayer.h"
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
 #include "Character/Components/YSCharacterMovementComponent.h"
@@ -158,6 +159,31 @@ void UYSAbilitySystemComponent::OnRemoveAbility(FGameplayAbilitySpec& AbilitySpe
 {
 	AbilitySpecHandles.Remove(AbilitySpec.Handle);
 	Super::OnRemoveAbility(AbilitySpec);
+}
+
+int32 UYSAbilitySystemComponent::HandleGameplayEvent(FGameplayTag EventTag, const FGameplayEventData* Payload)
+{
+	int32 SuperRes =  Super::HandleGameplayEvent(EventTag, Payload);
+	
+	const FYSGameplayEffectHandler* PassiveEffect =GrantAbilityData->GetPassiveEffect(EventTag);
+	
+	if ( PassiveEffect != nullptr )
+	{
+		const FGameplayEffectContextHandle Context = MakeEffectContext();	
+		const FGameplayEffectSpecHandle Spec = MakeOutgoingSpec(PassiveEffect->EffectClass, 1.f, Context);
+		if (Spec.IsValid())
+		{
+			for (const TPair<FGameplayTag, float>& Pair : PassiveEffect->Magnitudes)
+			{
+				Spec.Data->SetSetByCallerMagnitude(Pair.Key, Pair.Value);
+			}
+			ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
+		}
+		
+		++SuperRes;
+	}
+	
+	return SuperRes;
 }
 
 bool UYSAbilitySystemComponent::ProcessSkillActive(const FGameplayTag& InputTag)

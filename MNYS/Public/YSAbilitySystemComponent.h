@@ -38,6 +38,8 @@ public:
 	static UYSAbilitySystemComponent* Get(AActor* Owner);
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual int32 HandleGameplayEvent(FGameplayTag EventTag, const FGameplayEventData* Payload) override;
+	
 	void ProcessAbilityByInputPass(const TArray<FGameplayTag>& InputTags, EYSInputPhase InputPhase);
 	void ApplyStatInitialization();
 	void ApplyResourceRecharge(const FYSCharacterInfo* CharacterInfo);

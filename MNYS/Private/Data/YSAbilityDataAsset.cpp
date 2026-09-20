@@ -4,6 +4,7 @@
 #include "Data/YSAbilityDataAsset.h"
 
 #include "YSAbilitySystemComponent.h"
+#include "Ability/YSGameplayEffectHandler.h"
 #include "Character/YSCharacterBase.h"
 
 UYSAbilityDataAsset* UYSAbilityDataAsset::GetDataAssetFromAbilitySystemComponent(UYSAbilitySystemComponent* InASC)
@@ -24,6 +25,14 @@ TArray<FYSGrantedAbilityData> UYSAbilityDataAsset::GetAllAbilities() const
 	
 	return RetVal;
 }
+
+#if WITH_EDITOR
+void UYSAbilityDataAsset::PostEditChangeChainProperty(struct FPropertyChangedChainEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeChainProperty(PropertyChangedEvent);
+	FYSGameplayEffectHandler::SyncAllIn(GetClass(), this);
+}
+#endif
 
 UYSTaggedMontageAsset* UYSTaggedMontageAsset::GetMontageAsset(AActor* InActor)
 {

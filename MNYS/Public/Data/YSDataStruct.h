@@ -23,6 +23,15 @@ enum class EYSDamageType : uint8
 	Melee,
 };
 
+USTRUCT()
+struct FYSTableRowBase : public FTableRowBase
+{
+	GENERATED_BODY()
+
+#if WITH_EDITOR
+	virtual void OnDataTableChanged(const UDataTable* InDataTable, const FName InRowName) override;
+#endif
+};
 
 // Purpose : 데미지 처리를 위한, 데이터 ( 어빌리티에 대한 데미지 정보를 근간으로 합니다. )
 USTRUCT()
@@ -120,4 +129,7 @@ public :
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | Stat", meta = (DisplayName = "자원 충전 이펙트"))
 	TSubclassOf<UGameplayEffect> ResourceRechargeEffect;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | Stat", meta = (DisplayName = "처치 시 자원 회복량", ClampMin = "0"))
+	int32 ResourceOnKill = 0;
 };
