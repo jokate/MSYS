@@ -307,7 +307,11 @@ struct FYSCameraEffectParams
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera",
 		meta = (DisplayName = "고정할 컨트롤 피치 (음수 = 내려다봄)", EditCondition = "bOverrideControlPitch", EditConditionHides, ClampMin = "-89.0", ClampMax = "89.0"))
 	float ControlPitch = -55.f;
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera",
+		meta = (DisplayName = "도달 후 피치 입력 허용", EditCondition = "bOverrideControlPitch", EditConditionHides))
+	bool bFreeControlPitchAfterReach = false;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Camera", meta = (DisplayName = "컨트롤 요 고정 사용"))
 	bool bLockControlYaw = false;
 

@@ -259,9 +259,18 @@ void UYSCameraManageComponent::TickControlPitch(const FYSCameraEffectParams* Par
 
 	const bool bWantsOverride = ( Params != nullptr && Params->bOverrideControlPitch );
 
-	// 입력 차단 여부는 "요청 중"에만 참이어야 한다. 복귀 보간까지 막으면
-	// 플레이어가 카메라를 되찾는 순간이 답답해진다.
-	bControlPitchLockRequested = bWantsOverride;
+	if ( bWantsOverride == false )
+	{
+		bControlPitchReached = false;
+	}
+
+	// 목표 각도에 닿은 뒤에는 플레이어에게 돌려준다. 어깨너머 조준처럼 진입 각도만 맞추면 되는 경우다.
+	const bool bDriving = bWantsOverride && ( Params->bFreeControlPitchAfterReach == false || bControlPitchReached == false );
+
+	// 복귀 보간 중에도 입력을 막는다. 열어두면 입력과 보간이 같은 값을 밀고 당겨
+	// 1도 이내 도달 판정이 나지 않고, 손을 뗄 때까지 복귀가 끝나지 않는다.
+	const bool bReturning = ( bWantsOverride == false && bIsControlPitchOverridden );
+	bControlPitchLockRequested = bDriving || bReturning;
 
 	// 평소에는 컨트롤 회전에 손대지 않는다. 마우스는 플레이어 것이다.
 	if ( bWantsOverride == false && bIsControlPitchOverridden == false )
@@ -274,6 +283,11 @@ void UYSCameraManageComponent::TickControlPitch(const FYSCameraEffectParams* Par
 		// 잠그기 시작하는 프레임. 지금 보고 있던 각도를 복귀 지점으로 기억한다.
 		PreOverrideControlPitch = FRotator::NormalizeAxis(OwnerPlayerController->GetControlRotation().Pitch);
 		bIsControlPitchOverridden = true;
+	}
+
+	if ( bWantsOverride && bDriving == false )
+	{
+		return;
 	}
 
 	const float TargetPitch = bWantsOverride ? Params->ControlPitch : PreOverrideControlPitch;
@@ -289,9 +303,18 @@ void UYSCameraManageComponent::TickControlPitch(const FYSCameraEffectParams* Par
 
 	OwnerPlayerController->SetControlRotation(ControlRotation);
 
+	if ( bWantsOverride && Params->bFreeControlPitchAfterReach && FMath::IsNearlyEqual(ControlRotation.Pitch, TargetPitch, 1.f) )
+	{
+		bControlPitchReached = true;
+	}
+
 	if ( bWantsOverride == false && FMath::IsNearlyEqual(ControlRotation.Pitch, PreOverrideControlPitch, 1.f) )
 	{
 		bIsControlPitchOverridden = false;
+
+		// 같은 틱에 카메라가 정착 판정을 받으면 다음 틱부터 이 함수가 불리지 않는다.
+		// 여기서 풀지 않으면 입력이 잠긴 채로 굳는다.
+		bControlPitchLockRequested = false;
 	}
 }
 

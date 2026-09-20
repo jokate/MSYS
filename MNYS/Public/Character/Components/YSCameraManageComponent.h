@@ -166,5 +166,8 @@ private:
 	
 	bool bControlPitchLockRequested = false;
 
+	/** "도달 후 피치 입력 허용" 모드에서 목표 각도에 닿았는가. 닿은 뒤에는 피치를 플레이어에게 돌려준다. */
+	bool bControlPitchReached = false;
+
 	bool bControlYawLockRequested = false;
 };

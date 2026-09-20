@@ -16,6 +16,10 @@
 #include "Library/YSBlueprintFunctionLibrary.h"
 #include "Subsystem/YSWorldTagSubsystem.h"
 
+#if UE_EDITOR
+#include "Misc/DataValidation.h"
+#endif
+
 UYSGameplayAbility::UYSGameplayAbility()
 {
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
@@ -511,10 +515,35 @@ void UYSGameplayAbility::PostEditChangeProperty(struct FPropertyChangedEvent& Pr
 					EventActionMap.Add(YSTags::Event_Record, Record);
 					break;
 				}
-			default: 
+			default:
 				break;
-			}	
+			}
 		}
 	}
+}
+
+EDataValidationResult UYSGameplayAbility::IsDataValid(FDataValidationContext& Context) const
+{
+	EDataValidationResult Result = Super::IsDataValid(Context);
+
+	bool bHasActionType = false;
+
+	for ( EYSAbilityType AbilityType : AbilityTypes )
+	{
+		if ( AbilityType != EYSAbilityType::None )
+		{
+			bHasActionType = true;
+			break;
+		}
+	}
+
+	// PostEditChangeProperty 를 안 거치고 AbilityTypes 만 써 넣으면 이 상태가 된다 (리플렉션 직접 쓰기, 외부 툴).
+	if ( bHasActionType && EventActionMap.IsEmpty() )
+	{
+		Context.AddError(FText::FromString(TEXT("AbilityTypes 가 있는데 EventActionMap 이 비어 있다. AbilityTypes 를 에디터에서 다시 지정해 EventActionMap 을 재생성할 것.")));
+		Result = EDataValidationResult::Invalid;
+	}
+
+	return Result;
 }
 #endif

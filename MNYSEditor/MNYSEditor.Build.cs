@@ -39,6 +39,7 @@ public class MNYSEditor : ModuleRules
 				"GraphEditor",
 				"AssetDefinition",
 				"ToolMenus",
+				"DataValidation",
 			}
 		);
 	}
