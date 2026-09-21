@@ -36,11 +36,17 @@ void UYSGameplayAbility::OnGameplayTagChanged(const FGameplayTag& Tag, bool bInI
 		if (IsValid(PlaybackBase) == false)
 			return;
 	
-		// 입력에 대한 심사가 끝났다면 인풋에 대한 컨텍스트 처리를 담당해야 한다.
-		if (!bInIsActive)
+		if ( bInIsActive )
 		{
-			PlaybackBase->DispatchNext(EYSPlaybackEvent::OnInput, false);	
+			bInputWindowOpenedOnCurrentNode = true;
+			return;
 		}
+		
+		// 입력에 대한 심사가 끝났다면 인풋에 대한 컨텍스트 처리를 담당해야 한다.
+		if (bInputWindowOpenedOnCurrentNode == false)
+			return;
+		
+		PlaybackBase->DispatchNext(EYSPlaybackEvent::OnInput, false);	
 	}
 }
 
@@ -63,7 +69,8 @@ void UYSGameplayAbility::ActivePlayback(int32 Index)
 
 	CurrentPlayback = Playback;
 	CurrentPlaybackIndex = Index;
-
+	bInputWindowOpenedOnCurrentNode = false;     
+	
 	// 시전이 확정되는 노드에서 커밋한다.
 	// NeedReady 어빌리티는 활성 시점에 커밋을 미뤄뒀으므로 여기가 쿨다운이 도는 지점이다.
 	// 조준 단계에서 취소되면 이 노드에 도달하지 않아 쿨다운이 소모되지 않는다.

@@ -277,6 +277,8 @@ protected :
 	// NeedReady 어빌리티의 커밋 지연용. 확정 노드 진입 시 한 번만 커밋한다.
 	bool bHasCommitted = false;
 
+	bool bInputWindowOpenedOnCurrentNode = false;
+	
 	UPROPERTY()
 	UYSAT_Trace* TraceTask = nullptr;
 	

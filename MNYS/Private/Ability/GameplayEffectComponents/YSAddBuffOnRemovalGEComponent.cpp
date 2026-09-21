@@ -20,7 +20,7 @@ void UYSAddBuffOnRemovalGEComponent::OnActiveGameplayEffectRemoved(
 	
 	SpecHandle.Data->DynamicAssetTags.AppendTags(TargetToAddTag);
 	
-	UAbilitySystemComponent* AppliedToASC = ActiveGEContainer->Owner;;
+	UAbilitySystemComponent* AppliedToASC = ActiveGEContainer->Owner;
 	
 	if ( IsValid(AppliedToASC)  )
 	{
