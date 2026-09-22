@@ -7,6 +7,7 @@
 #include "General/YSStruct.h"
 #include "YSGameplayCueActionBase.generated.h"
 
+class UNiagaraComponent;
 class UNiagaraSystem;
 class AYSGameplayCueNotifyBase;
 class ALevelSequenceActor;
@@ -52,11 +53,26 @@ class MNYS_API UYSGameplayCueAction_NiagaraEffect : public UYSGameplayCueActionB
 
 public : 
 	virtual void OnActive(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget, const FGameplayCueParameters& Parameters) override;
-	
+	virtual void OnRemove(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget, const FGameplayCueParameters& Parameters) override;
 protected : 
 	// 에셋은 Soft로 잡아서 로딩 부담 분리
 	UPROPERTY(EditDefaultsOnly, Category = "YS | FX", meta = (DisplayName = "나이아가라 이펙트"))
 	TSoftObjectPtr<UNiagaraSystem> NiagaraEffect;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | FX", meta = (DisplayName = "붙일 것인가?"))
+	bool bNeedToAttach = false;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | FX", meta = (DisplayName = "붙일 소켓 이름", EditCondition = "bNeedToAttach"))
+	FName AttachSocketName;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | FX", meta = (DisplayName = "붙일 오프셋(회전)", EditCondition = "bNeedToAttach"))
+	FRotator AttachmentOffset;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "YS | FX", meta = (DisplayName = "붙일 오프셋(위치)", EditCondition = "bNeedToAttach"))
+	FVector AttachmentLocationOffset;
+	
+private : 
+	TWeakObjectPtr<UNiagaraComponent> SpawnedNiagaraComponent;
 };
 
 UCLASS(DisplayName = "타임 딜레이션 적용")

@@ -7,6 +7,7 @@
 #include "GameplayCueManager.h"
 #include "LevelSequenceActor.h"
 #include "LevelSequencePlayer.h"
+#include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Ability/GameplayCueActor/YSGameplayCueNotifyBase.h"
 #include "Character/Components/YSCameraManageComponent.h"
@@ -67,12 +68,31 @@ void UYSGameplayCueAction_NiagaraEffect::OnActive(AYSGameplayCueNotifyBase* Game
 
 	if (UNiagaraSystem* FX = NiagaraEffect.LoadSynchronous())
 	{
-		UNiagaraFunctionLibrary::SpawnSystemAtLocation(	GetWorld(), FX, Parameters.Location, Parameters.Normal.Rotation());
+		if (bNeedToAttach && MyTarget)
+		{
+			SpawnedNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(FX, MyTarget->GetRootComponent(), AttachSocketName, AttachmentLocationOffset, AttachmentOffset,
+				EAttachLocation::SnapToTarget, true);
+		}
+		else
+		{
+			SpawnedNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), FX, Parameters.Location, Parameters.Normal.Rotation());
+		}
 	}
 }
 
-void UYSGameplayCueAction_TimeDilation::OnActive(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget,
+void UYSGameplayCueAction_NiagaraEffect::OnRemove(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget,
 	const FGameplayCueParameters& Parameters)
+{
+	if (SpawnedNiagaraComponent.IsValid())
+	{
+		SpawnedNiagaraComponent->Deactivate();
+		SpawnedNiagaraComponent = nullptr;
+	}
+	Super::OnRemove(GameplayCueNotify, MyTarget, Parameters);
+}
+
+void UYSGameplayCueAction_TimeDilation::OnActive(AYSGameplayCueNotifyBase* GameplayCueNotify, AActor* MyTarget,
+                                                 const FGameplayCueParameters& Parameters)
 {
 	Super::OnActive(GameplayCueNotify, MyTarget, Parameters);
 	
