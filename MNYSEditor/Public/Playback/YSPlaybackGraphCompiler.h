@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 
 class UYSPlaybackGraphAsset;
+class UYSPlaybackGraphNode_State;
+class UYSPlaybackGraphNode_Transition;
 
 /**
  * 편집용 그래프를 런타임 데이터로 굽는다.
@@ -30,4 +32,7 @@ public:
 	 * 어빌리티의 SetupPlayBack 이 0번부터 시작하므로 이 규칙이 곧 진입점이다.
 	 */
 	static void Compile(UYSPlaybackGraphAsset* Asset);
+
+	/** 이 상태에서 나가는 전환들. 우선순위 오름차순이며, 같으면 그래프 등록 순서를 따른다. */
+	static void GatherOutgoingTransitions(const UYSPlaybackGraphNode_State& State, TArray<UYSPlaybackGraphNode_Transition*>& OutTransitions);
 };

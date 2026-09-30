@@ -349,7 +349,7 @@ bool UYSAbilityEventAction_CheckContextTag::Execute_Implementation(UYSGameplayAb
 	if (IsValid(PlaybackBase) == false)
 		return false;
 	
-	PlaybackBase->DispatchNext(EYSPlaybackEvent::OnCheckContextTag, true);
+	PlaybackBase->HandleContextTagChanged();
 	
 	return true;
 }

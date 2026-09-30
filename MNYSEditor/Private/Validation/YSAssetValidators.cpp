@@ -10,6 +10,52 @@
 #include "Misc/DataValidation.h"
 #include "Playback/YSPlaybackGraphNode.h"
 
+namespace YSPlaybackValidation
+{
+	/**
+	 * Task 의 종류·순서와 몽타주 선택기가 같은가.
+	 * 경로(OutputRoutes)는 비교하지 않는다 — 컴파일러가 화살표로 다시 쓰는 값이라 노드 쪽 값은 쓰이지 않는다.
+	 */
+	static bool HasSameTasks(const UYSAbilityPlaybackBase& A, const UYSAbilityPlaybackBase& B)
+	{
+		if (A.Tasks.Num() != B.Tasks.Num())
+		{
+			return false;
+		}
+
+		for (int32 Index = 0; Index < A.Tasks.Num(); ++Index)
+		{
+			const UYSPlaybackTask* TaskA = A.Tasks[Index];
+			const UYSPlaybackTask* TaskB = B.Tasks[Index];
+
+			if (TaskA == nullptr || TaskB == nullptr)
+			{
+				if (TaskA != TaskB)
+				{
+					return false;
+				}
+
+				continue;
+			}
+
+			if (TaskA->GetClass() != TaskB->GetClass())
+			{
+				return false;
+			}
+
+			const UYSPlaybackTask_PlayMontage* MontageA = Cast<UYSPlaybackTask_PlayMontage>(TaskA);
+			const UYSPlaybackTask_PlayMontage* MontageB = Cast<UYSPlaybackTask_PlayMontage>(TaskB);
+
+			if (MontageA != nullptr && (MontageA->MontageSelector == MontageB->MontageSelector) == false)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+}
+
 bool UYSMontageValidator::CanValidateAsset_Implementation(const FAssetData& InAssetData, UObject* InObject, FDataValidationContext& InContext) const
 {
 	return InObject != nullptr && InObject->IsA<UAnimMontage>();
@@ -93,13 +139,13 @@ EDataValidationResult UYSPlaybackGraphValidator::ValidateLoadedAsset_Implementat
 
 		const int32 MatchIndex = NodePlaybacks.IndexOfByPredicate([Compiled](const UYSAbilityPlaybackBase* NodePlayback)
 		{
-			return NodePlayback->MontageSelector == Compiled->MontageSelector;
+			return YSPlaybackValidation::HasSameTasks(*NodePlayback, *Compiled);
 		});
 
 		if (MatchIndex == INDEX_NONE)
 		{
 			AssetFails(InAsset, FText::FromString(FString::Printf(
-				TEXT("Playbacks[%d] 의 MontageSelector 와 같은 값을 가진 그래프 노드가 없다. 한쪽만 고쳐졌다 — 그래프 노드를 고치고 다시 컴파일할 것."),
+				TEXT("Playbacks[%d] 와 같은 Task 구성을 가진 그래프 노드가 없다. 한쪽만 고쳐졌다 — 그래프 노드를 고치고 다시 컴파일할 것."),
 				Index)));
 			Result = EDataValidationResult::Invalid;
 			continue;

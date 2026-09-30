@@ -5,6 +5,7 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "Ability/YSGameplayAbility.h"
 #include "AttackableActor/YSTelegraphActor.h"
 #include "Subsystem/YSObjectPoolingSubsystem.h"
 
@@ -29,7 +30,8 @@ void AYSAttackableBase::AllocateInstigator(AActor* InInstigator)
 
 bool AYSAttackableBase::OnSpawnInitialize(AActor* InOwnerActor, AActor* InInstigator, const TSharedPtr<FYSAbilityHitContext>& InHitContext)
 {
-	AllocateInstigator(InOwnerActor);
+	OwnerActor = InOwnerActor;
+	AllocateInstigator(InInstigator);
 	if (InHitContext.IsValid())
 	{
 		InitializeHitContext(InHitContext);    
@@ -48,9 +50,44 @@ void AYSAttackableBase::SetPoolActive(bool bActive)
 	}
 	else
 	{
+		// 컨텍스트를 놓기 전에 알린다. 안 빼두면 다음 사용이 이 액터를 재사용할 때 이전 컨텍스트의 Release 에 같이 걸린다.
+		_NotifyLinkedActorEnded();
 		HitContext = nullptr;
 		DeprocessActivationType();
 		GetWorldTimerManager().ClearTimer(DestroyTimerHandle);
+	}
+}
+
+void AYSAttackableBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	// 풀을 거치지 않고 Destroy() 로 끝나는 경로.
+	_NotifyLinkedActorEnded();
+	Super::EndPlay(EndPlayReason);
+}
+
+UAbilitySystemComponent* AYSAttackableBase::_FindEventSourceASC() const
+{
+	AActor* Current = OwnerActor.Get();
+
+	while ( IsValid(Current) )
+	{
+		if ( UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Current) )
+		{
+			return ASC;
+		}
+
+		const AYSAttackableBase* Attackable = Cast<AYSAttackableBase>(Current);
+		Current = IsValid(Attackable) ? Attackable->OwnerActor.Get() : nullptr;
+	}
+
+	return nullptr;
+}
+
+void AYSAttackableBase::_NotifyLinkedActorEnded()
+{
+	if ( HitContext.IsValid() )
+	{
+		HitContext->NotifyLinkedActorEnded(this);
 	}
 }
 
@@ -78,11 +115,13 @@ void AYSAttackableBase::ProcessActivationType()
 		}
 	case EYSAttackActivationType::TagBased :
 		{
-			UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OwnerActor.Get());
-			
+			UAbilitySystemComponent* ASC = _FindEventSourceASC();
+
 			if ( IsValid(ASC) )
 			{
-				ASC->GenericGameplayEventCallbacks.FindOrAdd(EventTag).AddUObject(this, &AYSAttackableBase::OnActivateTagCallback);
+				TagEventHandle = ASC->GenericGameplayEventCallbacks.FindOrAdd(EventTag).AddUObject(this, &AYSAttackableBase::OnActivateTagCallback);
+				// 해제 시점엔 스포너가 이미 사라져 체인을 못 탈 수 있다. 구독한 ASC 를 쥐고 있는다.
+				TagEventASC = ASC;
 			}
 			break;
 		}
@@ -105,12 +144,18 @@ void AYSAttackableBase::DeprocessActivationType()
 	{
 	case EYSAttackActivationType::TagBased :
 		{
-			UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(OwnerActor.Get());
-			
+			UAbilitySystemComponent* ASC = TagEventASC.Get();
+
+			// 태그 통째로 지우면 같은 태그를 기다리는 WaitGameplayEvent 태스크까지 날아간다. 내 핸들만 뺀다.
 			if ( IsValid(ASC) )
 			{
-				ASC->GenericGameplayEventCallbacks.Remove(EventTag);
+				if ( FGameplayEventMulticastDelegate* Delegate = ASC->GenericGameplayEventCallbacks.Find(EventTag) )
+				{
+					Delegate->Remove(TagEventHandle);
+				}
 			}
+			TagEventHandle.Reset();
+			TagEventASC = nullptr;
 		}
 	case EYSAttackActivationType::TimeBased :
 		{

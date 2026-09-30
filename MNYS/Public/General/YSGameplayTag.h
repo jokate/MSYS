@@ -58,7 +58,7 @@ namespace YSTags
 
 	// 입력 위상 — 플레이백 컨텍스트 태그로만 쓰인다.
 	// 어빌리티 라우팅은 EYSInputPhase 파라미터가 담당하고, 이 두 태그는
-	// FYSPlaybackEdge의 전환 조건이 "뗄 때 전환"을 표현할 수 있게 하는 용도다.
+	// 플레이백 경로(FYSPlaybackRoute)의 전환 조건이 "뗄 때 전환"을 표현할 수 있게 하는 용도다.
 	// (차지 → 릴리즈 발사 같은 노드 전환을 태그 조합 폭발 없이 처리한다)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Phase_Pressed);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Phase_Released);

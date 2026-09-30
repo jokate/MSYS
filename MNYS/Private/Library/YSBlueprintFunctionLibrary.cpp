@@ -22,6 +22,7 @@
 #include "General/YSDefine.h"
 #include "General/YSGameplayTag.h"
 #include "Interface/YSDamageProxy.h"
+#include "Interface/YSLinkedActor.h"
 #include "Subsystem/YSObjectPoolingSubsystem.h"
 
 namespace
@@ -199,7 +200,13 @@ AActor* UYSBlueprintFunctionLibrary::SpawnByConfig(UObject* WorldContext, const 
 			}
 			return nullptr;
 		}
-		
+
+		// 활성화가 곧장 반환·파괴로 이어질 수 있어(bTraceOnce 등) SetPoolActive 전에 등록한다.
+		if ( HitContext.IsValid() && PooledActor->Implements<UYSLinkedActor>() )
+		{
+			HitContext->RegisterLinkedActor(PooledActor);
+		}
+
 		Initializable->SetPoolActive(true);
 	}
 	

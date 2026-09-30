@@ -165,6 +165,11 @@ int32 UYSAbilitySystemComponent::HandleGameplayEvent(FGameplayTag EventTag, cons
 {
 	int32 SuperRes =  Super::HandleGameplayEvent(EventTag, Payload);
 	
+	if ( GrantAbilityData == nullptr )
+	{
+		return SuperRes;
+	}
+	
 	const FYSGameplayEffectHandler* PassiveEffect =GrantAbilityData->GetPassiveEffect(EventTag);
 	
 	if ( PassiveEffect != nullptr )

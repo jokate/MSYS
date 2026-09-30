@@ -9,6 +9,7 @@
 #include "General/YSMacros.h"
 #include "General/YSStruct.h"
 #include "Input/Combo/YSComboData.h"
+#include "Interface/YSLinkedActor.h"
 #include "YSGameplayAbility.generated.h"
 
 struct FYSPlaybackContext;
@@ -79,11 +80,42 @@ struct FYSAbilityHitContext
 		}
 		return ValidHitActors;
 	}
+	void RegisterLinkedActor(AActor* InActor)
+	{
+		check(IsInGameThread());
+		LinkedActors.AddUnique(InActor);
+	}
+	
+	void NotifyLinkedActorEnded(AActor* InActor)
+	{
+		check(IsInGameThread());
+		if (LinkedActors.Remove(InActor) > 0)
+		{
+			OnLinkedActorEnded.Broadcast(InActor);
+		}
+	}
 
-private : 
+	// Release 가 풀 반환을 거쳐 NotifyLinkedActorEnded 로 되돌아와 배열을 건드리므로 사본으로 돈다.
+	void ReleaseAllLinkedActors(EYSReleaseReason Reason)
+	{
+		check(IsInGameThread());
+		const TArray<TWeakObjectPtr<AActor>> Snapshot = LinkedActors;
+		for (const TWeakObjectPtr<AActor>& WeakActor : Snapshot)
+		{
+			if (IYSLinkedActor* LinkedActor = Cast<IYSLinkedActor>(WeakActor.Get()))
+			{
+				LinkedActor->Release(Reason);
+			}
+		}
+	}
+
+	TMulticastDelegate<void(AActor*)> OnLinkedActorEnded;
+
+private :
 	TWeakObjectPtr<AActor> InstigatorActor;
 	TSet<TWeakObjectPtr<AActor>> HitActors;
 	TMap<TWeakObjectPtr<UObject>, TArray<FHitResult>> RecentHitResults;
+	TArray<TWeakObjectPtr<AActor>> LinkedActors;
 };
 
 USTRUCT()

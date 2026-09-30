@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Playback/YSPlaybackGraphMigration.h"
@@ -121,78 +121,103 @@ int32 FYSPlaybackGraphMigration::ImportFromSourceAbility(UYSPlaybackGraphAsset* 
 		}
 	}
 
-	// ── 3단계 : 엣지마다 전환 노드를 만든다 ──────────────────────────────
+	// ── 3단계 : Task 출력의 경로마다 전환 노드를 만든다 ──────────────────
+	// 원본 플레이백은 로드될 때 PostLoad 가 옛 Transitions 를 Task 경로로 옮겨뒀다. 그 경로를 그대로 화살표로 편다.
 	for (int32 Index = 0; Index < SourcePlaybacks.Num(); ++Index)
 	{
-		if (SourcePlaybacks[Index] == nullptr)
+		const UYSAbilityPlaybackBase* SourcePlayback = SourcePlaybacks[Index];
+
+		if (SourcePlayback == nullptr)
 		{
 			continue;
 		}
-
-		const TArray<FYSPlaybackEdge>& Edges = SourcePlaybacks[Index]->Transitions;
 
 		// 종료·유지 노드는 상태 하나당 하나씩만 만들고 돌려 쓴다.
 		// 전환마다 만들면 노드가 두 배로 불어나 오히려 안 읽힌다.
 		UYSPlaybackGraphNode_Exit* SharedExitNode = nullptr;
 		UYSPlaybackGraphNode_Stay* SharedStayNode = nullptr;
 
-		for (int32 EdgeIndex = 0; EdgeIndex < Edges.Num(); ++EdgeIndex)
+		// 우선순위는 같은 출력 안에서만 의미가 있다. 상태 안에서 단조 증가하면 충분하다.
+		int32 RouteOrder = 0;
+
+		for (int32 TaskIndex = 0; TaskIndex < SourcePlayback->Tasks.Num(); ++TaskIndex)
 		{
-			const FYSPlaybackEdge& Edge = Edges[EdgeIndex];
+			const UYSPlaybackTask* Task = SourcePlayback->Tasks[TaskIndex];
 
-			FGraphNodeCreator<UYSPlaybackGraphNode_Transition> NodeCreator(Graph);
-
-			UYSPlaybackGraphNode_Transition* TransitionNode = NodeCreator.CreateNode(false);
-			TransitionNode->Edge = Edge;
-
-			// 배열 순서가 곧 우선순위였다. 그 순서를 숫자로 굳힌다.
-			TransitionNode->PriorityOrder = EdgeIndex;
-
-			NodeCreator.Finalize();
-
-			// 목적지를 노드로 바꾼다. -1 과 bFireEventOnly 는 이제 그림으로 표현된다.
-			UYSPlaybackGraphNode_Base* TargetNode = nullptr;
-
-			if (Edge.bFireEventOnly)
+			if (Task == nullptr)
 			{
-				if (SharedStayNode == nullptr)
+				continue;
+			}
+
+			for (int32 OutputIndex = 0; OutputIndex < Task->OutputRoutes.Num(); ++OutputIndex)
+			{
+				for (const FYSPlaybackRoute& Route : Task->OutputRoutes[OutputIndex].Routes)
 				{
-					FGraphNodeCreator<UYSPlaybackGraphNode_Stay> StayCreator(Graph);
+					FGraphNodeCreator<UYSPlaybackGraphNode_Transition> NodeCreator(Graph);
 
-					SharedStayNode = StayCreator.CreateNode(false);
-					SharedStayNode->NodePosX = StateNodes[Index]->NodePosX + 120;
-					SharedStayNode->NodePosY = YSPlaybackMigration::StateRowY - 220;
+					UYSPlaybackGraphNode_Transition* TransitionNode = NodeCreator.CreateNode(false);
+					TransitionNode->TaskIndex = TaskIndex;
+					TransitionNode->OutputIndex = OutputIndex;
+					TransitionNode->TransitionConditions = Route.Conditions;
+					TransitionNode->PriorityOrder = RouteOrder;
 
-					StayCreator.Finalize();
+					for (const UYSPlaybackAction* Action : Route.Actions)
+					{
+						if (Action != nullptr)
+						{
+							TransitionNode->Actions.Add(DuplicateObject<UYSPlaybackAction>(Action, TransitionNode));
+						}
+					}
+
+					NodeCreator.Finalize();
+
+					// 목적지를 노드로 바꾼다. 종료·유지는 이제 그림으로 표현된다.
+					UYSPlaybackGraphNode_Base* TargetNode = nullptr;
+
+					if (Route.Target == EYSRouteTarget::Node && StateNodes.IsValidIndex(Route.NextNodeIndex))
+					{
+						TargetNode = StateNodes[Route.NextNodeIndex];
+					}
+					else if (Route.Target == EYSRouteTarget::Stay)
+					{
+						if (SharedStayNode == nullptr)
+						{
+							FGraphNodeCreator<UYSPlaybackGraphNode_Stay> StayCreator(Graph);
+
+							SharedStayNode = StayCreator.CreateNode(false);
+							SharedStayNode->NodePosX = StateNodes[Index]->NodePosX + 120;
+							SharedStayNode->NodePosY = YSPlaybackMigration::StateRowY - 220;
+
+							StayCreator.Finalize();
+						}
+
+						TargetNode = SharedStayNode;
+					}
+					else
+					{
+						if (SharedExitNode == nullptr)
+						{
+							FGraphNodeCreator<UYSPlaybackGraphNode_Exit> ExitCreator(Graph);
+
+							SharedExitNode = ExitCreator.CreateNode(false);
+							SharedExitNode->NodePosX = StateNodes[Index]->NodePosX + 120;
+							SharedExitNode->NodePosY = YSPlaybackMigration::StateRowY + 320;
+
+							ExitCreator.Finalize();
+						}
+
+						TargetNode = SharedExitNode;
+					}
+
+					TransitionNode->CreateConnections(StateNodes[Index], TargetNode);
+
+					// 위치는 출발 상태 아래쪽. 전환 위젯이 붙으면 2차 배치가 다시 잡는다.
+					TransitionNode->NodePosX = StateNodes[Index]->NodePosX + (YSPlaybackMigration::StateSpacingX / 2);
+					TransitionNode->NodePosY = YSPlaybackMigration::StateRowY + 180 + (RouteOrder * 90);
+
+					++RouteOrder;
 				}
-
-				TargetNode = SharedStayNode;
 			}
-			else if (StateNodes.IsValidIndex(Edge.NextNodeIndex))
-			{
-				TargetNode = StateNodes[Edge.NextNodeIndex];
-			}
-			else
-			{
-				if (SharedExitNode == nullptr)
-				{
-					FGraphNodeCreator<UYSPlaybackGraphNode_Exit> ExitCreator(Graph);
-
-					SharedExitNode = ExitCreator.CreateNode(false);
-					SharedExitNode->NodePosX = StateNodes[Index]->NodePosX + 120;
-					SharedExitNode->NodePosY = YSPlaybackMigration::StateRowY + 320;
-
-					ExitCreator.Finalize();
-				}
-
-				TargetNode = SharedExitNode;
-			}
-
-			TransitionNode->CreateConnections(StateNodes[Index], TargetNode);
-
-			// 위치는 출발 상태 아래쪽. 전환 위젯이 붙으면 2차 배치가 다시 잡는다.
-			TransitionNode->NodePosX = StateNodes[Index]->NodePosX + (YSPlaybackMigration::StateSpacingX / 2);
-			TransitionNode->NodePosY = YSPlaybackMigration::StateRowY + 180 + (EdgeIndex * 90);
 		}
 	}
 

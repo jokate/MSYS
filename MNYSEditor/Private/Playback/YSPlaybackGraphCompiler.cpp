@@ -34,37 +34,36 @@ namespace YSPlaybackCompile
 
 		return nullptr;
 	}
+}
 
-	/** 이 상태에서 나가는 전환들. 우선순위 오름차순이며, 같으면 그래프 등록 순서를 따른다. */
-	static void GatherOutgoingTransitions(const UYSPlaybackGraphNode_State& State, TArray<UYSPlaybackGraphNode_Transition*>& OutTransitions)
+void FYSPlaybackGraphCompiler::GatherOutgoingTransitions(const UYSPlaybackGraphNode_State& State, TArray<UYSPlaybackGraphNode_Transition*>& OutTransitions)
+{
+	const UEdGraphPin* OutputPin = State.GetOutputPin();
+
+	if (OutputPin == nullptr)
 	{
-		const UEdGraphPin* OutputPin = State.GetOutputPin();
-
-		if (OutputPin == nullptr)
-		{
-			return;
-		}
-
-		for (const UEdGraphPin* LinkedPin : OutputPin->LinkedTo)
-		{
-			if (LinkedPin == nullptr)
-			{
-				continue;
-			}
-
-			if (UYSPlaybackGraphNode_Transition* Transition = Cast<UYSPlaybackGraphNode_Transition>(LinkedPin->GetOwningNode()))
-			{
-				OutTransitions.Add(Transition);
-			}
-		}
-
-		// StableSort 를 쓴다. 우선순위가 같은 전환끼리 순서가 매번 뒤집히면
-		// 컴파일할 때마다 에셋이 더러워져 소스 컨트롤이 시끄러워진다.
-		OutTransitions.StableSort([](const UYSPlaybackGraphNode_Transition& A, const UYSPlaybackGraphNode_Transition& B)
-		{
-			return A.PriorityOrder < B.PriorityOrder;
-		});
+		return;
 	}
+
+	for (const UEdGraphPin* LinkedPin : OutputPin->LinkedTo)
+	{
+		if (LinkedPin == nullptr)
+		{
+			continue;
+		}
+
+		if (UYSPlaybackGraphNode_Transition* Transition = Cast<UYSPlaybackGraphNode_Transition>(LinkedPin->GetOwningNode()))
+		{
+			OutTransitions.Add(Transition);
+		}
+	}
+
+	// StableSort 를 쓴다. 우선순위가 같은 전환끼리 순서가 매번 뒤집히면
+	// 컴파일할 때마다 에셋이 더러워져 소스 컨트롤이 시끄러워진다.
+	OutTransitions.StableSort([](const UYSPlaybackGraphNode_Transition& A, const UYSPlaybackGraphNode_Transition& B)
+	{
+		return A.PriorityOrder < B.PriorityOrder;
+	});
 }
 
 void FYSPlaybackGraphCompiler::Compile(UYSPlaybackGraphAsset* Asset)
@@ -121,48 +120,71 @@ void FYSPlaybackGraphCompiler::Compile(UYSPlaybackGraphAsset* Asset)
 		Asset->Playbacks.Add(Compiled);
 	}
 
-	// ── 4단계 : 전환을 엣지 배열로 굽는다 ────────────────────────────────
+	// ── 4단계 : 화살표를 Task 출력의 경로로 굽는다 ──────────────────────
 	for (int32 Index = 0; Index < StateNodes.Num(); ++Index)
 	{
-		TArray<UYSPlaybackGraphNode_Transition*> Transitions;
-		YSPlaybackCompile::GatherOutgoingTransitions(*StateNodes[Index], Transitions);
+		UYSAbilityPlaybackBase* Compiled = Asset->Playbacks[Index];
 
-		TArray<FYSPlaybackEdge> Edges;
-		Edges.Reserve(Transitions.Num());
+		// 노드에 남아 있던 경로는 버린다. 그래프의 화살표만이 경로의 출처다.
+		for (UYSPlaybackTask* Task : Compiled->Tasks)
+		{
+			if (IsValid(Task))
+			{
+				Task->ResetRoutes();
+			}
+		}
+
+		TArray<UYSPlaybackGraphNode_Transition*> Transitions;
+		GatherOutgoingTransitions(*StateNodes[Index], Transitions);
 
 		for (const UYSPlaybackGraphNode_Transition* Transition : Transitions)
 		{
-			FYSPlaybackEdge Edge = Transition->BuildEdge();
+			// 인덱스가 어긋난 화살표. 그래프에서 붉게 뜬다.
+			if (Transition->HasValidOutput() == false || Compiled->Tasks.IsValidIndex(Transition->TaskIndex) == false)
+			{
+				continue;
+			}
 
-			// 목적지 노드가 곧 전환의 뜻이다. 노드 프로퍼티에 적혀 있던 값은 여기서 덮어쓴다.
-			// TriggerGameplayData 는 건드리지 않는다 — 이벤트 발행은 목적지와 무관한 속성이다.
+			UYSPlaybackTask* CompiledTask = Compiled->Tasks[Transition->TaskIndex];
 			const UYSPlaybackGraphNode_Base* Target = Transition->GetTargetNode();
+
+			FYSPlaybackRoute Route;
+			Route.Conditions = Transition->TransitionConditions;
+
+			// 종료 노드로 갔거나, 아무 데도 안 닿았다.
+			// 둘 다 런타임 결과는 같지만 후자는 그래프에서 붉게 표시돼 실수임이 드러난다.
+			Route.Target = EYSRouteTarget::End;
 
 			if (const UYSPlaybackGraphNode_State* NextState = Cast<UYSPlaybackGraphNode_State>(Target))
 			{
-				const int32* NextIndex = NodeToIndex.Find(NextState);
-
-				Edge.NextNodeIndex = (NextIndex != nullptr) ? *NextIndex : INDEX_NONE;
-				Edge.bFireEventOnly = false;
+				if (const int32* NextIndex = NodeToIndex.Find(NextState))
+				{
+					Route.Target = EYSRouteTarget::Node;
+					Route.NextNodeIndex = *NextIndex;
+				}
 			}
 			else if (Target != nullptr && Target->IsA<UYSPlaybackGraphNode_Stay>())
 			{
-				// 전환하지 않는다. NextNodeIndex 는 읽히지 않지만 쓰레기 값을 남기지 않는다.
-				Edge.NextNodeIndex = INDEX_NONE;
-				Edge.bFireEventOnly = true;
+				Route.Target = EYSRouteTarget::Stay;
+
+				if (CompiledTask->IsRepeatable() == false)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("%s : 한 번만 나는 출력(%s)이 유지로 간다. 노드가 멈춘 채 남는다."),
+						*Asset->GetPathName(), *CompiledTask->GetClass()->GetName());
+				}
 			}
-			else
+
+			// 행동은 편집용 전환 노드가 소유한다. 그 노드는 쿠킹 때 사라지므로 산출물 쪽에 복제한다.
+			for (const UYSPlaybackAction* Action : Transition->Actions)
 			{
-				// 종료 노드로 갔거나, 아무 데도 안 닿았다.
-				// 둘 다 런타임 결과는 같지만 후자는 그래프에서 붉게 표시돼 실수임이 드러난다.
-				Edge.NextNodeIndex = INDEX_NONE;
-				Edge.bFireEventOnly = false;
+				if (Action != nullptr)
+				{
+					Route.Actions.Add(DuplicateObject<UYSPlaybackAction>(Action, CompiledTask));
+				}
 			}
 
-			Edges.Add(Edge);
+			CompiledTask->AddRoute(Transition->OutputIndex, Route);
 		}
-
-		Asset->Playbacks[Index]->Transitions = MoveTemp(Edges);
 	}
 
 	// 산출물이 바뀌었음을 알린다. 이미 사본을 뜬 어빌리티가 이 번호를 보고 다시 뜬다.

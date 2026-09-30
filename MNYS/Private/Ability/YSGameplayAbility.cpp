@@ -39,7 +39,7 @@ void UYSGameplayAbility::OnGameplayTagChanged(const FGameplayTag& Tag, bool bInI
 		// 입력에 대한 심사가 끝났다면 인풋에 대한 컨텍스트 처리를 담당해야 한다.
 		if (!bInIsActive)
 		{
-			PlaybackBase->DispatchNext(EYSPlaybackEvent::OnInput, false);	
+			PlaybackBase->HandleInputWindowClosed();
 		}
 	}
 }
@@ -255,6 +255,12 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 
 	bHasCommitted = false;
 
+	// 취소면 이번 사용이 남긴 연결 액터도 같이 걷는다.
+	if ( bWasCancelled && HitContext.IsValid() )
+	{
+		HitContext->ReleaseAllLinkedActors(EYSReleaseReason::Cancelled);
+	}
+
 	HitContext = nullptr;
 	PlaybackContext = nullptr;
 }
@@ -276,7 +282,7 @@ bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag, EYS
 	// 바로 트랜지션 가능하면 Dispatch Next를 호출하는게 좋을 듯 싶다.. ( 원래는 어셉트 되고 예약이 된다면 return true를 시켰었음..
 	// 사유는 인풋에 따른 처리가 부가적으로 필요한 경우에는 TryTransition에서 true를 리턴해서 인풋이 처리되었다는 것을 알려주는게 좋을 것 같아서임
 	//  ( 예시로는 콤보 입력이 들어왔을 때, 콤보 입력이 처리된 건지, 아니면 인풋이 무시된 건지 구분하기 위해서 )
-	return	AbilityPlaybackBase->TryAcceptInputTag();
+	return	AbilityPlaybackBase->HandleInput(InputGameplayTag, InputPhase);
 }
 
 

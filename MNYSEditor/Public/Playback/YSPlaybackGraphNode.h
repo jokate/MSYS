@@ -114,11 +114,10 @@ public:
 
 
 /**
- * 전환하지 않고 현재 플레이백을 유지한다. 런타임의 bFireEventOnly 에 대응한다.
+ * 전환하지 않고 현재 플레이백을 유지한다. 경로 목적지 Stay 에 대응한다.
  *
- * 이름이 '이벤트만'이 아니라 '유지'인 이유 —
- * 이 플래그가 실제로 하는 일은 전환을 막는 것뿐이다. 이벤트 발행은 전환에 붙은
- * TriggerGameplayData 가 따로 처리하며, 전환하는 경우에도 똑같이 발행된다.
+ * 화살표의 경로 행동은 그대로 실행되고, 출발 Task 는 계속 대기한다.
+ * 입력·이벤트처럼 여러 번 나는 출력에만 의미가 있다 — 몽타주 완료에 붙이면 노드가 멈춘 채 남는다.
  */
 UCLASS()
 class UYSPlaybackGraphNode_Stay : public UYSPlaybackGraphNode_Base
@@ -142,6 +141,9 @@ public:
  * 전환을 노드로 만들어야 클릭 한 번에 그 전환의 조건만 Details 에 띄울 수 있다.
  *
  * 엔진의 UAnimStateTransitionNode 가 같은 이유로 같은 선택을 했다.
+ *
+ * 화살표 하나 = 출발 상태의 Task 출력 하나에서 갈 수 있는 목적지 후보 하나.
+ * 같은 출력에 화살표가 여럿이면 우선순위대로 조건을 보고, 전부 실패하면 체인이 끝난다.
  */
 UCLASS()
 class UYSPlaybackGraphNode_Transition : public UYSPlaybackGraphNode_Base
@@ -149,46 +151,31 @@ class UYSPlaybackGraphNode_Transition : public UYSPlaybackGraphNode_Base
 	GENERATED_BODY()
 
 public:
-	/**
-	 * 이 전환을 깨우는 사건.
-	 *
-	 * 아래 필드들은 FYSPlaybackEdge 를 그대로 들고 있지 않고 따로 선언한다.
-	 * 그 구조체의 NextNodeIndex 와 bFireEventOnly 는 그래프가 결정하는 값이라
-	 * 편집란에 띄우면 "고쳐도 덮어써지는 칸"이 생긴다. 아예 없는 편이 낫다.
-	 */
-	UPROPERTY(EditAnywhere, Category = "YS | Transition", meta = (DisplayName = "발화 조건"))
-	EYSPlaybackEvent RequiredResult = EYSPlaybackEvent::Completed;
+	/** 출발 상태의 Tasks 배열 인덱스. Task 순서를 바꾸면 이 값도 같이 고쳐야 한다. */
+	UPROPERTY(EditAnywhere, Category = "YS | Transition", meta = (DisplayName = "Task 인덱스", ClampMin = "0"))
+	int32 TaskIndex = 0;
+
+	/** 그 Task 의 출력. 몽타주 재생은 0 = 완료, 1 = 중단. 나머지는 0 하나뿐이다. */
+	UPROPERTY(EditAnywhere, Category = "YS | Transition", meta = (DisplayName = "출력 인덱스", ClampMin = "0"))
+	int32 OutputIndex = 0;
 
 	UPROPERTY(EditAnywhere, Category = "YS | Transition",
 		meta = (DisplayName = "전환 조건", BaseStruct = "/Script/MNYS.YSPlaybackCondition", ExcludeBaseStruct))
 	TArray<FInstancedStruct> TransitionConditions;
 
-	UPROPERTY(EditAnywhere, Category = "YS | Transition", meta = (DisplayName = "입력 즉시 전환 (몽타주 완료를 기다리지 않음)"))
-	bool bImmediateTransition = false;
-
-	/** 비워두면 아무것도 쏘지 않는다. 목적지와 무관하게 발행된다. */
-	UPROPERTY(EditAnywhere, Category = "YS | Transition", meta = (DisplayName = "트리거 할 이벤트 데이터"))
-	FGameplayEventSendData TriggerGameplayData;
-
-	/**
-	 * 구버전 그래프가 값을 넣어둔 슬롯. 이름을 바꾸면 이미 저장된 에셋이 값을 잃으므로 그대로 둔다.
-	 * PostLoad 에서 한 번만 위 필드들로 옮긴다.
-	 */
-	UPROPERTY()
-	FYSPlaybackEdge Edge;
-
-	UPROPERTY()
-	bool bEdgeUpgraded = false;
-
-	/** 편집한 값들을 런타임 구조체로 모은다. 목적지는 컴파일러가 채운다. */
-	FYSPlaybackEdge BuildEdge() const;
-
-	/**
-	 * 같은 노드에서 나가는 전환이 여럿일 때의 우선순위. 작을수록 먼저 평가된다.
-	 * 지금의 Transitions 배열 순서를 대신한다.
-	 */
+	/** 같은 출력에서 나가는 화살표가 여럿일 때의 우선순위. 작을수록 먼저 평가된다. */
 	UPROPERTY(EditAnywhere, Category = "YS | Transition", meta = (DisplayName = "우선순위 (작을수록 먼저)"))
 	int32 PriorityOrder = 0;
+
+	/** 이 화살표가 확정되면 전환 직전에 실행한다. 목적지가 유지·종료여도 돈다. */
+	UPROPERTY(EditAnywhere, Instanced, Category = "YS | Transition", meta = (DisplayName = "경로 행동"))
+	TArray<TObjectPtr<UYSPlaybackAction>> Actions;
+
+	/** 출발 상태에서 이 화살표가 가리키는 Task. 인덱스가 어긋났으면 nullptr. */
+	UYSPlaybackTask* GetSourceTask() const;
+
+	/** Task 와 출력이 둘 다 실재한다. 아니면 컴파일에서 빠지고 그래프에서 붉게 뜬다. */
+	bool HasValidOutput() const;
 
 	/** From 의 출력 → 이 노드 → To 의 입력으로 잇는다. */
 	void CreateConnections(UYSPlaybackGraphNode_Base* From, UYSPlaybackGraphNode_Base* To);
@@ -207,7 +194,6 @@ public:
 
 	//~ UEdGraphNode
 	virtual void AllocateDefaultPins() override;
-	virtual void PostLoad() override;
 	virtual FText GetNodeTitle(ENodeTitleType::Type TitleType) const override;
 	virtual FLinearColor GetNodeTitleColor() const override;
 	virtual FText GetTooltipText() const override;

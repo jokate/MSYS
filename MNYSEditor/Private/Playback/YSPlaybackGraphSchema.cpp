@@ -40,7 +40,8 @@ void UYSPlaybackGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& Co
 			continue;
 		}
 
-		if (PlaybackClass->HasAnyClassFlags(CLASS_Abstract | CLASS_Deprecated | CLASS_NewerVersionExists))
+		// HideDropDown — 옛 에셋 로드용으로만 남긴 플레이백 서브클래스.
+		if (PlaybackClass->HasAnyClassFlags(CLASS_Abstract | CLASS_Deprecated | CLASS_NewerVersionExists | CLASS_HideDropDown))
 		{
 			continue;
 		}
@@ -75,7 +76,7 @@ void UYSPlaybackGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& Co
 		const TSharedPtr<FEdGraphSchemaAction_NewNode> StayAction = MakeShared<FEdGraphSchemaAction_NewNode>(
 			LOCTEXT("FlowCategory", "흐름"),
 			LOCTEXT("StayMenuDesc", "유지"),
-			LOCTEXT("StayMenuTooltip", "전환하지 않고 현재 플레이백을 계속 재생한다."),
+			LOCTEXT("StayMenuTooltip", "전환하지 않고 현재 플레이백을 계속 재생한다. 화살표의 행동은 실행된다."),
 			0);
 
 		StayAction->NodeTemplate = NewObject<UYSPlaybackGraphNode_Stay>(ContextMenuBuilder.OwnerOfTemporaries);

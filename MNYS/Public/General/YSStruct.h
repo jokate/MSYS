@@ -160,20 +160,6 @@ public :
 	TSubclassOf<UYSGameplayAbility> AbilityClass;
 };
 
-UENUM(BlueprintType)
-enum class EYSPlaybackEvent : uint8
-{
-	None        UMETA(DisplayName = "첫 진입"),
-	Completed   UMETA(DisplayName = "정상 완료"),
-	Interrupted UMETA(DisplayName = "중단/취소"),
-	OnHitTarget		UMETA(DisplayName = "타겟 히트 시"),
-	OnHitPlayed		UMETA(DisplayName = "히트 당했을 시"),
-	OnCheckContextTag		UMETA(DisplayName = "컨텍스트 태그 추가 시"),
-	OnInput		UMETA(DisplayName = "인풋 발생 시"),
-	CustomEvent		UMETA(DisplayName = "커스텀 이벤트")
-};
-
-
 USTRUCT(BlueprintType)
 struct FYSTagHistory
 {
@@ -230,22 +216,9 @@ struct FYSPlaybackContext
 	UPROPERTY()
 	TObjectPtr<AActor> Target;
 
-	EYSPlaybackEvent PreviousResult = EYSPlaybackEvent::None;
-	
 	// 들어온 태그들에 대한 설정.
 	UPROPERTY()
 	FGameplayTagContainer ContextTags;
-	
-	/**
-	 * 평가 단계에서 조건을 통과했지만 아직 전환하지 않은 엣지의 인덱스.
-	 *
-	 * 목적지 노드가 아니라 "엣지"를 예약하는 이유 — 전환에는 목적지뿐 아니라
-	 * "어떤 입력을 소비할지"도 필요하다. 목적지만 들고 있으면 실제 전환 시점에
-	 * 소비할 대상을 알 수 없어, 예약 시점에 미리 먹어야 하고 그러면 인터럽트로
-	 * 예약이 무산될 때 입력이 증발한다.
-	 */
-	UPROPERTY()
-	int32 PendingEvaluatedEdgeIndex = INDEX_NONE;
 };
 
 USTRUCT(BlueprintType)

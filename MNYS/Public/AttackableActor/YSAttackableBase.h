@@ -7,13 +7,17 @@
 #include "Abilities/GameplayAbilityTypes.h"
 #include "GameFramework/Actor.h"
 #include "General/YSEnum.h"
+#include "Interface/YSDamageProxy.h"
 #include "Interface/YSSpawnInitializable.h"
 #include "YSAttackableBase.generated.h"
 
 class AYSTelegraphActor;
+class UAbilitySystemComponent;
 
+// 위치 기준은 직접 스폰한 액터, 공격자는 스폰 체인의 루트.
+// 프록시로 공격자를 넘겨서, 이 액터가 무엇을 스폰하든 공격자가 체인을 따라 전달된다.
 UCLASS()
-class MNYS_API AYSAttackableBase : public AActor, public IYSSpawnInitializable
+class MNYS_API AYSAttackableBase : public AActor, public IYSSpawnInitializable, public IYSDamageProxy
 {
 	GENERATED_BODY()
 
@@ -21,7 +25,9 @@ public:
 	// Sets default values for this actor's properties
 	AYSAttackableBase();
 	virtual void AllocateInstigator(AActor* InInstigator);
-	
+
+	virtual AActor* GetDamageInstigator() const override { return InstigatorActor.Get(); }
+
 	virtual bool OnSpawnInitialize(AActor* InOwnerActor, AActor* InInstigator, const TSharedPtr<FYSAbilityHitContext>& InHitContext) override;
 	
 	void InitializeHitContext(const TSharedPtr<FYSAbilityHitContext>& InHitContext)
@@ -30,8 +36,12 @@ public:
 	}
 	
 	virtual void SetPoolActive(bool bActive) override;
-	
-protected : 
+
+protected :
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	void _NotifyLinkedActorEnded();
+	UAbilitySystemComponent* _FindEventSourceASC() const;
+
 	UFUNCTION(BlueprintNativeEvent)
 	void OnActivate();
 	virtual void OnActivate_Implementation();
@@ -79,7 +89,11 @@ protected :
 	
 protected : 
 	TSharedPtr<FYSAbilityHitContext> HitContext;
-private : 
+private :
 	FTimerHandle ActivateTimerHandle;
 	FTimerHandle DestroyTimerHandle;
+	FDelegateHandle TagEventHandle;
+
+	UPROPERTY()
+	TWeakObjectPtr<UAbilitySystemComponent> TagEventASC;
 };

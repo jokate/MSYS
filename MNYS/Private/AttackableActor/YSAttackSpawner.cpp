@@ -27,12 +27,11 @@ void AYSAttackSpawner::SpawnActorByConfig(FYSSpawnActorConfig SpawnConfig)
 {
 	++SpawnCount;
 
-	AActor* OwnerForPolicy = OwnerActor.IsValid() ? OwnerActor.Get() : this;
-
+	// 위치 기준은 스포너 자신. 공격자는 스포너의 프록시(GetDamageInstigator)로 체인을 따라 넘어간다.
 	UYSBlueprintFunctionLibrary::SpawnByConfig(
 		this,
 		SpawnConfig,
-		FYSTransformPolicyContext(OwnerForPolicy, TargetActor.Get()),
+		FYSTransformPolicyContext(this, TargetActor.Get()),
 		/*AttachParent*/ this, HitContext);
 
 	if ( SpawnCount >= SpawnActorConfigs.Num() )

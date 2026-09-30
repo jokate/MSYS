@@ -1,8 +1,9 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Playback/YSPlaybackGraphNode.h"
 
+#include "Ability/AbilityComponent/YSPlaybackTask.h"
 #include "Framework/Commands/GenericCommands.h"
 #include "GraphEditorActions.h"
 #include "Playback/YSPlaybackGraphSchema.h"
@@ -160,7 +161,7 @@ FText UYSPlaybackGraphNode_Stay::GetTooltipText() const
 {
 	return LOCTEXT("StayTooltip",
 		"전환하지 않고 현재 플레이백을 계속 재생한다.\n"
-		"전환에 이벤트가 달려 있으면 그 이벤트는 그대로 발행된다.");
+		"화살표의 경로 행동은 그대로 실행된다. 입력·이벤트 대기처럼 여러 번 나는 출력에만 쓴다.");
 }
 
 
@@ -172,36 +173,25 @@ void UYSPlaybackGraphNode_Transition::AllocateDefaultPins()
 	CreatePin(EGPD_Output, UYSPlaybackGraphSchema::PC_Transition, TEXT("Out"));
 }
 
-void UYSPlaybackGraphNode_Transition::PostLoad()
+UYSPlaybackTask* UYSPlaybackGraphNode_Transition::GetSourceTask() const
 {
-	Super::PostLoad();
+	const UYSPlaybackGraphNode_State* PrevState = GetPreviousState();
 
-	// 예전 그래프는 FYSPlaybackEdge 하나에 전부 넣어 저장했다. 한 번만 옮긴다.
-	// 매번 옮기면 이후에 고친 값이 저장된 옛 값으로 되돌아간다.
-	if (bEdgeUpgraded)
+	if (PrevState == nullptr || PrevState->Playback == nullptr)
 	{
-		return;
+		return nullptr;
 	}
 
-	RequiredResult = Edge.RequiredResult;
-	TransitionConditions = Edge.TransitionConditions;
-	bImmediateTransition = Edge.bImmediateTransition;
-	TriggerGameplayData = Edge.TriggerGameplayData;
+	const TArray<TObjectPtr<UYSPlaybackTask>>& Tasks = PrevState->Playback->Tasks;
 
-	bEdgeUpgraded = true;
+	return Tasks.IsValidIndex(TaskIndex) ? Tasks[TaskIndex].Get() : nullptr;
 }
 
-FYSPlaybackEdge UYSPlaybackGraphNode_Transition::BuildEdge() const
+bool UYSPlaybackGraphNode_Transition::HasValidOutput() const
 {
-	FYSPlaybackEdge Result;
+	const UYSPlaybackTask* Task = GetSourceTask();
 
-	Result.RequiredResult = RequiredResult;
-	Result.TransitionConditions = TransitionConditions;
-	Result.bImmediateTransition = bImmediateTransition;
-	Result.TriggerGameplayData = TriggerGameplayData;
-
-	// NextNodeIndex 와 bFireEventOnly 는 목적지가 정한다. 컴파일러가 채운다.
-	return Result;
+	return Task != nullptr && OutputIndex >= 0 && OutputIndex < Task->GetOutputCount();
 }
 
 void UYSPlaybackGraphNode_Transition::CreateConnections(UYSPlaybackGraphNode_Base* From, UYSPlaybackGraphNode_Base* To)
@@ -270,24 +260,27 @@ UYSPlaybackGraphNode_State* UYSPlaybackGraphNode_Transition::GetPreviousState() 
 
 FText UYSPlaybackGraphNode_Transition::GetNodeTitle(ENodeTitleType::Type TitleType) const
 {
-	// 발화 조건이 곧 이 전환의 정체다. 화살표 위에 이것만 떠도 그래프가 읽힌다.
-	const UEnum* EventEnum = StaticEnum<EYSPlaybackEvent>();
+	// 어느 Task 의 어느 출력인지가 곧 이 전환의 정체다. 같은 종류의 Task 가 여럿일 수 있어 인덱스를 붙인다.
+	const UYSPlaybackTask* Task = GetSourceTask();
 
-	const FText EventText = (EventEnum != nullptr)
-		? EventEnum->GetDisplayNameTextByValue(static_cast<int64>(RequiredResult))
-		: LOCTEXT("TransitionTitle", "전환");
-
-	// 이벤트를 쏘는 전환은 그 사실이 선 위에 드러나야 한다.
-	// 목적지와 무관하게 발행되므로 노드 모양만으로는 알 수 없다.
-	if (TriggerGameplayData.IsValid())
+	if (Task == nullptr || HasValidOutput() == false)
 	{
-		return FText::Format(
-			LOCTEXT("TransitionTitleWithEvent", "{0}  ▸ {1}"),
-			EventText,
-			FText::FromName(TriggerGameplayData.TargetToTrigger.GetTagName()));
+		return LOCTEXT("InvalidOutput", "출력 없음");
 	}
 
-	return EventText;
+	const FText OutputText = FText::Format(
+		LOCTEXT("TransitionTitle", "[{0}] {1} · {2}"),
+		FText::AsNumber(TaskIndex),
+		Task->GetClass()->GetDisplayNameText(),
+		Task->GetOutputDisplayName(OutputIndex));
+
+	// 행동이 달린 화살표는 선 위에서 티가 나야 한다. 목적지만 봐서는 알 수 없다.
+	if (Actions.Num() > 0)
+	{
+		return FText::Format(LOCTEXT("TransitionTitleWithActions", "{0}  ▸ 행동 {1}"), OutputText, FText::AsNumber(Actions.Num()));
+	}
+
+	return OutputText;
 }
 
 FLinearColor UYSPlaybackGraphNode_Transition::GetNodeTitleColor() const
@@ -297,7 +290,7 @@ FLinearColor UYSPlaybackGraphNode_Transition::GetNodeTitleColor() const
 
 FText UYSPlaybackGraphNode_Transition::GetTooltipText() const
 {
-	return LOCTEXT("TransitionTooltip", "전환 노드. 발화 조건과 전환 조건을 담는다.");
+	return LOCTEXT("TransitionTooltip", "전환 노드. 출발 상태의 Task 출력 하나와 전환 조건을 담는다.");
 }
 
 #undef LOCTEXT_NAMESPACE

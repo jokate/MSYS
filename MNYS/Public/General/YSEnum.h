@@ -136,3 +136,12 @@ enum class EYSOperatorType : uint8
 	OR,
 	AND
 };
+
+// 연결 액터가 해제되는 사유. 어떻게 사라질지(폭발/무피해)는 액터가 사유를 보고 정한다.
+UENUM(BlueprintType)
+enum class EYSReleaseReason : uint8
+{
+	Command		UMETA(DisplayName = "명령"),
+	Expired		UMETA(DisplayName = "만료"),
+	Cancelled	UMETA(DisplayName = "어빌리티 취소")
+};

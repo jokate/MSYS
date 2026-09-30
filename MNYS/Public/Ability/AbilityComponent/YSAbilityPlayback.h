@@ -1,68 +1,48 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "General/YSStruct.h"
 #include "Ability/AbilityComponent/YSPlaybackCondition.h"
+#include "Ability/AbilityComponent/YSPlaybackTask.h"
 #include "StructUtils/InstancedStruct.h"
 #include "UObject/Object.h"
 #include "YSAbilityPlayback.generated.h"
 
+class UYSPlaybackAction;
+class UYSPlaybackTask;
 class ULevelSequencePlayer;
 class UAbilityTask_PlayMontageAndWait;
 class ALevelSequenceActor;
-/**
- * 
- */
-UENUM(BlueprintType)
-enum class EYSAbilityPlaybackType : uint8
-{
-	None UMETA(DisplayName = "아무것도 재생 안함"),
-	Montage UMETA(DisplayName = "몽타주 재생"),
-	Sequence UMETA(DisplayName = "시퀀스 재생"),
-};
-
-USTRUCT()
-struct FYSPlaybackEdge
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Transition", meta = (DisplayName = "발화 조건"))
-	EYSPlaybackEvent RequiredResult = EYSPlaybackEvent::Completed;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Transition", meta = (DisplayName = "전환 조건", BaseStruct = "/Script/MNYS.YSPlaybackCondition", ExcludeBaseStruct))
-	TArray<FInstancedStruct> TransitionConditions;
-	
-	// -1 = 체인 종료 (어빌리티 EndAbility)
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Transition", meta = (DisplayName = "다음 노드 인덱스 (-1: 종료)"))
-	int32 NextNodeIndex = INDEX_NONE;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Transition", meta = (DisplayName = "입력 즉시 전환 (몽타주 완료를 기다리지 않음)"))
-	bool bImmediateTransition = false;
-	
-	UPROPERTY(EditAnywhere, meta = (DisplayName = "트리거 할 이벤트 데이터"))
-	FGameplayEventSendData TriggerGameplayData;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Transition", meta = (DisplayName = "전환 없이 이벤트만 발행"))
-	bool bFireEventOnly = false;
-};
 
 // 해당 구조의 가장 큰 문제점은 어빌리티의 플레이 백을 의미하다보니 다른 어빌리티에서 동작 시, Race Condition이 발생할 수 있음.
 // 사실 이게 다양한 상황에서의 전제가 있다고 가정한다면, 애니메이션이 좀 꼬일 수 있겠다는 생각은 드는 편.
-// 그렇다면 규칙이 있음, 예를 들어서 
+// 그렇다면 규칙이 있음, 예를 들어서
 
 UCLASS(EditInlineNew, DefaultToInstanced, CollapseCategories)
 class MNYS_API UYSAbilityPlaybackBase : public UObject
 {
 	GENERATED_BODY()
-	
-public : 
+
+public :
 	void Play(const TSharedPtr<FYSPlaybackContext>& Context);
+	virtual void EndPlay();
 	void ReleaseMotionWarp();
-	bool DispatchNext(EYSPlaybackEvent Event, bool bIsEvaluate = false);
+
+	bool HandleInput(const FGameplayTag& InputTag, EYSInputPhase InputPhase);
+	void HandleInputWindowClosed();
 	void OnHit(const TArray<FHitResult>& HitResults);
-	
+	void HandleContextTagChanged();
+
+	/** Task 가 전환을 확정했을 때 부른다. -1 이면 체인 종료. */
+	bool RequestTransition(int32 NextNodeIndex);
+
+	/** 조건을 통과한 첫 경로로 전환한다. 통과한 경로가 없으면 아무것도 안 하고 false. */
+	bool TryResolveRoutes(const TArray<FYSPlaybackRoute>& Routes);
+
+	const TSharedPtr<FYSPlaybackContext>& GetContext() const { return CapturedContext; }
+
 	AActor* GetCurrentPlaybackTarget() const
 	{
 		if ( CapturedContext.IsValid() == false )
@@ -71,131 +51,46 @@ public :
 		}
 		return CapturedContext->Target;
 	}
-	
+
 	UYSGameplayAbility* GetCurrentPlaybackOwningAbility() const
 	{
 		if ( CapturedContext.IsValid() == false )
 		{
-			return nullptr; 
+			return nullptr;
 		}
-		
 		return CapturedContext->OwnerAbility;
 	}
-	
+
 	AActor* GetCurrentPlaybackInstigator() const
 	{
 		if ( CapturedContext.IsValid() == false )
 		{
 			return nullptr;
 		}
-		
 		return CapturedContext->Instigator;
 	}
-	
-	virtual void EndPlay();
-	
-	bool TryAcceptInputTag();
-	
-protected :
-	UFUNCTION()
-	void OnMontagePlayed();
 
-	UFUNCTION()
-	void OnMontageInterrupted();
-	
-	virtual void SetupMontage();
-	
-	virtual void SetPlayback(TSharedPtr<FYSPlaybackContext> Context);
-	
-	UFUNCTION()
-	void OnSequencePlayed();
-	
-	virtual void SetupSequence();
+public :
+	UPROPERTY(EditDefaultsOnly, Instanced, Category = "YS | Playback", meta = (DisplayName = "진입 시 행동"))
+	TArray<TObjectPtr<UYSPlaybackAction>> EnterActions;
 
-	virtual void ProcessContextBeforePlay() {};
-	
-protected:
-	/** 조건을 만족하는 첫 엣지의 인덱스. 배열 순서가 곧 우선순위다. */
-	int32 FindTransitionEdgeIndex(EYSPlaybackEvent Event) const;
-	bool AreConditionsSatisfied(const FYSPlaybackEdge& Edge) const;
+	UPROPERTY(EditDefaultsOnly, Instanced, Category = "YS | Playback", meta = (DisplayName = "태스크 (배열 순서가 우선순위)"))
+	TArray<TObjectPtr<UYSPlaybackTask>> Tasks;
 
-	/** 전환이 확정된 시점에만 부른다 — 여기서 입력이 소비된다. */
-	bool CommitEdge(const FYSPlaybackEdge& Edge);
-
-	/** 조건은 통과했지만 지금 전환하지 않는 경우. 소비하지 않는다. */
-	bool ReserveEdge(int32 EdgeIndex);
-
-	bool CommitTransition(int32 NextNodeIndex);
-	bool HandleUnmatchedEvent(EYSPlaybackEvent Event);
-
-	/** 엣지가 지정한 이벤트를 ASC로 흘린다. AnimNotify 가 쏘는 것과 같은 경로다. */
-	void FireEdgeEvent(const FGameplayEventSendData& SendEventData) const;
-
-	void ProcessConditionMatch(const FYSPlaybackEdge& Edge, const TSharedPtr<FYSPlaybackContext>& Context) const;
-	
-public : 
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Ability Playback Type")
-	EYSAbilityPlaybackType PlaybackType = EYSAbilityPlaybackType::Montage;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Sequence", meta = (DisplayName = "시퀀스 설정", 	EditCondition = "PlaybackType == EYSAbilityPlaybackType::Sequence"))
-	FYSSequencePlaySettings SequenceSettings;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Montage To Play", meta = (DisplayName = "재생할 몽타주 정보", EditCondition = "PlaybackType == EYSAbilityPlaybackType::Montage", BaseStruct = "/Script/MNYS.YSMontageSelector", ExcludeBaseStruct))
-	FInstancedStruct MontageSelector;
-
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Transitions", meta = (DisplayName = "다음 플레이백 전환"))
-	TArray<FYSPlaybackEdge> Transitions;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Transitions", meta = (DisplayName = "입력 불일치 시 체인 종료"))
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Playback", meta = (DisplayName = "입력 불일치 시 체인 종료"))
 	bool bEndChainOnUnmatchedInput = true;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Transitions", meta = (DisplayName = "진입 시 커밋 (쿨다운 소모)"))
+
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Playback", meta = (DisplayName = "진입 시 커밋 (쿨다운 소모)"))
 	bool bCommitOnEnter = false;
 
-protected : 
-	// Play() 시점에 캡처 — 콜백에서 컨텍스트 참조용
+protected :
+	bool AreConditionsSatisfied(const TArray<FInstancedStruct>& Conditions) const;
+	void ConsumeConditions(const TArray<FInstancedStruct>& Conditions) const;
+
+protected :
 	TSharedPtr<FYSPlaybackContext> CapturedContext;
-	
+
 private :
-	UPROPERTY()
-	TObjectPtr<ALevelSequenceActor> ActiveSequenceActor = nullptr;
-	
-	UPROPERTY()
-	TObjectPtr<UAbilityTask_PlayMontageAndWait> PlayMontageAndWaitTask = nullptr;
-	
-	UPROPERTY()
-	TObjectPtr<ULevelSequencePlayer> LevelSequencePlayer = nullptr;
-};
-
-UCLASS(DisplayName = "히트 첫번째 타겟 기준 플레이 백")
-class MNYS_API UYSAbilityPlayback_FirstHitTarget : public UYSAbilityPlaybackBase
-{
-	GENERATED_BODY()
-	
-protected :
-	virtual void ProcessContextBeforePlay() override;
-};
-
-
-UCLASS(DisplayName = "저스트 회피 공격자 기준 플레이 백")
-class MNYS_API UYSAbilityPlayback_JustAvoidTarget : public UYSAbilityPlaybackBase
-{
-	GENERATED_BODY()
-	
-protected :
-	virtual void ProcessContextBeforePlay() override;
-};
-
-
-UCLASS(DisplayName = "플레이 백 시작 시, 버프 해제 / 버프 추가")
-class MNYS_API UYSAbilityPlayback_ReleaseBuff : public UYSAbilityPlaybackBase
-{
-	GENERATED_BODY()
-	
-public : 
-	UPROPERTY(EditAnywhere, Category = "YS | ReleaseBuff")
-	FGameplayTagContainer BuffTags;
-	
-protected :  
-	virtual void ProcessContextBeforePlay() override;
+	// Play/EndPlay 마다 올린다. Task 가 동기로 전환을 확정하면 값이 바뀌어 순회를 멈춘다.
+	int32 PlaySerial = 0;
 };

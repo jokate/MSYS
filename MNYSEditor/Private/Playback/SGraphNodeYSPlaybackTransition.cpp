@@ -94,8 +94,9 @@ FSlateColor SGraphNodeYSPlaybackTransition::GetTransitionColor() const
 	}
 
 	// 아무 데도 안 닿은 전환. 종료 노드로 보낸 것과 런타임 결과는 같지만 의도가 없다.
-	// 붉게 띄워서 "이건 실수다"를 먼저 말한다.
-	if (TransitionNode->IsDangling())
+	// Task 출력이 어긋난 전환은 컴파일에서 아예 빠진다.
+	// 둘 다 붉게 띄워서 "이건 실수다"를 먼저 말한다.
+	if (TransitionNode->IsDangling() || TransitionNode->HasValidOutput() == false)
 	{
 		return FLinearColor(0.90f, 0.20f, 0.15f);
 	}

@@ -1,6 +1,5 @@
 
 #include "MNYSEditor.h"
-#include "Details/YSAbilityPlaybackDetails.h"
 #include "Details/YSAbilityTestCharacterDetails.h"
 #include "PropertyEditorModule.h"
 #include "Details/YSIAUSCurveDetails.h"
@@ -18,9 +17,6 @@ void FMNYSEditorModule::StartupModule()
 	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 	PropertyModule.RegisterCustomClassLayout("YSCharacterBase", FOnGetDetailCustomizationInstance::CreateStatic(&FYSAbilityTestCharacterDetails::MakeInstance) );
 	PropertyModule.RegisterCustomClassLayout("YSGameplayAbility_AIBase", FOnGetDetailCustomizationInstance::CreateStatic(&FYSIAUSCurveDetails::MakeInstance));
-
-	// 그래프가 소유한 플레이백에서만 Transitions 배열을 감춘다. 레거시 인라인 배열은 그대로 둔다.
-	PropertyModule.RegisterCustomClassLayout("YSAbilityPlaybackBase", FOnGetDetailCustomizationInstance::CreateStatic(&FYSAbilityPlaybackDetails::MakeInstance));
 
 	PropertyModule.NotifyCustomizationModuleChanged();
 
@@ -52,7 +48,6 @@ void FMNYSEditorModule::ShutdownModule()
 		FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 		PropertyModule.UnregisterCustomClassLayout("YSCharacterBase");
 		PropertyModule.UnregisterCustomClassLayout("YSGameplayAbility_AIBase");
-		PropertyModule.UnregisterCustomClassLayout("YSAbilityPlaybackBase");
 	}
 }
 

@@ -70,7 +70,12 @@ void UYSGameplayCueAction_NiagaraEffect::OnActive(AYSGameplayCueNotifyBase* Game
 	{
 		if (bNeedToAttach && MyTarget)
 		{
-			SpawnedNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(FX, MyTarget->GetRootComponent(), AttachSocketName, AttachmentLocationOffset, AttachmentOffset,
+			USceneComponent* AttachTo = MyTarget->FindComponentByClass<USkeletalMeshComponent>();
+			if (AttachTo == nullptr)
+				AttachTo = MyTarget->GetRootComponent();
+
+			SpawnedNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+				FX, AttachTo, AttachSocketName, AttachmentLocationOffset, AttachmentOffset,
 				EAttachLocation::SnapToTarget, true);
 		}
 		else

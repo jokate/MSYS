@@ -32,11 +32,11 @@ void FYSPlaybackConnectionDrawingPolicy::DetermineWiringStyle(UEdGraphPin* Outpu
 	{
 		if (const UYSPlaybackGraphNode_Transition* TransitionNode = Cast<UYSPlaybackGraphNode_Transition>(InputPin->GetOwningNode()))
 		{
-			if (TransitionNode->IsDangling())
+			if (TransitionNode->IsDangling() || TransitionNode->HasValidOutput() == false)
 			{
 				Params.WireColor = FLinearColor(0.90f, 0.20f, 0.15f);
 			}
-			else if (TransitionNode->Edge.TransitionConditions.Num() > 0)
+			else if (TransitionNode->TransitionConditions.Num() > 0)
 			{
 				Params.WireColor = FLinearColor(0.95f, 0.70f, 0.25f);
 			}
