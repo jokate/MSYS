@@ -44,22 +44,38 @@ void UYSGameplayAbility::OnGameplayTagChanged(const FGameplayTag& Tag, bool bInI
 	}
 }
 
+void UYSGameplayAbility::AddRuntimeEffectSpecHandle(const FActiveGameplayEffectHandle& Handle)
+{
+	AddEndCleanup([WeakASC = TWeakObjectPtr<UAbilitySystemComponent>(GetAbilitySystemComponentFromActorInfo()), Handle]()
+	{
+		if ( UAbilitySystemComponent* ASC = WeakASC.Get() )
+		{
+			ASC->RemoveActiveGameplayEffect(Handle);
+		}
+	});
+}
+
 void UYSGameplayAbility::ActivePlayback(int32 Index)
 {
 	const TArray<TObjectPtr<UYSAbilityPlaybackBase>>& PlaybackArray = GetPlaybackArray();
 
-	if ( PlaybackArray.IsValidIndex(Index) == false )
-		return;
+	UYSAbilityPlaybackBase* Playback = PlaybackArray.IsValidIndex(Index) ? PlaybackArray[Index].Get() : nullptr;
 
-	UYSAbilityPlaybackBase* Playback = PlaybackArray[Index];
+	// 끝으로 가는 정상 경로는 INDEX_NONE → NotifyPlaybackChainFinished 다. 여기 오는 범위 밖 · null 은 데이터 오류이고,
+	// 그냥 돌려보내면 체인을 이어갈 주체가 없어 어빌리티가 켜진 채 남는다.
+	// 현재 노드의 EndPlay 는 EndAbility 가 부르므로 그 앞에서 판정한다.
+	if ( IsValid(Playback) == false )
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Playback] %s: 노드 %d 를 켤 수 없다(범위 밖 또는 null, 노드 %d개). 어빌리티를 종료한다."),
+			*GetName(), Index, PlaybackArray.Num());
+		NotifyPlaybackChainFinished();
+		return;
+	}
 
 	if ( IsValid(CurrentPlayback.Get()))
 	{
-		CurrentPlayback->EndPlay();	
+		CurrentPlayback->EndPlay();
 	}
-	
-	if ( IsValid(Playback) == false )
-		return;
 
 	CurrentPlayback = Playback;
 	CurrentPlaybackIndex = Index;
@@ -74,6 +90,9 @@ void UYSGameplayAbility::ActivePlayback(int32 Index)
 	}
 
 	CurrentPlayback->Play(PlaybackContext);
+
+	// 일이 시작됐는지는 Play 가 끝난 뒤에 안다. 몽타주 재생 실패처럼 Play 안에서 체인이 끝나도 이 노드의 몫은 센다.
+	bPlaybackDidWork |= Playback->DidWork();
 }
 
 bool UYSGameplayAbility::CheckCooldown(const FGameplayAbilitySpecHandle Handle,
@@ -127,7 +146,11 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 	{
 		YSASC->OnGameplayTagStateChanged.AddDynamic(this, &UYSGameplayAbility::OnGameplayTagChanged);
 	}
-	
+
+	// 인스턴스가 재사용된다. 앞 사용에서 입력 창이 열린 채 끝났어도 이번 사용은 닫힌 채로 시작한다.
+	SetInputAcceptable(false);
+	EndCleanups.Reset();
+
 	AActor* OwnerActor = GetOwningActorFromActorInfo();
 
 	if ( IsValid(OwnerActor) )
@@ -170,25 +193,48 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 	
 	HitContext = MakeShared<FYSAbilityHitContext>(GetOwningActorFromActorInfo());
 	PlaybackContext = MakeShared<FYSPlaybackContext>();
+	bHasCommitted = false;
+	bPlaybackDidWork = false;
+
+	// SetupPlayBack 안에서 체인이 동기로 끝나면 EndAbility 가 먼저 돈다.
+	// 월드 태그를 그 뒤에 더하면 짝이 되는 제거가 없어 영구히 남으므로 앞서 더한다.
+	_AddWorldTag();
 	SetupPlayBack(TriggerEventData);
+
+	// 일이 시작된 노드가 하나도 없이 체인이 끝났다(빈 노드 · 범위 밖 · null · 몽타주 재생 실패). 아무것도 안 한 어빌리티에 쿨다운을 걸지 않는다.
+	// 즉발 어빌리티는 진입 행동이나 시작된 태스크가 있어 일이 있는 노드로 세므로 그대로 커밋한다.
+	if ( IsActive() == false && bPlaybackDidWork == false )
+	{
+		return;
+	}
 
 	// NeedReady 는 조준·레디 단계를 거치는 어빌리티다.
 	// 여기서 커밋하면 조준하다 취소해도 쿨다운이 돌아버리므로,
 	// 시전이 확정되는 노드(bCommitOnEnter)까지 커밋을 미룬다.
-	bHasCommitted = ( AbilityTypes.Contains(EYSAbilityType::NeedReady) == false );
-
-	if ( bHasCommitted )
+	// 0번 노드가 bCommitOnEnter 면 SetupPlayBack 안에서 이미 커밋됐으므로 다시 하지 않는다.
+	if ( AbilityTypes.Contains(EYSAbilityType::NeedReady) == false && bHasCommitted == false )
 	{
+		bHasCommitted = true;
 		CommitAbility(Handle, ActorInfo, ActivationInfo);
 	}
-
-	_AddWorldTag();
 }
 
 void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 	const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
+	// 취소 방송 중 몽타주 태스크가 '중단'으로 먼저 끝내면, CancelAbility 의 EndAbility 가 한 번 더 온다.
+	if ( IsEndAbilityValid(Handle, ActorInfo) == false )
+	{
+		return;
+	}
+
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+
+	// 스코프 락으로 미뤄졌으면 그 호출이 다시 들어올 때 정리한다.
+	if ( IsActive() )
+	{
+		return;
+	}
 
 	AActor* OwnerActor = GetOwningActorFromActorInfo();
 
@@ -207,13 +253,23 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 	if ( IsValid(YSASC) )
 	{
 		YSASC->OnGameplayTagStateChanged.RemoveDynamic(this, &UYSGameplayAbility::OnGameplayTagChanged);
-		
-		for ( const FActiveGameplayEffectHandle& RuntimeHandle : RuntimeData.GetActiveGameplayEffectHandle() )
-		{
-			YSASC->RemoveActiveGameplayEffect(RuntimeHandle);	
-		}
+		// 구독을 끊었으니 창을 닫는 알림은 더 오지 않는다. 여기서 닫지 않으면 열린 채로 남는다.
+		SetInputAcceptable(false);
+
 		
 		YSASC->RemoveActiveEffectsWithTags(BuffTags);
+	}
+
+	// 어빌리티가 건 큐 · 카메라 모드 등. 실행 중 새 등록이 생겨도 이번 목록만 돌도록 옮겨서 돈다.
+	// ASC 유무와 무관하게 돌아야 하므로 위 블록 밖에 둔다. 대상이 사라졌는지는 각 람다가 본다.
+	{
+		TArray<TFunction<void()>> Cleanups = MoveTemp(EndCleanups);
+		EndCleanups.Reset();
+
+		for ( int32 i = Cleanups.Num() - 1; i >= 0; --i )
+		{
+			Cleanups[i]();
+		}
 	}
 
 	if ( IsValid(CurrentPlayback.Get()) )
@@ -256,13 +312,20 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 	bHasCommitted = false;
 
 	// 취소면 이번 사용이 남긴 연결 액터도 같이 걷는다.
-	if ( bWasCancelled && HitContext.IsValid() )
+	if ( ( bWasCancelled || bCancelling ) && HitContext.IsValid() )
 	{
 		HitContext->ReleaseAllLinkedActors(EYSReleaseReason::Cancelled);
 	}
 
 	HitContext = nullptr;
 	PlaybackContext = nullptr;
+}
+
+void UYSGameplayAbility::CancelAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+	const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateCancelAbility)
+{
+	TGuardValue<bool> CancellingGuard(bCancelling, true);
+	Super::CancelAbility(Handle, ActorInfo, ActivationInfo, bReplicateCancelAbility);
 }
 
 bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag, EYSInputPhase InputPhase)
@@ -307,6 +370,16 @@ void UYSGameplayAbility::EnsureRuntimePlaybacks()
 {
 	if ( IsValid(PlaybackGraph) == false || PlaybackGraph->Playbacks.Num() == 0 )
 	{
+		// 그래프도 레거시 배열도 비었으면 클래스 기본으로 한 번 채운다.
+		if ( RuntimePlaybacks.Num() == 0 && Playbacks.Num() == 0 )
+		{
+			BuildDefaultPlaybacks(RuntimePlaybacks);
+
+			if ( RuntimePlaybacks.Num() > 0 )
+			{
+				UE_LOG(LogTemp, Verbose, TEXT("[Playback] %s: 그래프 · 레거시가 비어 클래스 기본 플레이백(%d 노드)을 쓴다."), *GetName(), RuntimePlaybacks.Num());
+			}
+		}
 		return;
 	}
 

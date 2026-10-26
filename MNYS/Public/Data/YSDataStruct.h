@@ -14,6 +14,7 @@
 
 class UNiagaraSystem;
 class UGameplayEffect;
+class UYSCombatProfile;
 
 UENUM(BlueprintType)
 enum class EYSDamageType : uint8
@@ -51,11 +52,24 @@ public :
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGameplayTag HitTag;
-	
+
+	// 1타의 그로기 피해. 그로기 게이지가 없는 대상에는 아무 일도 없다. 대상 프로필의 받는 그로기 피해 배율을 곱한다.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "1타 그로기 피해", ClampMin = "0"))
+	float GroggyDamage = 0.f;
+
+	// 대상이 이 태그를 가지면 그 배율을 곱한다 (예: 스위치 어택 행에 State.Groggy.Broken → 1.2). 여럿 맞으면 모두 곱한다.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "대상 상태 태그별 피해 배율"))
+	TMap<FGameplayTag, float> TargetStateMultipliers;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TObjectPtr<UNiagaraSystem> HitEffect;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	// 공격 1회가 맞았을 때 거는 임팩트 행(YS Developer Settings 의 등급). None 이면 임팩트 없음.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "임팩트"))
+	EYSImpactGrade Impact = EYSImpactGrade::None;
+
+	// 폐기 예정 — 셰이크는 임팩트 행으로 옮겼다. 값만 남겨 두고 재생하지 않는다.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "(폐기) 피격 카메라 셰이크"))
 	TSubclassOf<UCameraShakeBase> HitCameraShake;
 	
 	UPROPERTY(EditAnywhere, meta = (DisplayName = "히트 이벤트", BaseStruct = "/Script/MNYS.YSDamageEffectBase", ExcludeBaseStruct))
@@ -132,4 +146,8 @@ public :
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | Stat", meta = (DisplayName = "처치 시 자원 회복량", ClampMin = "0"))
 	int32 ResourceOnKill = 0;
+
+	// 비우면 YS Developer Settings 의 기본 전투 프로필을 쓴다.
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | Combat", meta = (DisplayName = "전투 프로필"))
+	TObjectPtr<UYSCombatProfile> CombatProfile;
 };

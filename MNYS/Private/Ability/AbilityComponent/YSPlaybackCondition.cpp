@@ -6,7 +6,9 @@
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
 #include "Ability/YSGameplayAbility.h"
+#include "Character/Components/YSCombatTargetComponent.h"
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
+#include "General/YSDefine.h"
 
 bool FYSPlaybackCondition_ContextTag::Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const
 {
@@ -81,7 +83,24 @@ bool FYSPlaybackCondition_ActorInDistance::Evaluate(const TSharedPtr<FYSPlayback
 	}
 	
 	float Distance = FVector::Dist(Target->GetActorLocation(), Instigator->GetActorLocation());
-	return bIsInRange ? Distance <= CheckDistance : Distance > CheckDistance;
+	const bool bResult = bIsInRange ? Distance <= CheckDistance : Distance > CheckDistance;
+	UE_LOG(LogYSMeasure, Verbose, TEXT("[Dist] t=%.3f Instigator=%s Target=%s Dist=%.2f Check=%.2f bIsInRange=%d Result=%d"),
+		Instigator->GetWorld()->GetTimeSeconds(), *GetNameSafe(Instigator), *GetNameSafe(Target), Distance, CheckDistance, bIsInRange, bResult);
+	return bResult;
+}
+
+bool FYSPlaybackCondition_TargetDistanceBand::Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const
+{
+	UYSCombatTargetComponent* CombatTarget = UYSCombatTargetComponent::Get(Context->Instigator);
+
+	if ( IsValid(CombatTarget) == false )
+	{
+		return Band == EYSTargetDistanceBand::OutOfRange;
+	}
+
+	// 컨텍스트에 타겟이 없으면 전투 타겟을 본다. 둘 다 없으면 구간 밖이다(§8).
+	const AActor* Target = IsValid(Context->Target) ? Context->Target.Get() : CombatTarget->GetCurrentTarget();
+	return CombatTarget->GetDistanceBand(Target) == Band;
 }
 
 bool FYSPlaybackCondition_Input::Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const

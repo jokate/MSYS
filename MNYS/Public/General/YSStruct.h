@@ -13,6 +13,7 @@
  */
 
 class AYSTelegraphActor;
+class UCameraShakeBase;
 class ULevelSequence;
 class UYSAbilityTriggerPayload;
 class UYSGameplayAbility;
@@ -305,8 +306,56 @@ struct FYSCameraEffectParams
 	float CursorLeanInterpSpeed = 7.f;
 };
 
+/**
+ * 임팩트 행. 등급 하나가 갖는 시간 · 셰이크 · 줌의 강도다.
+ * 어느 공격이 어느 행을 쓰는지는 피해 행의 임팩트 칸(타겟 바꿈은 스위치 창 트리거별 칸)이 정한다.
+ */
 USTRUCT(BlueprintType)
-struct FYSTargetingActorCollections 
+struct FYSImpactProfile
+{
+	GENERATED_BODY()
+
+	// 0 = 정지(히트스톱), 0~1 = 슬로우.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Impact | Time", meta = (DisplayName = "시간 배율", ClampMin = "0", ClampMax = "1"))
+	float TimeDilation = 0.f;
+
+	// 0 이면 시간 채널을 쓰지 않는다.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Impact | Time", meta = (DisplayName = "시간 길이 (초)", ClampMin = "0"))
+	float TimeDuration = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Impact | Time", meta = (DisplayName = "시간 범위"))
+	EYSTimeDilationScope TimeScope = EYSTimeDilationScope::All;
+
+	// 비우면 셰이크 없음.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Impact | Shake", meta = (DisplayName = "셰이크"))
+	TSubclassOf<UCameraShakeBase> ShakeClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Impact | Shake", meta = (DisplayName = "셰이크 배율", ClampMin = "0"))
+	float ShakeScale = 1.f;
+
+	// 0 이면 줌 없음. 줌은 카메라 모드 스택에 임팩트 우선순위로 얹혔다가 이 시간 뒤 빠진다.
+	// 아래 거리 · 높이 · 화각은 줌이 걸리는 순간 카메라(활성 모드, 없으면 기본 카메라)에 대한 증감이다. 0 이면 지금 카메라 그대로다.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Impact | Zoom", meta = (DisplayName = "줌 유지 (초)", ClampMin = "0"))
+	float ZoomDuration = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Impact | Zoom", meta = (DisplayName = "줌 거리 증감 (cm, 음수 = 가까이)", EditCondition = "ZoomDuration > 0", EditConditionHides))
+	float ZoomArmLengthDelta = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Impact | Zoom", meta = (DisplayName = "줌 높이 증감 (cm, 소켓 오프셋 Z)", EditCondition = "ZoomDuration > 0", EditConditionHides))
+	float ZoomHeightDelta = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Impact | Zoom", meta = (DisplayName = "줌 화각 증감 (도)", EditCondition = "ZoomDuration > 0", EditConditionHides))
+	float ZoomFOVDelta = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Impact | Zoom", meta = (DisplayName = "줌 진입 보간 속도", ClampMin = "0.1", EditCondition = "ZoomDuration > 0", EditConditionHides))
+	float ZoomInterpInSpeed = 10.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Impact | Zoom", meta = (DisplayName = "줌 복귀 보간 속도", ClampMin = "0.1", EditCondition = "ZoomDuration > 0", EditConditionHides))
+	float ZoomInterpOutSpeed = 5.f;
+};
+
+USTRUCT(BlueprintType)
+struct FYSTargetingActorCollections
 {
 	GENERATED_BODY()
 	
@@ -354,4 +403,54 @@ private :
 	
 	// 스킬에 대한 타겟팅 지정이 완료되었다면 해당 부분에 대해서 활용.
 	TArray<TWeakObjectPtr<AActor>> SkillTargetActors;
+};
+
+class UAnimMontage;
+class UCurveFloat;
+
+/**
+ * 몸 회전 각도 구간 1행. 회전할 각도가 MaxAngle 이하인 첫 행을 쓴다.
+ * 몽타주가 있으면 루트 모션 턴 + 워프 타깃으로 목표 yaw 까지 늘리고, 없으면 Duration / PlayRate 동안 보간한다.
+ */
+USTRUCT(BlueprintType)
+struct FYSTurnBand
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "최대각 (도)", ClampMin = "0", ClampMax = "180"))
+	float MaxAngle = 180.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "보간 시간 (초)", ClampMin = "0"))
+	float Duration = 0.15f;
+
+	// 0~1 입력 · 0~1 출력. 비면 SmoothStep.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "보간 커브"))
+	TObjectPtr<UCurveFloat> Curve;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "재생 배율", ClampMin = "0.01"))
+	float PlayRate = 1.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "턴 몽타주 (왼쪽)"))
+	TObjectPtr<UAnimMontage> MontageLeft;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "턴 몽타주 (오른쪽)"))
+	TObjectPtr<UAnimMontage> MontageRight;
+};
+
+/** 회전 요청 출처 하나가 따르는 규칙. */
+USTRUCT(BlueprintType)
+struct FYSTurnSourceRule
+{
+	GENERATED_BODY()
+
+	// 켜면 막는 상태 태그가 있는 동안 요청을 1칸 대기시키고, 태그가 빠지면 돈다.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "막는 태그 따름"))
+	bool bRespectBlockedTags = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "턴 몽타주 허용"))
+	bool bAllowTurnMontage = true;
+
+	// 보간 시간 상한. 0 이면 상한 없음.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "최대 시간 (초, 0=없음)", ClampMin = "0"))
+	float MaxDuration = 0.f;
 };

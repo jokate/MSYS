@@ -3,12 +3,17 @@
 
 #include "AI/Component/YSPhaseChangeComponent.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
 #include "AI/Component/YSPhaseChangeCondition.h"
 #include "Character/YSCharacterBase.h"
+#include "General/YSGameplayTag.h"
 
 UYSPhaseChangeComponent::UYSPhaseChangeComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
+
+	DeferTags = { YSTags::State_Groggy_Broken };
 }
 
 void UYSPhaseChangeComponent::BeginPlay()
@@ -44,9 +49,35 @@ void UYSPhaseChangeComponent::CheckPhaseChange()
 	
 	if ( PhaseChangeCondition.CheckCondition(CharacterBase))
 	{
+		if ( IsDeferred(CharacterBase) )
+		{
+			return;
+		}
+
 		// StateTree 쪽에다가 이벤트 송신.
-		
+
 		++CurrentPhase;
+		OnPhaseChanged.Broadcast(CurrentPhase);
 	}
+}
+
+bool UYSPhaseChangeComponent::IsDeferred(AActor* Owner) const
+{
+	const UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Owner);
+
+	if ( IsValid(ASC) == false )
+	{
+		return false;
+	}
+
+	for ( const FGameplayTag& Tag : DeferTags )
+	{
+		if ( ASC->HasMatchingGameplayTag(Tag) )
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 

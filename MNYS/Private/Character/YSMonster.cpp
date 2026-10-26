@@ -5,6 +5,8 @@
 #include "YSAbilitySystemComponent.h"
 #include "AI/YSAIController.h"
 #include "AI/Component/YSPhaseChangeComponent.h"
+#include "Character/AttributeSet/YSGroggyAttributeSet.h"
+#include "Combat/YSGroggyComponent.h"
 #include "General/YSDefine.h"
 
 // Sets default values
@@ -23,6 +25,20 @@ void AYSMonster::BeginPlay()
 	SetGenericTeamId(YS_MONSTER_START);
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
 	AbilitySystemComponent->GiveInitAbility();
+}
+
+void AYSMonster::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	if ( StaggerGrade == EYSStaggerGrade::Immovable )
+	{
+		AbilitySystemComponent->AddSet<UYSGroggyAttributeSet>();
+
+		GroggyComponent = NewObject<UYSGroggyComponent>(this, TEXT("GroggyComponent"));
+		GroggyComponent->SetProfile(GroggyProfile);
+		GroggyComponent->RegisterComponent();
+	}
 }
 
 // Called every frame

@@ -70,6 +70,12 @@ struct FYSTargetingShape
 	/** 인디케이터에 도형을 그린다. 사거리 링은 여기서 공통 처리한다. */
 	void Draw(AYSSkillIndicator* Indicator, const FYSTargetingResult& Result, const FVector& CasterLocation) const;
 
+	/**
+	 * 도형 안의 폰을 모은다. 표시와 판정이 같은 값을 쓰게 하려고 도형이 직접 겹침을 낸다.
+	 * 시전자 기준 도형만 판정을 지원한다. 조준점 기준 도형은 false.
+	 */
+	virtual bool CollectActors(const UWorld* World, const FVector& Origin, const FVector& Forward, const AActor* Ignore, TArray<AActor*>& OutActors) const { return false; }
+
 protected:
 	virtual void DrawShape(AYSSkillIndicator* Indicator, const FYSTargetingResult& Result, const FVector& CasterLocation) const {}
 };
@@ -131,6 +137,7 @@ struct FYSTargetingShape_SelfCircle : public FYSTargetingShape
 	float Radius = 400.f;
 
 	virtual bool UsesAimPointAsOrigin() const override { return false; }
+	virtual bool CollectActors(const UWorld* World, const FVector& Origin, const FVector& Forward, const AActor* Ignore, TArray<AActor*>& OutActors) const override;
 
 protected:
 	virtual void DrawShape(AYSSkillIndicator* Indicator, const FYSTargetingResult& Result, const FVector& CasterLocation) const override;
@@ -156,6 +163,8 @@ struct FYSTargetingShape_Line : public FYSTargetingShape
 	float Width = 120.f;
 
 	virtual bool UsesAimPointAsOrigin() const override { return false; }
+	// 폭을 지름으로 하는 캡슐로 판정한다.
+	virtual bool CollectActors(const UWorld* World, const FVector& Origin, const FVector& Forward, const AActor* Ignore, TArray<AActor*>& OutActors) const override;
 
 protected:
 	virtual void DrawShape(AYSSkillIndicator* Indicator, const FYSTargetingResult& Result, const FVector& CasterLocation) const override;
@@ -180,6 +189,7 @@ struct FYSTargetingShape_Cone : public FYSTargetingShape
 	float AngleDegrees = 60.f;
 
 	virtual bool UsesAimPointAsOrigin() const override { return false; }
+	virtual bool CollectActors(const UWorld* World, const FVector& Origin, const FVector& Forward, const AActor* Ignore, TArray<AActor*>& OutActors) const override;
 
 protected:
 	virtual void DrawShape(AYSSkillIndicator* Indicator, const FYSTargetingResult& Result, const FVector& CasterLocation) const override;

@@ -17,7 +17,8 @@ struct MNYS_API FYSMotionWarpParam
 	
 	virtual ~FYSMotionWarpParam() = default;
 
-	virtual FMotionWarpingTarget GetWarpTargetData(const UYSGameplayAbility* InAbility) const { return FMotionWarpingTarget();  }
+	/** 걸 워프 타깃을 만든다. 만들 수 없으면(대상 없음 등) false — 0 위치 · 0 회전 타깃을 걸지 않는다. */
+	virtual bool GetWarpTargetData(const UYSGameplayAbility* InAbility, FMotionWarpingTarget& OutTarget) const { return false; }
 	virtual void ResolveMotionWarp(const UYSGameplayAbility* InAbility) const;
 	virtual void ReleaseMotionWarp(const UYSGameplayAbility* InAbility) const;
 	
@@ -32,7 +33,7 @@ struct MNYS_API FYSMotionWarpParam_ControlRotation : public FYSMotionWarpParam
 {
 	GENERATED_BODY()
 	
-	virtual FMotionWarpingTarget GetWarpTargetData(const UYSGameplayAbility* InAbility) const override;
+	virtual bool GetWarpTargetData(const UYSGameplayAbility* InAbility, FMotionWarpingTarget& OutTarget) const override;
 };
 
 USTRUCT(BlueprintType, DisplayName = "타겟 기준으로 모션 워핑 ( 회전 ) ")
@@ -40,7 +41,7 @@ struct MNYS_API FYSMotionWarpParam_Target : public FYSMotionWarpParam
 {
 	GENERATED_BODY()
 
-	virtual FMotionWarpingTarget GetWarpTargetData(const UYSGameplayAbility* InAbility) const override;
+	virtual bool GetWarpTargetData(const UYSGameplayAbility* InAbility, FMotionWarpingTarget& OutTarget) const override;
 	
 public : 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "타겟을 향할 것인가?")

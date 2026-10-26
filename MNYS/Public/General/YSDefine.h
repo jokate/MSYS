@@ -5,6 +5,9 @@
 #include "CoreMinimal.h"
 #include "GenericTeamAgentInterface.h"
 
+// S5 계측 전용 로그. 측정이 끝나면 이 선언과 UE_LOG(LogYSMeasure ...) 줄을 지운다.
+DECLARE_LOG_CATEGORY_EXTERN(LogYSMeasure, Log, All);
+
 
 #define YS_PLAYER 255
 #define YS_MONSTER_END 254

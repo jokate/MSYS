@@ -196,8 +196,16 @@ public:
 	
 	const FGameplayEventData* GetEventData() const { return &CurrentEventData; }
 	
-	void AddRuntimeEffectSpecHandle(const FActiveGameplayEffectHandle& Handle) { RuntimeData.AddEffectSpecHandle(Handle); }
-	
+	/** 어빌리티가 건 GE 를 어빌리티가 끝날 때 제거한다. 핸들을 쌓아 두지 않고 종료 정리 목록에 넘긴다. */
+	void AddRuntimeEffectSpecHandle(const FActiveGameplayEffectHandle& Handle);
+
+	/**
+	 * 어빌리티가 건 것을 어빌리티가 끝날 때 풀기 위한 등록구. 건 쪽이 푸는 일을 같이 넘긴다.
+	 * EndAbility 가 취소 · 정상 모두에서 등록의 역순으로 한 번씩 실행하고 비운다.
+	 * 람다는 UObject 를 weak 로 잡을 것 — 실행 시점에 대상이 사라졌을 수 있다.
+	 */
+	void AddEndCleanup(TFunction<void()> Cleanup) { EndCleanups.Add(MoveTemp(Cleanup)); }
+
 	void ActivePlayback(int32 Index);
 	
 	UYSAbilityPlaybackBase* GetCurrentPlayback() const { return CurrentPlayback.Get(); }
@@ -210,6 +218,7 @@ public:
 	
 	virtual bool CheckCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
 	virtual void ApplyCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const override;
+	virtual void CancelAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateCancelAbility) override;
 protected:
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
@@ -221,7 +230,13 @@ protected:
 	void OnMontageInterrupted();
 	
 	virtual void SetupPlayBack(const FGameplayEventData* TriggerEventData);
-	
+
+	/**
+	 * 그래프 에셋도 레거시 배열도 비었을 때 쓸 클래스 기본 플레이백. 모양이 고정된 어빌리티가 재정의한다.
+	 * 순서는 그래프 > 레거시 > 이 기본. 만든 노드의 Outer 는 this 로 둔다.
+	 */
+	virtual void BuildDefaultPlaybacks(TArray<TObjectPtr<UYSAbilityPlaybackBase>>& OutPlaybacks) {}
+
 	const FYSSkillInfo* GetSkillInfo() const;
 	
 public :
@@ -299,7 +314,10 @@ protected:
 	
 protected :
 	FYSGameplayAbility_RuntimeData RuntimeData;
-	
+
+	// 이번 활성에 어빌리티가 건 것의 해제 목록. 활성 시작과 EndAbility 끝에서 비운다.
+	TArray<TFunction<void()>> EndCleanups;
+
 	TSharedPtr<FYSAbilityHitContext> HitContext;
 	TSharedPtr<FYSPlaybackContext> PlaybackContext;
 	
@@ -309,10 +327,16 @@ protected :
 	// NeedReady 어빌리티의 커밋 지연용. 확정 노드 진입 시 한 번만 커밋한다.
 	bool bHasCommitted = false;
 
+	// 이번 활성에 일이 있는 노드가 하나라도 켜졌는가. 활성 직후 체인이 일 없이 끝났는지 가른다.
+	bool bPlaybackDidWork = false;
+
 	UPROPERTY()
 	UYSAT_Trace* TraceTask = nullptr;
 	
 private :
 	float CachedGravityScale = 1.f;
 	bool bAirFrozen = false;
+
+	// CancelAbility 가 도는 동안. 그 사이 다른 경로로 먼저 끝나도 취소로 정리한다.
+	bool bCancelling = false;
 };

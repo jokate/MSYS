@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
+#include "GameplayTagContainer.h"
 #include "General/YSStruct.h"
 #include "YSDamageEffect.generated.h"
 
@@ -39,6 +40,26 @@ struct MNYS_API FYSDamageEffectBase
 
 	virtual ~FYSDamageEffectBase() = default;
 	virtual void Apply(const FYSDamageEffectContext& Context) const {}
+
+	bool CanApply(const FYSDamageEffectContext& Context) const;
+
+	// 비면 늘 적용한다. 예: 스위치 어택 적중 강조는 State.Groggy.Broken.
+	UPROPERTY(EditAnywhere, Category = "YS | Damage Effect", meta = (DisplayName = "대상이 가져야 할 태그 (모두)"))
+	FGameplayTagContainer RequiredTargetTags;
+};
+
+/**
+ * 대상에게 Cue 를 한 번 실행한다 (Execute). 트랙형 YS Cue 액터는 Execute 를 받지 않으니 Burst 계열 Cue 애셋을 쓴다.
+ */
+USTRUCT(DisplayName = "게임 플레이 큐 실행")
+struct FYSDamageEffect_GameplayCue : public FYSDamageEffectBase
+{
+	GENERATED_BODY()
+
+	virtual void Apply(const FYSDamageEffectContext& Context) const override;
+
+	UPROPERTY(EditAnywhere, Category = "YS | Damage Effect", meta = (DisplayName = "큐", Categories = "GameplayCue"))
+	FGameplayTag CueTag;
 };
 
 USTRUCT(DisplayName = "넉백")

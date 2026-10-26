@@ -25,7 +25,9 @@ enum class EYSCameraModePriority : uint8
 	Default		= 0		UMETA(DisplayName = "기본 (일회성 연출)"),
 	LockOn		= 10	UMETA(DisplayName = "락온"),
 	Targeting	= 20	UMETA(DisplayName = "조준 / 스킬 레디"),
+	Impact		= 30	UMETA(DisplayName = "타격 임팩트 줌"),
 	JustAvoid	= 50	UMETA(DisplayName = "저스트 회피"),
+	Break		= 60	UMETA(DisplayName = "브레이크 진입"),
 	Cinematic	= 100	UMETA(DisplayName = "시네마틱 (연계기)"),
 };
 
@@ -63,6 +65,7 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:
 	// Called every frame
@@ -106,10 +109,27 @@ public:
 	void StartCameraEffect(UObject* Requester, const FYSCameraEffectParams& Params);
 	void StopCameraEffect(UObject* Requester);
 
+	/**
+	 * 임팩트 줌. 지금 카메라(임팩트 줌을 뺀 활성 모드, 없으면 기본 카메라)에 행의 거리 · 높이 · 화각 증감을 얹어
+	 * 임팩트 우선순위로 올리고 ZoomDuration 초 뒤 뺀다. 증감이 0 이면 카메라는 그대로다. 다시 부르면 갱신하고 시간을 다시 센다.
+	 */
+	void PlayImpactZoom(const FYSImpactProfile& Profile);
+
 private:
+	/** 스위치 창이 열린 순간(타겟 바꿈 · 태그 교대)에 표의 임팩트를 건다. */
+	UFUNCTION()
+	void HandleSwitchWindowOpened(EYSSwitchTrigger Trigger, AActor* Target, float AbuseCooldown);
+
 	/** 폰이 바뀌면 캐시와 기본값을 다시 잡는다. 스쿼드 태그 교대 대응. */
 	UFUNCTION()
 	void HandlePossessedPawnChanged(APawn* OldPawn, APawn* NewPawn);
+
+	/**
+	 * 전투 타겟이 바뀌면 락온이 따라간다. 선택은 하지 않는다.
+	 * 수동 전환 · 교전 시작 자동 타겟이면 락온을 건다. 자동 전환은 이미 락온 중일 때만 옮긴다.
+	 */
+	UFUNCTION()
+	void HandleCombatTargetChanged(AActor* OldTarget, AActor* NewTarget, EYSTargetChangeReason Reason);
 
 	/** 현재 폰의 카메라 기본값을 복귀 지점으로 캡처한다. */
 	void CaptureCameraDefaults();
@@ -148,6 +168,12 @@ private:
 
 	/** 스택이 빈 뒤 기본값으로 되돌아갈 때 쓸 속도. 마지막으로 빠진 요청의 값을 물려받는다. */
 	float RestoreInterpSpeed = 5.f;
+
+	// 스택이 요청자를 약참조로만 들어서 임팩트 줌의 요청자는 여기서 붙든다.
+	UPROPERTY()
+	TObjectPtr<UObject> ImpactZoomRequester;
+
+	FTimerHandle ImpactZoomTimer;
 
 	/** 스택이 비고 기본값에 도달하면 참. 매 틱 보간을 건너뛴다. */
 	bool bCameraSettled = true;

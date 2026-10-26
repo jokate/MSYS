@@ -7,12 +7,17 @@
 #include "Camera/CameraComponent.h"
 #include "Character/YSCharacterPlayer.h"
 #include "Character/YSPlayerController.h"
+#include "Character/Components/YSCharacterMovementComponent.h"
+#include "Character/Components/YSCombatTargetComponent.h"
 #include "Data/YSTransformPolicy.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "General/YSGameplayTag.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
+#include "General/YSDefine.h"
+#include "Subsystem/YSSquadSubsystem.h"
+#include "YSDeveloperSettings.h"
 
 
 // Sets default values for this component's properties
@@ -50,9 +55,80 @@ void UYSCameraManageComponent::BeginPlay()
 		// 스쿼드 태그 교대는 UnPossess -> Possess 로 폰을 갈아끼운다.
 		// 여기서 다시 잡아주지 않으면 벤치로 내려간 이전 폰의 카메라를 계속 만지게 된다.
 		PlayerController->OnPossessedPawnChanged.AddDynamic(this, &UYSCameraManageComponent::HandlePossessedPawnChanged);
+
+		if ( UYSCombatTargetComponent* CombatTarget = PlayerController->CombatTargetComponent )
+		{
+			CombatTarget->OnTargetChanged.AddDynamic(this, &UYSCameraManageComponent::HandleCombatTargetChanged);
+		}
+	}
+
+	if ( UGameInstance* GameInstance = GetWorld() ? GetWorld()->GetGameInstance() : nullptr )
+	{
+		if ( UYSSquadSubsystem* Squad = GameInstance->GetSubsystem<UYSSquadSubsystem>() )
+		{
+			Squad->OnSwitchWindowOpened.AddDynamic(this, &UYSCameraManageComponent::HandleSwitchWindowOpened);
+		}
 	}
 
 	CaptureCameraDefaults();
+}
+
+void UYSCameraManageComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	// 스쿼드는 게임 인스턴스 수명이라 컨트롤러보다 오래 산다. 레벨이 바뀌어도 죽은 구독이 남지 않게 끊는다.
+	if ( UGameInstance* GameInstance = GetWorld() ? GetWorld()->GetGameInstance() : nullptr )
+	{
+		if ( UYSSquadSubsystem* Squad = GameInstance->GetSubsystem<UYSSquadSubsystem>() )
+		{
+			Squad->OnSwitchWindowOpened.RemoveDynamic(this, &UYSCameraManageComponent::HandleSwitchWindowOpened);
+		}
+	}
+
+	if ( UWorld* World = GetWorld() )
+	{
+		World->GetTimerManager().ClearTimer(ImpactZoomTimer);
+	}
+
+	Super::EndPlay(EndPlayReason);
+}
+
+void UYSCameraManageComponent::HandleSwitchWindowOpened(EYSSwitchTrigger Trigger, AActor* Target, float AbuseCooldown)
+{
+	const EYSImpactGrade Grade = GetDefault<UYSDeveloperSettings>()->GetSwitchWindowImpact(Trigger);
+
+	if ( Grade == EYSImpactGrade::None || OwnerPlayerController.IsValid() == false )
+	{
+		return;
+	}
+
+	AActor* Instigator = OwnerPlayerController->GetPawn();
+	TArray<AActor*> Targets;
+
+	if ( IsValid(Target) )
+	{
+		Targets.Add(Target);
+	}
+
+	UYSBlueprintFunctionLibrary::PlayImpact(Instigator, Targets, Grade);
+}
+
+void UYSCameraManageComponent::HandleCombatTargetChanged(AActor* OldTarget, AActor* NewTarget, EYSTargetChangeReason Reason)
+{
+	if ( IsValid(NewTarget) == false )
+	{
+		// 끊긴 약참조(파괴)도 같은 타겟을 잃은 것이다.
+		if ( CurrentLockedTarget.Get() == OldTarget || CurrentLockedTarget.IsValid() == false )
+		{
+			ReleaseLockOn();
+		}
+		return;
+	}
+
+	// 락온 대상이 파괴돼 약참조만 끊긴 채 차선이 오면, 사망 때처럼 차선으로 락온을 옮긴다.
+	if ( Reason != EYSTargetChangeReason::Auto || CurrentLockedTarget.IsExplicitlyNull() == false )
+	{
+		ForceSetLockOn(NewTarget);
+	}
 }
 
 void UYSCameraManageComponent::HandlePossessedPawnChanged(APawn* OldPawn, APawn* NewPawn)
@@ -106,6 +182,8 @@ void UYSCameraManageComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 
 void UYSCameraManageComponent::ForceSetLockOn(AActor* TargetToLockOn)
 {
+	UE_LOG(LogYSMeasure, Verbose, TEXT("[LockOn] t=%.3f Set Prev=%s New=%s"),
+		GetWorld()->GetTimeSeconds(), *GetNameSafe(CurrentLockedTarget.Get()), *GetNameSafe(TargetToLockOn));
 	CurrentLockedTarget = TargetToLockOn;
 
 	if ( OwnerPlayer.IsValid() == false )
@@ -114,7 +192,15 @@ void UYSCameraManageComponent::ForceSetLockOn(AActor* TargetToLockOn)
 	}
 
 	const FRotator CharacterRotation = FYSRotationPolicy_LockOnTarget().GetRotation(FYSTransformPolicyContext(OwnerPlayer.Get()));
-	OwnerPlayer->SetActorRotation(CharacterRotation);
+
+	if ( UYSCharacterMovementComponent* Movement = UYSCharacterMovementComponent::Get(OwnerPlayer.Get()) )
+	{
+		Movement->RequestFaceYaw(CharacterRotation.Yaw, EYSFaceYawSource::TargetSwitch);
+	}
+	else
+	{
+		OwnerPlayer->SetActorRotation(CharacterRotation);
+	}
 
 	// 락온도 카메라 모드의 요청자 중 하나다. 조준·연계기가 위에 얹히면 그쪽이 이기고,
 	// 그것들이 빠지면 다시 락온 프로파일로 돌아온다.
@@ -126,6 +212,7 @@ void UYSCameraManageComponent::ForceSetLockOn(AActor* TargetToLockOn)
 
 void UYSCameraManageComponent::ReleaseLockOn()
 {
+	UE_LOG(LogYSMeasure, Verbose, TEXT("[LockOn] t=%.3f Release Prev=%s"), GetWorld()->GetTimeSeconds(), *GetNameSafe(CurrentLockedTarget.Get()));
 	CurrentLockedTarget = nullptr;
 
 	PopCameraMode(this);
@@ -225,21 +312,88 @@ void UYSCameraManageComponent::StopCameraEffect(UObject* Requester)
 	PopCameraMode(Requester);
 }
 
+void UYSCameraManageComponent::PlayImpactZoom(const FYSImpactProfile& Profile)
+{
+	UWorld* World = GetWorld();
+
+	if ( Profile.ZoomDuration <= 0.f || IsValid(World) == false )
+	{
+		return;
+	}
+
+	if ( IsValid(ImpactZoomRequester) == false )
+	{
+		ImpactZoomRequester = NewObject<UObject>(this);
+	}
+
+	// 죽은 요청을 먼저 걷고, 임팩트 줌 자신을 뺀 최상위 모드를 기준으로 삼는다. 자신을 넣으면 다시 불릴 때 증감이 쌓인다.
+	ResolveActiveMode();
+
+	const FYSCameraModeRequest* Base = nullptr;
+
+	for ( int32 Index = CameraModeStack.Num() - 1; Index >= 0; --Index )
+	{
+		if ( CameraModeStack[Index].Requester == ImpactZoomRequester )
+		{
+			continue;
+		}
+
+		if ( Base == nullptr || CameraModeStack[Index].Priority > Base->Priority )
+		{
+			Base = &CameraModeStack[Index];
+		}
+	}
+
+	FYSCameraEffectParams Params;
+
+	if ( Base != nullptr )
+	{
+		Params = Base->Params;
+	}
+	else
+	{
+		Params.TargetArmLength = DefaultArmLength;
+		Params.SocketOffset = DefaultSocketOffset;
+		Params.FieldOfView = DefaultFOV;
+		Params.RelativeRotator = DefaultRotation;
+		Params.bOrientToControlRotation = bOriginControl;
+		Params.bUseControllerRotationYaw = bControlYaw;
+	}
+
+	Params.TargetArmLength += Profile.ZoomArmLengthDelta;
+	Params.SocketOffset.Z += Profile.ZoomHeightDelta;
+	Params.FieldOfView += Profile.ZoomFOVDelta;
+	Params.InterpInSpeed = Profile.ZoomInterpInSpeed;
+	Params.InterpOutSpeed = Profile.ZoomInterpOutSpeed;
+
+	PushCameraMode(ImpactZoomRequester, Params, EYSCameraModePriority::Impact);
+
+	World->GetTimerManager().SetTimer(ImpactZoomTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
+	{
+		PopCameraMode(ImpactZoomRequester);
+	}), Profile.ZoomDuration, false);
+}
+
 const FYSCameraModeRequest* UYSCameraManageComponent::ResolveActiveMode()
 {
+	// 요청자가 사라졌으면 요청도 무효다.
+	// EndAbility를 못 거치고 파괴된 어빌리티가 카메라를 물고 늘어지는 것을 막는다.
+	// 고르기 전에 먼저 걷어야 Best 포인터가 RemoveAt에 밀리지 않는다.
+	const int32 NumRemoved = CameraModeStack.RemoveAll(
+		[](const FYSCameraModeRequest& Request)
+		{
+			return Request.Requester.IsValid() == false;
+		});
+
+	if ( NumRemoved > 0 )
+	{
+		bCameraSettled = false;
+	}
+
 	const FYSCameraModeRequest* Best = nullptr;
 
 	for ( int32 Index = CameraModeStack.Num() - 1; Index >= 0; --Index )
 	{
-		// 요청자가 사라졌으면 요청도 무효다.
-		// EndAbility를 못 거치고 파괴된 어빌리티가 카메라를 물고 늘어지는 것을 막는다.
-		if ( CameraModeStack[Index].Requester.IsValid() == false )
-		{
-			CameraModeStack.RemoveAt(Index);
-			bCameraSettled = false;
-			continue;
-		}
-
 		// 뒤에서부터 순회하므로, 우선순위가 같으면 나중에 들어온 요청이 남는다.
 		if ( Best == nullptr || CameraModeStack[Index].Priority > Best->Priority )
 		{

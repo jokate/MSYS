@@ -2,6 +2,8 @@
 
 #include "MNYS.h"
 
+#include "General/YSDefine.h"
+
 #include "Ability/AIAbility/GameplayDebuggerCategory_IAUS.h"
 #include "Modules/ModuleManager.h"
 
@@ -34,3 +36,5 @@ void FMNYSModule::ShutdownModule()
 }
 
 IMPLEMENT_PRIMARY_GAME_MODULE( FMNYSModule, MNYS, "MNYS" );
+
+DEFINE_LOG_CATEGORY(LogYSMeasure);

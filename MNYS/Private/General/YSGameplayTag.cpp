@@ -33,6 +33,7 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(Event_DeployEcho, "Event.DeployEcho");
 	UE_DEFINE_GAMEPLAY_TAG(Event_TransitionState, "Event.TransitionState");
 	UE_DEFINE_GAMEPLAY_TAG(Event_OnLand, "Event.OnLand");
+	UE_DEFINE_GAMEPLAY_TAG(Event_GroggyBroken, "Event.Groggy.Broken");
 	
 	UE_DEFINE_GAMEPLAY_TAG(Hit_Normal, "Hit.Normal");
 	UE_DEFINE_GAMEPLAY_TAG(Hit_Big, "Hit.Big");
@@ -70,6 +71,8 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Save_Full, "State.Save.Full");
 	UE_DEFINE_GAMEPLAY_TAG(State_Echo, "State.Echo");
 	UE_DEFINE_GAMEPLAY_TAG(State_Save_TripleEcho, "State.Save.TripleEcho");
+
+	UE_DEFINE_GAMEPLAY_TAG(State_Groggy_Broken, "State.Groggy.Broken");
 
 	UE_DEFINE_GAMEPLAY_TAG(AISuppress, "AI.Suppress");
 	UE_DEFINE_GAMEPLAY_TAG(AISuppress_HitReact, "AI.Suppress.HitReact");

@@ -44,10 +44,22 @@ public:
 	 */
 	UPROPERTY(BlueprintAssignable, Category = "YS | Input", meta = (DisplayName = "원본 입력 수신"))
 	FOnRawInputAccepted OnRawInputAccepted;
-	
+
+	/**
+	 * 원본 통로 구독자가 이 태그를 소비한다고 등록한다. 등록된 태그는 원본 방송까지만 가고
+	 * 커맨드 버퍼 · 상태 해석 · 어빌리티로 흐르지 않는다 (활성 콤보가 받으면 체인이 끊긴다).
+	 * 등록자가 사라지면 등록도 무효다.
+	 */
+	void ClaimRawInput(const FGameplayTag& Tag, const UObject* Claimer);
+	void ReleaseRawInputs(const UObject* Claimer);
+	bool IsRawInputClaimed(const FGameplayTag& Tag) const;
+
 	virtual void AddStateStack(EYSInputStatesType State);
 	virtual void RemoveStateStack(EYSInputStatesType State);
-	
+
+	/** 이 상태 요청이 스택에 있는가. 맨 위가 아니어도 참이다. */
+	bool IsStateRequested(EYSInputStatesType State) const { return InputStateRequests.Contains(State); }
+
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -74,7 +86,28 @@ public :
 	 * 상태 접두가 붙지 않은 원본 태그(Input.Aim)로 묻는다 — 아래 HeldInputTags 주석 참고.
 	 */
 	bool IsInputHeld(const FGameplayTag& RawInputTag) const { return HeldInputTags.Contains(RawInputTag); }
-	
+
+	// 뗌을 흘리지 않고 홀드 목록에서만 뺀다. 축에서 합성해 뗌이 없는 방향 태그용.
+	void ClearInputHeld(const FGameplayTag& RawInputTag) { HeldInputTags.Remove(RawInputTag); }
+
+	/**
+	 * 요청자가 하나라도 있는 동안 누름을 바로 처리하지 않고 첫 누름 하나만 보관한다.
+	 * 마지막 요청자가 빠질 때 보관한 누름(그 사이 뗐으면 뗌까지)을 다시 흘린다.
+	 * 히트스톱처럼 몸이 멈춘 동안의 선입력용이다.
+	 */
+	void PushInputHold(const UObject* Requester);
+	void PopInputHold(const UObject* Requester);
+
+protected:
+	bool HoldInputIfRequested(const FGameplayTag& Tag, EYSInputPhase InputPhase);
+	void FlushHeldPress();
+	void DispatchInput(const FGameplayTag& Tag, EYSInputPhase InputPhase);
+
+	TArray<TWeakObjectPtr<const UObject>> InputHoldRequesters;
+	TMultiMap<FGameplayTag, TWeakObjectPtr<const UObject>> RawInputClaims;
+	FGameplayTag HeldPress;
+	bool bHeldPressReleased = false;
+
 protected:
 	void ResetInputTags()
 	{

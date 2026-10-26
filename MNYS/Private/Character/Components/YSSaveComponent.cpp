@@ -47,10 +47,12 @@ void UYSSaveComponent::BeginPlay()
 
 	SavedTechniques.SetNum(MaxSlotCount);
 	RefreshStateTags();
-	
+
+	// 세이브는 어빌리티가 아니다. 활성 콤보가 F 를 받아 체인을 끊지 않게 소비 등록한다.
 	if ( UYSInputStateMachineComponent* InputStateMachine = UYSInputStateMachineComponent::Get(GetOwner()) )
 	{
 		InputStateMachine->OnRawInputAccepted.AddUniqueDynamic(this, &UYSSaveComponent::HandleRawInput);
+		InputStateMachine->ClaimRawInput(YSInputTags::InputSave, this);
 	}
 
 	if ( UYSAbilitySystemComponent* ASC = GetOwnerASC() )
@@ -92,6 +94,7 @@ void UYSSaveComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	if ( UYSInputStateMachineComponent* InputStateMachine = UYSInputStateMachineComponent::Get(GetOwner()) )
 	{
 		InputStateMachine->OnRawInputAccepted.RemoveDynamic(this, &UYSSaveComponent::HandleRawInput);
+		InputStateMachine->ReleaseRawInputs(this);
 	}
 
 	if ( UYSAbilitySystemComponent* ASC = GetOwnerASC() )

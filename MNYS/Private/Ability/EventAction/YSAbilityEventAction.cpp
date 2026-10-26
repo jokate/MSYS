@@ -23,6 +23,7 @@
 #include "General/YSDefine.h"
 #include "General/YSGameplayTag.h"
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
+#include "Interface/YSDamageProxy.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
 #include "YSBattleActor.h"
 #include "Components/PrimitiveComponent.h"
@@ -84,9 +85,15 @@ bool UYSAbilityEventAction_HitContextTarget::Execute_Implementation(UYSGameplayA
 	if ( IsValid(Instigator) == false || IsValid(Target) == false )
 		return false;
 
-	const IYSBattleActor* BattleActor = Cast<IYSBattleActor>(Target);
+	// 분신이 재현 중이면 시전자는 분신이다. 분신은 팀 · 속성 세트가 없어 AdmitHit 이 막으므로 트레이스처럼 Master 로 푼다.
+	AActor* DamageInstigator = Instigator;
+	if ( const IYSDamageProxy* Proxy = Cast<IYSDamageProxy>(Instigator) )
+	{
+		DamageInstigator = Proxy->GetDamageInstigator();
+	}
 
-	if ( BattleActor != nullptr && BattleActor->IsDead() )
+	// 트레이스 입구와 같은 검사. 걸러지면 히트 이벤트 · 이펙트 · 히트 컨텍스트 기록 · OnHit 모두 건너뛴다.
+	if ( UYSBlueprintFunctionLibrary::AdmitHit(DamageInstigator, Target) == false )
 		return false;
 
 	// 시퀀스가 두 액터의 위치를 쥐고 있으므로 스윕 대신 타겟 위치를 히트 지점으로 쓴다.
@@ -94,9 +101,13 @@ bool UYSAbilityEventAction_HitContextTarget::Execute_Implementation(UYSGameplayA
 	const FVector HitDirection = (HitLocation - Instigator->GetActorLocation()).GetSafeNormal2D();
 	const FHitResult HitResult(Target, Cast<UPrimitiveComponent>(Target->GetRootComponent()), HitLocation, -HitDirection);
 
-	UYSBlueprintFunctionLibrary::SendHitEventToTarget(Instigator, Target, Payload->DamageRow);
+	UYSBlueprintFunctionLibrary::SendHitEventToTarget(DamageInstigator, Target, Payload->DamageRow);
 	UYSBlueprintFunctionLibrary::SpawnEffects(Instigator, Payload->DamageRow, HitLocation, HitDirection.ToOrientationRotator());
-	UYSBlueprintFunctionLibrary::ApplyHitEffects(Instigator, Instigator, Target, Payload->DamageRow, HitResult);
+	UYSBlueprintFunctionLibrary::ApplyHitEffects(Instigator, DamageInstigator, Target, Payload->DamageRow, HitResult);
+
+	TArray<AActor*> HitActors;
+	HitActors.Add(Target);
+	UYSBlueprintFunctionLibrary::PlayHitImpact(Instigator, HitActors, Payload->DamageRow);
 
 	TArray<FHitResult> HitResults;
 	HitResults.Add(HitResult);
@@ -172,7 +183,16 @@ bool UYSAbilityEventAction_GameplayCue::Execute_Implementation(UYSGameplayAbilit
 	
 	for ( const FGameplayTag& CueTag : GameplayCueTag )
 	{
-		ASC->AddGameplayCue(CueTag);	
+		ASC->AddGameplayCue(CueTag);
+
+		// 푸는 액션이 따로 없다. 건 만큼만 어빌리티가 끝날 때 푼다.
+		OwningAbility->AddEndCleanup([WeakASC = TWeakObjectPtr<UAbilitySystemComponent>(ASC), CueTag]()
+		{
+			if ( UAbilitySystemComponent* CueASC = WeakASC.Get() )
+			{
+				CueASC->RemoveGameplayCue(CueTag);
+			}
+		});
 	}
 	
 	return true;
@@ -277,7 +297,14 @@ bool UYSAbilityEventAction_ApplyVelocity::Execute_Implementation(UYSGameplayAbil
 	// 뒤로 쭉 밀려서 들어가야 하는 경우라면?
 	if ( VelocityData->bRotateActorToDirection )
 	{
-		OwningActor->SetActorRotation(DirectionVector.Rotation());	
+		if ( UYSCharacterMovementComponent* Movement = UYSCharacterMovementComponent::Get(OwningActor) )
+		{
+			Movement->RequestFaceYaw(DirectionVector.Rotation().Yaw, EYSFaceYawSource::AbilityMotion);
+		}
+		else
+		{
+			OwningActor->SetActorRotation(DirectionVector.Rotation());
+		}
 	}
 	
 	if (VelocityData->bSetNewMovementMode)
@@ -405,7 +432,26 @@ bool UYSAbilityEventAction_PushCamera::Execute_Implementation(UYSGameplayAbility
 		return false;
 	}
 	
+	// 같은 요청자의 재호출은 갱신이므로 처음 올릴 때만 해제를 등록한다. 중간에 Pop 액션이 먼저 빼면 Pop 은 빈 호출이 된다.
+	const bool bAlreadyPushed = CameraManager->HasCameraMode(OwningAbility);
+
 	CameraManager->PushCameraMode(OwningAbility, PushCamera->CameraEffectParams, PushCamera->CameraEffectPriority);
+
+	if ( bAlreadyPushed == false )
+	{
+		OwningAbility->AddEndCleanup([WeakCamera = TWeakObjectPtr<UYSCameraManageComponent>(CameraManager),
+			WeakAbility = TWeakObjectPtr<UYSGameplayAbility>(OwningAbility)]()
+		{
+			UYSCameraManageComponent* Camera = WeakCamera.Get();
+			UYSGameplayAbility* Ability = WeakAbility.Get();
+
+			if ( IsValid(Camera) && IsValid(Ability) )
+			{
+				Camera->PopCameraMode(Ability);
+			}
+		});
+	}
+
 	return true;
 }
 

@@ -72,9 +72,12 @@ private:
 	UPROPERTY()
 	TMap<TObjectPtr<AActor>, float> HitTimeMap;
 
+	/** 저스트 회피 GE 를 이미 준 대상. 창이 닫히면 AdmitHit 이 지운다. */
+	TSet<TWeakObjectPtr<AActor>> JustAvoidGrantedActors;
+
 	UPROPERTY()
 	int32 RemainHitProcessCount;
-	
+
 	FVector PreviousLocation = FVector::ZeroVector;
 	FRotator EffectRotation = FRotator::ZeroRotator;
 	bool bHasPreviousLocation = false;

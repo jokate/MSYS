@@ -5,6 +5,22 @@
 
 #include "Ability/YSGameplayAbility.h"
 
+void UYSInputSaveData::AddInputSaveData(const FYSInputSaveDataMemeber& Data)
+{
+	FYSInputSaveDataMemeber* Found = InputSaveDatas.FindByPredicate([&Data](const FYSInputSaveDataMemeber& Entry)
+	{
+		return Entry.AbilityClass == Data.AbilityClass;
+	});
+
+	if ( Found )
+	{
+		*Found = Data;
+		return;
+	}
+
+	InputSaveDatas.Add(Data);
+}
+
 FGameplayTagContainer UYSInputSaveData::GetInputTagByAbilityClass(const TSubclassOf<UYSGameplayAbility> AbilityClass)
 {
 	for (const FYSInputSaveDataMemeber& InputSaveData : InputSaveDatas)

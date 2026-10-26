@@ -161,3 +161,15 @@ public:
 	UPROPERTY(EditAnywhere, meta = (DisplayName = "옵션 태그"))
 	FGameplayTagContainer OwnedTagFilter;
 };
+
+
+// ─── 컨텍스트 스위치 변형 ─────────────────────────────────────────────────────
+//  UYSGameplayAbility_ContextSwitch 가 고른 변형 표 행의 몽타주. 워프는 UYSPlaybackTask_ContextSwitchHit 이 건다.
+USTRUCT(BlueprintType, DisplayName = "컨텍스트 스위치 변형 몽타주")
+struct MNYS_API FYSMontageSelector_ContextSwitch : public FYSMontageSelector
+{
+	GENERATED_BODY()
+
+public:
+	virtual UAnimMontage* SelectMontage(const UYSGameplayAbility* Ability) const override;
+};

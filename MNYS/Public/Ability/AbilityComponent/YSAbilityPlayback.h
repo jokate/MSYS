@@ -83,6 +83,9 @@ public :
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Playback", meta = (DisplayName = "진입 시 커밋 (쿨다운 소모)"))
 	bool bCommitOnEnter = false;
 
+	/** 마지막 Play 에서 일이 실제로 시작됐는가. 진입 행동이 있거나 일이 시작된 태스크가 하나라도 있으면 참. 몽타주 재생이 실패한 노드는 거짓. */
+	bool DidWork() const { return bDidWork; }
+
 protected :
 	bool AreConditionsSatisfied(const TArray<FInstancedStruct>& Conditions) const;
 	void ConsumeConditions(const TArray<FInstancedStruct>& Conditions) const;
@@ -93,4 +96,6 @@ protected :
 private :
 	// Play/EndPlay 마다 올린다. Task 가 동기로 전환을 확정하면 값이 바뀌어 순회를 멈춘다.
 	int32 PlaySerial = 0;
+
+	bool bDidWork = false;
 };

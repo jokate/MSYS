@@ -100,7 +100,10 @@ void AYSDamagableActor::SetPoolActive(bool bActive)
 	{
 		if (IsValid(TraceObject))
 		{
-			HitContext->RemoveTraceEntry(TraceObject);
+			if ( HitContext.IsValid() )
+			{
+				HitContext->RemoveTraceEntry(TraceObject);
+			}
 			TraceObject->OnHitCountDepleted.RemoveAll(this);
 			TraceObject->OnTraceHit.RemoveAll(this);
 			TraceObject = nullptr;

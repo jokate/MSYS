@@ -16,6 +16,7 @@
 #include "General/YSStruct.h"
 #include "Input/YSInputSaveData.h"
 #include "Kismet/GameplayStatics.h"
+#include "Subsystem/YSSquadSubsystem.h"
 
 
 // Sets default values for this component's properties
@@ -51,26 +52,73 @@ void UYSAbilitySystemComponent::OnEffectAppliedToSelf(UAbilitySystemComponent* S
 
 void UYSAbilitySystemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	AYSCharacterPlayer* PC = Cast<AYSCharacterPlayer>(GetOwner());
-	if (IsValid(PC))
-	{
-		if (UYSInputSaveData* SaveGameInstance = Cast<UYSInputSaveData>(UGameplayStatics::CreateSaveGameObject(UYSInputSaveData::StaticClass())))
-		{
-			for ( FGameplayAbilitySpecHandle& AbilitySpecHandle : AbilitySpecHandles )
-			{
-				FGameplayAbilitySpec* AbilitySpec = FindAbilitySpecFromHandle(AbilitySpecHandle);
-			
-				if (AbilitySpec == nullptr || AbilitySpec->GetDynamicSpecSourceTags().IsEmpty())
-					continue;
-			
-				FYSInputSaveDataMemeber InputSaveData(AbilitySpec->GetDynamicSpecSourceTags(), AbilitySpec->Ability->GetClass());
-				SaveGameInstance->AddInputSaveData(InputSaveData);
-			}
-		
-			UGameplayStatics::SaveGameToSlot(SaveGameInstance,"InputSaveSlot", 0);
-		}	
-	}
+	SaveInputBindings();
 	Super::EndPlay(EndPlayReason);
+}
+
+void UYSAbilitySystemComponent::SaveInputBindings()
+{
+	AYSCharacterPlayer* Player = Cast<AYSCharacterPlayer>(GetOwner());
+	if (IsValid(Player) == false)
+	{
+		return;
+	}
+
+	// 스쿼드 폰은 각자 EndPlay 를 맞는다. 필드 폰 한 번만 세 슬롯을 모아 저장한다.
+	// 스펙은 EndPlay 가 아니라 OnUnregister 에서 비워지므로 먼저 끝난 벤치 폰 스펙도 아직 읽힌다.
+	TArray<UYSAbilitySystemComponent*> Sources;
+	const UYSSquadSubsystem* Squad = Player->GetGameInstance() ? Player->GetGameInstance()->GetSubsystem<UYSSquadSubsystem>() : nullptr;
+
+	if (IsValid(Squad) && Squad->GetSlotCount() > 0)
+	{
+		if (Squad->GetActivePawn() != Player)
+		{
+			return;
+		}
+
+		for (int32 Index = 0; Index < Squad->GetSlotCount(); ++Index)
+		{
+			FYSCharacterInfo Definition;
+			UYSAbilitySystemComponent* SlotASC = nullptr;
+
+			if (Squad->GetSlotInfo(Index, Definition, SlotASC) && IsValid(SlotASC))
+			{
+				Sources.Add(SlotASC);
+			}
+		}
+	}
+	else
+	{
+		Sources.Add(this);
+	}
+
+	// 이번 스쿼드에 없는 캐릭터의 바인딩을 지우지 않도록 기존 저장에 덮어 쓴다.
+	UYSInputSaveData* SaveGameInstance = Cast<UYSInputSaveData>(UGameplayStatics::LoadGameFromSlot("InputSaveSlot", 0));
+	if (IsValid(SaveGameInstance) == false)
+	{
+		SaveGameInstance = Cast<UYSInputSaveData>(UGameplayStatics::CreateSaveGameObject(UYSInputSaveData::StaticClass()));
+	}
+
+	if (IsValid(SaveGameInstance) == false)
+	{
+		return;
+	}
+
+	for (UYSAbilitySystemComponent* Source : Sources)
+	{
+		for ( FGameplayAbilitySpecHandle& AbilitySpecHandle : Source->AbilitySpecHandles )
+		{
+			FGameplayAbilitySpec* AbilitySpec = Source->FindAbilitySpecFromHandle(AbilitySpecHandle);
+
+			if (AbilitySpec == nullptr || AbilitySpec->Ability == nullptr || AbilitySpec->GetDynamicSpecSourceTags().IsEmpty())
+				continue;
+
+			FYSInputSaveDataMemeber InputSaveData(AbilitySpec->GetDynamicSpecSourceTags(), AbilitySpec->Ability->GetClass());
+			SaveGameInstance->AddInputSaveData(InputSaveData);
+		}
+	}
+
+	UGameplayStatics::SaveGameToSlot(SaveGameInstance, "InputSaveSlot", 0);
 }
 
 void UYSAbilitySystemComponent::OnGiveAbility(FGameplayAbilitySpec& AbilitySpec)
@@ -83,9 +131,11 @@ void UYSAbilitySystemComponent::OnGiveAbility(FGameplayAbilitySpec& AbilitySpec)
 
 void UYSAbilitySystemComponent::GiveInitAbility()
 {
-	if ( IsValid(GrantAbilityData) == false )
+	if ( IsValid(GrantAbilityData) == false || bInitAbilityGiven )
 		return;
-	
+
+	bInitAbilityGiven = true;
+
 	
 	// 테스트 코드 나중에 바꿉시다.
 	UYSInputSaveData* LoadedInput = Cast<UYSInputSaveData>(UGameplayStatics::LoadGameFromSlot("InputSaveSlot", 0));
@@ -266,33 +316,41 @@ void UYSAbilitySystemComponent::StartCoolDown(TSubclassOf<UGameplayAbility> Abil
 	Entry->EndTime = TargetToCooldownTime;
 }
 
-void UYSAbilitySystemComponent::ProcessAbilityByInputPass(const TArray<FGameplayTag>& InputTags, EYSInputPhase InputPhase)
+bool UYSAbilitySystemComponent::ProcessAbilityByInputPass(const TArray<FGameplayTag>& InputTags, EYSInputPhase InputPhase)
 {
 	if ( InputTags.Num() == 0 )
 	{
-		return;
+		return false;
 	}
 
 	// 활성 어빌리티는 태그가 아니라 자기 플레이백 그래프로 판정하므로 세부 태그 한 번이면 된다.
 	if ( ProcessAlreadyActiveAbility(InputTags[0], InputPhase) )
-		return;
+		return true;
 
 	if ( InputPhase != EYSInputPhase::Pressed )
-		return;
+		return false;
 
 	// 세부 → 대분류 순. 먼저 맞는 하나만 켠다.
 	for ( const FGameplayTag& InputTag : InputTags )
 	{
 		if ( ProcessSkillActive(InputTag) )
 		{
-			return;
+			return true;
 		}
 	}
+
+	return false;
 }
 
 
 void UYSAbilitySystemComponent::ApplyStatInitialization()
 {
+	// 교대로 다시 빙의될 때 HP 가 가득 차거나 초기화 GE 가 겹쳐 쌓이지 않게 한다.
+	if ( bStatInitialized )
+	{
+		return;
+	}
+
 	AYSCharacterBase* CharacterBase = GetOwner<AYSCharacterBase>();
 	
 	if ( IsValid(CharacterBase) == false )
@@ -330,6 +388,7 @@ void UYSAbilitySystemComponent::ApplyStatInitialization()
 	Spec.Data->SetSetByCallerMagnitude(YSTags::Data_Stat_RangeAttackCount, CharacterInfo->MaxRangeAttackCount);
 
 	ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
+	bStatInitialized = true;
 	ApplyDerivedStats(true);
 	ApplyResourceRecharge(CharacterInfo);
 }

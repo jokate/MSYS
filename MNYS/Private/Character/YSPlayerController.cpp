@@ -5,8 +5,10 @@
 
 #include "EnhancedInputSubsystems.h"
 #include "Character/Components/YSCameraManageComponent.h"
+#include "Character/Components/YSCombatTargetComponent.h"
 #include "Character/Components/YSTargetingComponent.h"
 #include "Character/Components/YSTargetingComponent.h"
+#include "UI/YSCombatHUDComponent.h"
 
 class UEnhancedInputLocalPlayerSubsystem;
 
@@ -14,6 +16,8 @@ AYSPlayerController::AYSPlayerController(const FObjectInitializer& ObjectInitial
 {
 	LockOnComponent = CreateDefaultSubobject<UYSCameraManageComponent>(TEXT("LockOnComponent"));
 	TargetingComponent = CreateDefaultSubobject<UYSTargetingComponent>(TEXT("TargetingComponent"));
+	CombatTargetComponent = CreateDefaultSubobject<UYSCombatTargetComponent>(TEXT("CombatTargetComponent"));
+	CombatHUDComponent = CreateDefaultSubobject<UYSCombatHUDComponent>(TEXT("CombatHUDComponent"));
 }
 
 void AYSPlayerController::SetupInputComponent()

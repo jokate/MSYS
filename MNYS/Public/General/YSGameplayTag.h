@@ -52,6 +52,8 @@ namespace YSTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_DeployEcho);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_TransitionState);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_OnLand);
+	// 그로기 게이지(Groggy)가 0 에 닿은 순간. 브레이크 연출은 이 이벤트를 받는 쪽이 맡는다.
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_GroggyBroken);
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Buff_JustAvoid);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Passive_RelativeEvaluation);
@@ -82,6 +84,9 @@ namespace YSTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Save_Full);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Echo);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Save_TripleEcho);
+
+	// 브레이크 중인 적. UYSGE_GroggyBreak 가 부여한다 (UI · 상태별 피해 배율 · 페이즈 전환 보류).
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Groggy_Broken);
 
 	// AI 억제 — 캐릭터 고유 (ASC에 부여, ActivationOwnedTags/루즈 태그)
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AISuppress);

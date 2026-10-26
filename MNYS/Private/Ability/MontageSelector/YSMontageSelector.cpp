@@ -1,12 +1,14 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Ability/MontageSelector/YSMontageSelector.h"
 
 #include "AbilitySystemComponent.h"
 #include "Ability/YSGameplayAbility.h"
+#include "Ability/Ability/YSGameplayAbility_ContextSwitch.h"
 #include "Ability/MotionWarp/YSMotionWarpParam.h"
 #include "Character/YSCharacterBase.h"
 #include "Character/Components/YSCharacterMovementComponent.h"
+#include "Combat/YSContextSwitchVariant.h"
 #include "Data/YSAbilityDataAsset.h"
 #include "General/YSGameplayTag.h"
 #include "MotionWarp/UYSMotionWarpingComponent.h"
@@ -196,4 +198,17 @@ UAnimMontage* FYSMontageSelector_ByTag::SelectMontage(const UYSGameplayAbility* 
 		return nullptr;
 
 	return MontagePtr.LoadSynchronous();
+}
+
+UAnimMontage* FYSMontageSelector_ContextSwitch::SelectMontage(const UYSGameplayAbility* Ability) const
+{
+	const UYSGameplayAbility_ContextSwitch* ContextSwitch = Cast<UYSGameplayAbility_ContextSwitch>(Ability);
+	const FYSContextSwitchVariant* Variant = IsValid(ContextSwitch) ? ContextSwitch->GetSelectedVariant() : nullptr;
+
+	if ( Variant == nullptr || Variant->Montage.IsNull() )
+	{
+		return nullptr;
+	}
+
+	return Variant->Montage.LoadSynchronous();
 }

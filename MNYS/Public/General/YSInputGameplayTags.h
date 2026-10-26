@@ -39,6 +39,10 @@ namespace YSInputTags
 	// 폼 전환(마보마이 V). Form.Berserker/Form.Guardian 부여 어빌리티가 이 슬롯을 쓴다.
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputForm);
 
+	// 전투 타겟 이전/다음. 어빌리티가 아니라 UYSCombatTargetComponent 가 원본 입력으로 받는다.
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTargetPrev);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTargetNext);
+
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputUpAttack);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputDownAttack);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputBackDodgeAttack);

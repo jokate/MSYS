@@ -23,6 +23,7 @@ enum class EYSInputStatesType : uint8
 	Damaged,
 	Death,
 	Aim,
+	Switch,
 	End,
 };
 
@@ -137,6 +138,106 @@ enum class EYSOperatorType : uint8
 	AND
 };
 
+// 타겟까지의 거리 구간. 경계값은 UYSCombatProfile 이 캐릭터마다 정한다.
+// 가까운 순서로 둔다 — 이력(떨림 방지) 판정이 이 순서를 비교에 쓴다.
+UENUM(BlueprintType)
+enum class EYSTargetDistanceBand : uint8
+{
+	Near		UMETA(DisplayName = "근"),
+	Mid			UMETA(DisplayName = "중"),
+	Far			UMETA(DisplayName = "원"),
+	OutOfRange	UMETA(DisplayName = "구간 밖 / 타겟 없음"),
+};
+
+// 타겟이 바뀐 까닭. 락온 카메라가 따라갈지를 이것으로 정한다.
+UENUM(BlueprintType)
+enum class EYSTargetChangeReason : uint8
+{
+	Auto	UMETA(DisplayName = "자동 전환"),
+	Manual	UMETA(DisplayName = "수동 전환 (Q/E)"),
+	Engage	UMETA(DisplayName = "교전 시작 자동 타겟"),
+};
+
+// 몸 회전을 요청한 쪽. 출처마다 따르는 규칙은 전투 프로필의 출처별 규칙 표에 있다.
+UENUM(BlueprintType)
+enum class EYSFaceYawSource : uint8
+{
+	TargetSwitch	UMETA(DisplayName = "타겟 전환 · 락온"),
+	AbilityMotion	UMETA(DisplayName = "어빌리티 이동 이벤트"),
+};
+
+// 스위치 창을 열려고 한 쪽.
+UENUM(BlueprintType)
+enum class EYSSwitchTrigger : uint8
+{
+	TargetSwitch	UMETA(DisplayName = "타겟 전환"),
+	TagSwap			UMETA(DisplayName = "태그 교대"),
+};
+
+// 어느 트리거가 스위치 창을 여는가. 기획 미결(컨텍스트 스위치 해석)을 설정 한 값으로 둔다.
+UENUM(BlueprintType)
+enum class EYSSwitchWindowTriggerRule : uint8
+{
+	Both				UMETA(DisplayName = "둘 다"),
+	TargetSwitchOnly	UMETA(DisplayName = "타겟 전환만"),
+	TagSwapOnly			UMETA(DisplayName = "태그 교대만"),
+};
+
+// 스위치 남용 기록(쿨 · 감쇠 · 연속 소모)을 트리거끼리 나눠 쓰는가.
+UENUM(BlueprintType)
+enum class EYSSwitchAbuseScope : uint8
+{
+	PerTrigger	UMETA(DisplayName = "트리거별"),
+	Shared		UMETA(DisplayName = "공유"),
+};
+
+// 스위치 어택 진입기 형이 판정 도형 안에서 누구를 맞히는가.
+UENUM(BlueprintType)
+enum class EYSSwitchEntryTargetRule : uint8
+{
+	CurrentTarget	UMETA(DisplayName = "현재 타겟 1체"),
+	AllInShape		UMETA(DisplayName = "도형 안 전부"),
+};
+
+// 스위치 어택 진입기 형의 이동.
+UENUM(BlueprintType)
+enum class EYSSwitchEntryMove : uint8
+{
+	RootMotion		UMETA(DisplayName = "모션 루트모션 그대로"),
+	WarpToTarget	UMETA(DisplayName = "타겟 앞까지 모션 워프"),
+};
+
+// 적의 경직 등급 (기획 02_COMBAT §5.1).
+UENUM(BlueprintType)
+enum class EYSStaggerGrade : uint8
+{
+	Soft		UMETA(DisplayName = "0 — 무른 (잡몹)"),
+	Firm		UMETA(DisplayName = "1 — 단단한 (정예)"),
+	Immovable	UMETA(DisplayName = "2 — 부동 (엘리트 · 보스)"),
+};
+
+// 타격 임팩트 등급 (COMBAT_TONE_GUIDE §3). 등급 하나의 값(시간 · 셰이크 · 줌)은 YS Developer Settings 의 임팩트 행이 갖는다. None 은 임팩트 없음.
+UENUM(BlueprintType)
+enum class EYSImpactGrade : uint8
+{
+	S		UMETA(DisplayName = "S"),
+	M		UMETA(DisplayName = "M"),
+	MPlus	UMETA(DisplayName = "M+"),
+	L		UMETA(DisplayName = "L"),
+	LPlus	UMETA(DisplayName = "L+"),
+	None	UMETA(DisplayName = "없음"),
+};
+
+// 브레이크 연출 단계 (말레 브레이크 스토리보드). 단계가 겹칠 수 있다 — 무방비는 진입 · 예고를 감싼다.
+UENUM(BlueprintType)
+enum class EYSBreakPhase : uint8
+{
+	Enter		UMETA(DisplayName = "진입 (정지 · 카메라)"),
+	Broken		UMETA(DisplayName = "무방비"),
+	Warning		UMETA(DisplayName = "회복 예고"),
+	Grace		UMETA(DisplayName = "회복 뒤 유예"),
+};
+
 // 연결 액터가 해제되는 사유. 어떻게 사라질지(폭발/무피해)는 액터가 사유를 보고 정한다.
 UENUM(BlueprintType)
 enum class EYSReleaseReason : uint8
@@ -144,4 +245,21 @@ enum class EYSReleaseReason : uint8
 	Command		UMETA(DisplayName = "명령"),
 	Expired		UMETA(DisplayName = "만료"),
 	Cancelled	UMETA(DisplayName = "어빌리티 취소")
+};
+
+// 시간 왜곡을 누구에게 거는가. 기준은 큐 대상이다.
+UENUM(BlueprintType)
+enum class EYSTimeDilationScope : uint8
+{
+	All				UMETA(DisplayName = "전원"),
+	HostileToTarget	UMETA(DisplayName = "큐 대상의 적만"),
+	Participants	UMETA(DisplayName = "때린 쪽 · 맞은 쪽만"),
+};
+
+// 큐 액션이 다룰 액터.
+UENUM(BlueprintType)
+enum class EYSCueActorSelector : uint8
+{
+	CueTarget	UMETA(DisplayName = "큐 대상"),
+	Instigator	UMETA(DisplayName = "시전자 (저스트 회피면 판정 적)"),
 };

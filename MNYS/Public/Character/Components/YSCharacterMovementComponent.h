@@ -6,7 +6,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "General/YSEnum.h"
 #include "YSCharacterMovementComponent.generated.h"
+
+class UAnimMontage;
+class UCurveFloat;
+class UYSCombatProfile;
+struct FYSTurnBand;
+struct FYSTurnSourceRule;
 
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -57,6 +64,56 @@ public:
 	
 	YS_ACCESSOR(FVector, LocalSpaceVelocity);
 	YS_GETTER(FVector, LocalSpaceLastInputDirection);
+
+	/**
+	 * 몸 yaw 를 목표로 돌린다. 몸을 돌리는 곳은 모두 여기로 온다.
+	 * 각도 구간 · 출처 규칙은 플레이어 전투 프로필에서 고른다. 프로필이나 출처 행이 없으면 즉시 돈다.
+	 */
+	void RequestFaceYaw(float TargetYaw, EYSFaceYawSource Source);
+
+	bool IsTurning() const { return bInterpTurning || ActiveTurnMontage.IsValid(); }
+
+protected :
+	virtual void PhysicsRotation(float DeltaTime) override;
+
+private :
+	const UYSCombatProfile* ResolveTurnProfile() const;
+	bool IsTurnBlocked(const UYSCombatProfile& Profile) const;
+	bool IsMovingForTurn() const;
+
+	void StartTurn(const UYSCombatProfile& Profile, const FYSTurnSourceRule& Rule, float TargetYaw, EYSFaceYawSource Source);
+	bool TryPlayTurnMontage(const UYSCombatProfile& Profile, const FYSTurnBand& Band, float DeltaYaw, float TargetYaw);
+	void TickTurn(float DeltaTime);
+	void CancelTurn();
+	void SetFaceYaw(float Yaw);
+	void DeferTurn(float TargetYaw, EYSFaceYawSource Source);
+	void HandleTurnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	struct FPendingFaceYaw
+	{
+		float Yaw = 0.f;
+		EYSFaceYawSource Source = EYSFaceYawSource::TargetSwitch;
+	};
+
+	// 막혀 있는 동안 들어온 마지막 요청 1칸.
+	TOptional<FPendingFaceYaw> PendingFaceYaw;
+
+	bool bInterpTurning = false;
+	float TurnStartYaw = 0.f;
+	float TurnDeltaYaw = 0.f;
+	float TurnElapsed = 0.f;
+	float TurnDuration = 0.f;
+
+	// 진행 중인 턴의 목표 · 출처 · 규칙. 막혀서 끊기면 이 값으로 다시 대기한다.
+	float TurnTargetYaw = 0.f;
+	EYSFaceYawSource TurnSource = EYSFaceYawSource::TargetSwitch;
+	bool bTurnRespectsBlock = false;
+
+	UPROPERTY()
+	TObjectPtr<UCurveFloat> TurnCurve;
+
+	TWeakObjectPtr<UAnimMontage> ActiveTurnMontage;
+	FName ActiveTurnWarpTargetName;
 
 protected :
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)

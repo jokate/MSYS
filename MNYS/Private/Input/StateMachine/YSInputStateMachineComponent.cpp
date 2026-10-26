@@ -7,12 +7,18 @@
 #include "YSAbilitySystemComponent.h"
 #include "YSDeveloperSettings.h"
 #include "General/YSGameplayTag.h"
+#include "General/YSDefine.h"
 #include "Input/Combo/YSComboData.h"
 #include "Input/StateMachine/YSInputStates.h"
 
 
 UYSInputStateMachineComponent* UYSInputStateMachineComponent::Get(AActor* Owner)
 {
+	if ( IsValid(Owner) == false )
+	{
+		return nullptr;
+	}
+
 	return Owner->FindComponentByClass<UYSInputStateMachineComponent>();
 }
 
@@ -93,7 +99,12 @@ void UYSInputStateMachineComponent::TrimInputHistory()
 	const float CurrentTime = GetWorld()->GetTimeSeconds();
 	InputHistories.RemoveAll([&](const FYSInputHistory& History)
 	{
-		return (CurrentTime - History.InputTime) > InputExpirationTime;
+		const bool bExpired = (CurrentTime - History.InputTime) > InputExpirationTime;
+		if ( bExpired )
+		{
+			UE_LOG(LogYSMeasure, Verbose, TEXT("[Input] t=%.3f Expire Tag=%s Age=%.3f Expire=%.3f"), CurrentTime, *History.InputTag.ToString(), CurrentTime - History.InputTime, InputExpirationTime);
+		}
+		return bExpired;
 	});
 }
 
@@ -127,6 +138,8 @@ void UYSInputStateMachineComponent::ConsumeInputHistory(const FGameplayTag& Tag,
 
 	if ( FoundIndex != INDEX_NONE )
 	{
+		UE_LOG(LogYSMeasure, Verbose, TEXT("[Input] t=%.3f Consume Tag=%s Age=%.3f Expire=%.3f"),
+			GetWorld()->GetTimeSeconds(), *Tag.ToString(), GetWorld()->GetTimeSeconds() - InputHistories[FoundIndex].InputTime, InputExpirationTime);
 		InputHistories.RemoveAt(FoundIndex);
 	}
 }
@@ -213,8 +226,120 @@ void UYSInputStateMachineComponent::AcceptInput(const FGameplayTag& Tag, EYSInpu
 
 	if ( bIsInputBlocked )
 		return;
-	
+
+	if ( HoldInputIfRequested(Tag, InputPhase) )
+		return;
+
+	DispatchInput(Tag, InputPhase);
+}
+
+bool UYSInputStateMachineComponent::HoldInputIfRequested(const FGameplayTag& Tag, EYSInputPhase InputPhase)
+{
+	InputHoldRequesters.RemoveAll([](const TWeakObjectPtr<const UObject>& Requester) { return Requester.IsValid() == false; });
+
+	if ( InputHoldRequesters.IsEmpty() )
+	{
+		FlushHeldPress();
+		return false;
+	}
+
+	if ( InputPhase == EYSInputPhase::Pressed )
+	{
+		// 첫 누름 하나만 남긴다 (S3 — 처음 입력 하나로 파생이 갈린다).
+		if ( HeldPress.IsValid() == false )
+		{
+			HeldPress = Tag;
+			bHeldPressReleased = false;
+		}
+		return true;
+	}
+
+	if ( HeldPress.IsValid() && Tag == HeldPress && (InputPhase == EYSInputPhase::Released || InputPhase == EYSInputPhase::Canceled) )
+	{
+		bHeldPressReleased = true;
+		return true;
+	}
+
+	// 보관 전에 누른 키의 뗌은 그대로 흘린다. 막으면 그 입력이 영영 눌린 것으로 남는다.
+	return false;
+}
+
+void UYSInputStateMachineComponent::PushInputHold(const UObject* Requester)
+{
+	if ( Requester == nullptr )
+		return;
+
+	InputHoldRequesters.AddUnique(Requester);
+}
+
+void UYSInputStateMachineComponent::PopInputHold(const UObject* Requester)
+{
+	InputHoldRequesters.Remove(Requester);
+	InputHoldRequesters.RemoveAll([](const TWeakObjectPtr<const UObject>& Other) { return Other.IsValid() == false; });
+
+	if ( InputHoldRequesters.IsEmpty() )
+	{
+		FlushHeldPress();
+	}
+}
+
+void UYSInputStateMachineComponent::ClaimRawInput(const FGameplayTag& Tag, const UObject* Claimer)
+{
+	if ( Tag.IsValid() == false || Claimer == nullptr )
+		return;
+
+	RawInputClaims.AddUnique(Tag, Claimer);
+}
+
+void UYSInputStateMachineComponent::ReleaseRawInputs(const UObject* Claimer)
+{
+	for ( auto It = RawInputClaims.CreateIterator(); It; ++It )
+	{
+		if ( It.Value().IsValid() == false || It.Value().Get() == Claimer )
+		{
+			It.RemoveCurrent();
+		}
+	}
+}
+
+bool UYSInputStateMachineComponent::IsRawInputClaimed(const FGameplayTag& Tag) const
+{
+	for ( auto It = RawInputClaims.CreateConstKeyIterator(Tag); It; ++It )
+	{
+		if ( It.Value().IsValid() )
+			return true;
+	}
+
+	return false;
+}
+
+void UYSInputStateMachineComponent::FlushHeldPress()
+{
+	if ( HeldPress.IsValid() == false )
+		return;
+
+	const FGameplayTag Press = HeldPress;
+	const bool bReleased = bHeldPressReleased;
+	HeldPress = FGameplayTag();
+	bHeldPressReleased = false;
+
+	if ( bIsInputBlocked )
+		return;
+
+	DispatchInput(Press, EYSInputPhase::Pressed);
+
+	if ( bReleased )
+	{
+		DispatchInput(Press, EYSInputPhase::Released);
+	}
+}
+
+void UYSInputStateMachineComponent::DispatchInput(const FGameplayTag& Tag, EYSInputPhase InputPhase)
+{
 	OnRawInputAccepted.Broadcast(Tag, InputPhase);
+
+	if ( IsRawInputClaimed(Tag) )
+		return;
 
 	// 커맨드 버퍼에는 "누름"만 먹인다.
 	// 뗌까지 InputTags에 쌓이면 FYSCommandSequence::IsSatisfiedCommand의 순서 판정이 깨진다.
@@ -240,16 +365,41 @@ void UYSInputStateMachineComponent::TransitionState(EYSInputStatesType NewInputS
 
 void UYSInputStateMachineComponent::AddStateStack(EYSInputStatesType State)
 {
+	// None 은 "바꾸지 않음" 이다. 맨 위에 쌓이면 전이에 실패해 이전 상태 객체가 그대로 남는다.
+	if ( State == EYSInputStatesType::None )
+	{
+		return;
+	}
+
 	// 만약 State Stack에 있는 경우 최상단으로 올려준다.
 	if ( InputStateRequests.Contains(State))
 	{
 		InputStateRequests.Remove(State);
 	}
-	
-	InputStateRequests.Add(State);	
-	
+
+	// 창끼리 겹치면 우선순위가 높은 창 아래에 끼운다. 높은 창이 닫히면 그때 드러난다.
+	const UYSDeveloperSettings* Settings = GetDefault<UYSDeveloperSettings>();
+	const FYSInputWindowRule* NewRule = Settings->FindInputWindowRule(State);
+	int32 InsertIndex = InputStateRequests.Num();
+
+	if ( NewRule != nullptr )
+	{
+		for ( int32 Index = 0; Index < InputStateRequests.Num(); ++Index )
+		{
+			const FYSInputWindowRule* OtherRule = Settings->FindInputWindowRule(InputStateRequests[Index]);
+
+			if ( OtherRule != nullptr && OtherRule->Priority > NewRule->Priority )
+			{
+				InsertIndex = Index;
+				break;
+			}
+		}
+	}
+
+	InputStateRequests.Insert(State, InsertIndex);
+
 	// 근데 이렇게 State 전환이 정상적이지 않다면 어쩌지?
-	TransitionState(State);
+	TransitionState(InputStateRequests.Last());
 }
 
 void UYSInputStateMachineComponent::RemoveStateStack(EYSInputStatesType State)

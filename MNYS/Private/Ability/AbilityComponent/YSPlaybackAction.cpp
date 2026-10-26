@@ -8,6 +8,7 @@
 #include "YSAbilitySystemComponent.h"
 #include "Ability/YSGameplayAbility.h"
 #include "Ability/Payload/YSAbilityTriggerPayload.h"
+#include "Character/Components/YSCombatTargetComponent.h"
 
 void UYSPlaybackAction_SendGameplayEvent::Execute(const TSharedPtr<FYSPlaybackContext>& Context) const
 {
@@ -90,6 +91,17 @@ void UYSPlaybackAction_JustAvoidTarget::Execute(const TSharedPtr<FYSPlaybackCont
 	}
 
 	Context->Target = Attacker;
+}
+
+void UYSPlaybackAction_CombatTarget::Execute(const TSharedPtr<FYSPlaybackContext>& Context) const
+{
+	if ( Context.IsValid() == false )
+	{
+		return;
+	}
+
+	UYSCombatTargetComponent* CombatTarget = UYSCombatTargetComponent::Get(Context->Instigator);
+	Context->Target = IsValid(CombatTarget) ? CombatTarget->RefreshTarget() : nullptr;
 }
 
 void UYSPlaybackAction_ReleaseBuff::Execute(const TSharedPtr<FYSPlaybackContext>& Context) const

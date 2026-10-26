@@ -41,20 +41,30 @@ void UYSCharacterAttributeSetBase::PreAttributeBaseChange(const FGameplayAttribu
 {
 	Super::PreAttributeBaseChange(Attribute, NewValue);
 	
-	// 안정성 보장을 위한 처리.
+	ApplyAttributeGuards(Attribute, NewValue);
+}
+
+void UYSCharacterAttributeSetBase::ApplyAttributeGuards(const FGameplayAttribute& Attribute, float& NewValue) const
+{
 	CallHandler(Attribute, NewValue);
+
+	if (Attribute == GetIncomingDamageMultiplierAttribute())
+	{
+		NewValue = FMath::Max(NewValue, 0.f);
+	}
+
+	// 피해 식이 (1 - DefenseRate) 이므로 1.0 이 완전 방어다. 넘으면 피해가 음수(회복)가 된다.
+	if (Attribute == GetDefenseRateAttribute())
+	{
+		NewValue = FMath::Clamp(NewValue, 0.f, 1.f);
+	}
 }
 
 void UYSCharacterAttributeSetBase::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
 {
 	Super::PreAttributeChange(Attribute, NewValue);
 	
-    CallHandler(Attribute, NewValue);
-
-	if (Attribute == GetIncomingDamageMultiplierAttribute())
-	{
-		NewValue = FMath::Max(NewValue, 0.f);
-	}
+	ApplyAttributeGuards(Attribute, NewValue);
 }
 
 void UYSCharacterAttributeSetBase::PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue,
@@ -90,8 +100,12 @@ void UYSCharacterAttributeSetBase::PostAttributeChange(const FGameplayAttribute&
 		if (NewValue <= 0.f && OldValue > 0.f)
 		{	
 			FGameplayEventData EventData;
+			UAbilitySystemComponent* DeadASC = GetOwningAbilitySystemComponent();
 			HandleDowned();
-			GetOwningAbilitySystemComponent()->HandleGameplayEvent(YSTags::Event_OnDead, &EventData);
+			if (IsValid(DeadASC))
+			{
+				DeadASC->HandleGameplayEvent(YSTags::Event_OnDead, &EventData);
+			}
 		}
 		
 		return;
@@ -155,6 +169,8 @@ void UYSCharacterAttributeSetBase::HandleDowned()
 	
 	if (UYSSquadSubsystem* Squad = GI->GetSubsystem<UYSSquadSubsystem>())
 	{
+		// 쓰러진 폰에 창이 남으면 벤치로 들어가서도 만료까지 열려 있다.
+		Squad->CloseSwitchWindow(GetOwningAbilitySystemComponent());
 		Squad->ForceTagOnDown();
 	}	
 }

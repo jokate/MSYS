@@ -42,6 +42,7 @@ void UYSTraceObject::ResetHitState()
 {
 	TracedActors.Reset();
 	HitTimeMap.Reset();
+	JustAvoidGrantedActors.Reset();
 	bHasPreviousLocation = false;
 	PreviousLocation     = FVector::ZeroVector;
 	RemainHitProcessCount = TraceConfig.LimitHitCount;
@@ -218,24 +219,8 @@ void UYSTraceObject::_ProcessValidHit(const TArray<FHitResult>& InProcessedHits)
 	if (!IsValid(Instigator))
 		return;
 
-	UAbilitySystemComponent* OwnerASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Instigator);
-	if (!IsValid(OwnerASC))
-		return;
-
-	const UYSCharacterAttributeSetBase* OwnerAttribute = OwnerASC->GetSet<UYSCharacterAttributeSetBase>();
-	if (!IsValid(OwnerAttribute))
-		return;
-
-	IGenericTeamAgentInterface* TeamAgent = Cast<IGenericTeamAgentInterface>(Instigator);
-	if (TeamAgent == nullptr)
-		return;
-	
-	const UYSDeveloperSettings* DevSetting = GetDefault<UYSDeveloperSettings>();
-	
-	if ( IsValid(DevSetting) == false )
-		return;
-	
 	TArray<FHitResult> ValidHits;
+	bool bDepleted = false;
 
 	for (const FHitResult& HitResult : InProcessedHits)
 	{
@@ -243,36 +228,9 @@ void UYSTraceObject::_ProcessValidHit(const TArray<FHitResult>& InProcessedHits)
 		if (!IsValid(HitActor))
 			continue;
 
-		if (TeamAgent->GetTeamAttitudeTowards(*HitActor) == ETeamAttitude::Friendly)
-			continue;
-
-		IYSBattleActor* BattleActor = Cast<IYSBattleActor>(HitActor);
-		if (BattleActor == nullptr || BattleActor->IsDead())
-			continue;
-
-		UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(HitActor);
-		if (!IsValid(TargetASC))
-			continue;
-
-		const UYSCharacterAttributeSetBase* TargetAttribute = TargetASC->GetSet<UYSCharacterAttributeSetBase>();
-		if (!IsValid(TargetAttribute))
-			continue;
-
-		// JustAvoid 윈도우 처리 -> 여기서는 그냥 Effect를 부여하는게 좋을까?
-		// 버프를 부여한다. 이 시점에 버프의 경우에는 이펙트 출력을 담당하기로 합시당
-		if (TargetASC->HasMatchingGameplayTag(YSTags::JustAvoid_Window))
-		{
-			FGameplayEffectContextHandle EffectContextHandle = OwnerASC->MakeEffectContext();
-			EffectContextHandle.AddInstigator(Instigator, Instigator);
-			FGameplayEffectSpec Spec(DevSetting->JustAvoidGameplayEffect.GetDefaultObject(), EffectContextHandle);	
-			Spec.AddDynamicAssetTag(YSTags::Event_JustAvoid);
-			
-			OwnerASC->ApplyGameplayEffectSpecToTarget(Spec, TargetASC);
-			continue;
-		}
-
-		// 무적 상태 스킵
-		if (TargetASC->HasMatchingGameplayTag(YSTags::Invincible))
+		// 아군 · 사망 · 저스트 회피 창 · 무적 검사는 DirectHit 과 같은 함수를 거친다.
+		// 연속 히트가 저스트 창 안에서 HitTimeCheck 마다 GE 를 다시 걸지 않도록 대상별 기록을 넘긴다.
+		if (!UYSBlueprintFunctionLibrary::AdmitHit(Instigator, HitActor, &JustAvoidGrantedActors))
 			continue;
 
 		// 데미지 이벤트 전송
@@ -284,13 +242,32 @@ void UYSTraceObject::_ProcessValidHit(const TArray<FHitResult>& InProcessedHits)
 		
 		if ( DecreaseHitProcessCount() )
 		{
-			OnHitCountDepleted.Broadcast();
+			bDepleted = true;
 			break;
 		}
 	}
-	
+
+	// 임팩트는 이번 판정 1회에 한 번. 대상 루프 안에서 걸면 맞은 수만큼 겹친다.
+	if ( ValidHits.Num() > 0 )
+	{
+		TArray<AActor*> HitActors;
+
+		for ( const FHitResult& ValidHit : ValidHits )
+		{
+			HitActors.AddUnique(ValidHit.GetActor());
+		}
+
+		UYSBlueprintFunctionLibrary::PlayHitImpact(Instigator, HitActors, TraceConfig.DamageRow);
+	}
+
+	// 소진 방송은 OnTraceHit 뒤에. 먼저 하면 태스크가 EndTask(MarkAsGarbage)돼 마지막 타격이 OnHit 에 닿지 못한다.
 	if ( ValidHits.Num() > 0 )
 	{
 		OnTraceHit.Broadcast(ValidHits, TraceConfig.DamageRow);
+	}
+
+	if ( bDepleted )
+	{
+		OnHitCountDepleted.Broadcast();
 	}
 }

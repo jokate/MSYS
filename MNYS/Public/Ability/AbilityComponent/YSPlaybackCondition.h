@@ -82,6 +82,23 @@ public :
 	bool bIsInRange = false;
 };
 
+/**
+ * 타겟까지의 거리 구간(근/중/원)으로 같은 입력 안의 모션을 고른다.
+ * 경계값 · 떨림 방지 여유는 캐릭터의 전투 프로필(UYSCombatProfile)에 있다. 타겟이 없으면 "구간 밖" 이다.
+ */
+USTRUCT(DisplayName = "타겟 거리 구간")
+struct FYSPlaybackCondition_TargetDistanceBand : public FYSPlaybackCondition
+{
+	GENERATED_BODY()
+
+public :
+	virtual bool Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const override;
+
+public :
+	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = "구간"))
+	EYSTargetDistanceBand Band = EYSTargetDistanceBand::Near;
+};
+
 USTRUCT(DisplayName = "인풋 관련 조건")
 struct FYSPlaybackCondition_Input : public FYSPlaybackCondition
 {

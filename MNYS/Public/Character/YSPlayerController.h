@@ -8,6 +8,8 @@
 
 class UYSTargetingComponent;
 class UYSCameraManageComponent;
+class UYSCombatTargetComponent;
+class UYSCombatHUDComponent;
 class UYSTargetingComponent;
 class UInputMappingContext;
 /**
@@ -36,6 +38,14 @@ public :
 	// 인디케이터 인스턴스와 조준 상태가 유지돼야 하기 때문이다.
 	UPROPERTY(EditDefaultsOnly, Category="YS | Comp")
 	TObjectPtr<UYSTargetingComponent> TargetingComponent;
+
+	// 공격 대상 선택. 같은 이유로 컨트롤러에 둔다. 락온 카메라는 이것을 구독한다.
+	UPROPERTY(EditDefaultsOnly, Category="YS | Comp")
+	TObjectPtr<UYSCombatTargetComponent> CombatTargetComponent;
+
+	// 전투 HUD. 같은 이유로 컨트롤러에 둔다.
+	UPROPERTY(EditDefaultsOnly, Category="YS | Comp")
+	TObjectPtr<UYSCombatHUDComponent> CombatHUDComponent;
 
 protected : 
 	UPROPERTY(EditDefaultsOnly)

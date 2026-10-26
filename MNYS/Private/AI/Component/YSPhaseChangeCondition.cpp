@@ -8,13 +8,18 @@
 
 bool FYSPhaseChangeConditions::CheckCondition(AYSCharacterBase* CharacterBase) const
 {
-	for (const FInstancedStruct& Condition : ConditionStructs )
+	for (int32 SlotIndex = 0; SlotIndex < ConditionStructs.Num(); ++SlotIndex )
 	{
-		const FYSPhaseChangeConditions* ConditionPtr = Condition.GetPtr<FYSPhaseChangeConditions>();
-		
+		const FYSPhaseChangeConditionBase* ConditionPtr = ConditionStructs[SlotIndex].GetPtr<FYSPhaseChangeConditionBase>();
+
 		if ( ConditionPtr == nullptr )
 		{
-			continue;
+			if ( bWarnedInvalidSlot == false )
+			{
+				bWarnedInvalidSlot = true;
+				UE_LOG(LogTemp, Warning, TEXT("[PhaseChange] %s 의 조건 %d번 칸이 비었거나 조건 형이 아니다. 거짓으로 판정한다."), *GetNameSafe(CharacterBase), SlotIndex);
+			}
+			return false;
 		}
 		
 		if ( ConditionPtr->CheckCondition(CharacterBase) == false )

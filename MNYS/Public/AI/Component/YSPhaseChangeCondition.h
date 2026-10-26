@@ -21,6 +21,10 @@ public :
 public : 
 	UPROPERTY(EditAnywhere,  meta = (DisplayName = "페이즈 변환 조건", BaseStruct = "/Script/MNYS.YSPhaseChangeConditionBase", ExcludeBaseStruct))
 	TArray<FInstancedStruct> ConditionStructs;
+
+private :
+	// 판정이 매 틱이라 빈 칸 경고를 한 번만 내기 위한 런타임 표지. 첫 빈 칸에서 판정이 끝나므로 칸당 한 번과 같다.
+	mutable bool bWarnedInvalidSlot = false;
 };
 
 USTRUCT()
@@ -57,6 +61,7 @@ struct MNYS_API FYSPhaseChangeCondition_WorldTag : public FYSPhaseChangeConditio
 public :
 	virtual bool CheckCondition(AYSCharacterBase* CharacterBase) const override;
 	
-public : 
+public :
+	UPROPERTY(EditAnywhere, Category = "YS | Condition", meta = (DisplayName = "월드 태그"))
 	FGameplayTag TargetTag;
 };

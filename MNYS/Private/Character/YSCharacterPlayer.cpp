@@ -217,6 +217,11 @@ void AYSCharacterPlayer::Move(const FInputActionValue& Value)
 
 void AYSCharacterPlayer::OnMovementComplete()
 {
+	for (const FGameplayTag& Tag : LastDirectionTags)
+	{
+		InputStateMachineComponent->ClearInputHeld(Tag);
+	}
+
 	LastDirectionTags.Empty();
 }
 
@@ -256,6 +261,12 @@ void AYSCharacterPlayer::ProcessMovementInput(const FVector2D& InputDir)
 		if (!LastDirectionTags.Contains(Tag))
 			InputStateMachineComponent->AcceptInput(Tag, EYSInputPhase::Pressed);
 	}
-	
+
+	for (const FGameplayTag& Tag : LastDirectionTags)
+	{
+		if (!NewTags.Contains(Tag))
+			InputStateMachineComponent->ClearInputHeld(Tag);
+	}
+
 	LastDirectionTags = NewTags;
 }

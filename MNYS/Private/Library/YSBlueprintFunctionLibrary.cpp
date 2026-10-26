@@ -16,9 +16,12 @@
 #include "AttackableActor/YSAttackableBase.h"
 #include "AttackableActor/DamageEffect/YSDamageEffect.h"
 #include "Character/YSCharacterBase.h"
+#include "Character/AttributeSet/YSGroggyAttributeSet.h"
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
+#include "Camera/PlayerCameraManager.h"
 #include "Character/Components/YSCameraManageComponent.h"
 #include "Character/Components/YSTargetingComponent.h"
+#include "Framework/YSGameModeBase.h"
 #include "General/YSDefine.h"
 #include "General/YSGameplayTag.h"
 #include "Interface/YSDamageProxy.h"
@@ -42,7 +45,7 @@ namespace
 }
 
 float UYSBlueprintFunctionLibrary::GetFinalDamage(const UYSCharacterAttributeSetBase* Owner,
-                                                  const UYSCharacterAttributeSetBase* Target, const FName& SkillID)
+                                                  const UYSCharacterAttributeSetBase* Target, const FName& SkillID, float EffectScale)
 {
 	const FYSDamageInfo* DamageInfo = UYSDeveloperSettings::GetDamageInfo(SkillID);
 
@@ -55,14 +58,80 @@ float UYSBlueprintFunctionLibrary::GetFinalDamage(const UYSCharacterAttributeSet
 
 	float BaselineDamage = DamageInfo->DamageType == EYSDamageType::Melee ? Owner->GetMeleeAttackDmg() : Owner->GetRangedAttackDmg();
 
-	// (공격 데미지 * 공격 계수) * (1 - DefenceRate) * 받는 피해 배율 * 상대평가 + 고정 데미지. 고정 데미지는 배율을 받지 않는다.
+	// (공격 데미지 * 공격 계수) * (1 - DefenceRate) * 받는 피해 배율 * 상대평가 * 대상 상태 배율 * 효과 배율 + 고정 데미지. 고정 데미지는 배율을 받지 않는다.
 	float ScaledDamage = ( BaselineDamage * DamageInfo->DamageMultiplier ) * ( 1 - Target->GetDefenseRate()) * Target->GetIncomingDamageMultiplier();
 	ScaledDamage *= GetRelativeEvaluationMultiplier(Owner, Target);
 
-	return ScaledDamage + DamageInfo->AdditiveTrueDamage;
+	if ( const UAbilitySystemComponent* TargetASC = Target->GetOwningAbilitySystemComponent() )
+	{
+		for ( const TPair<FGameplayTag, float>& StateMultiplier : DamageInfo->TargetStateMultipliers )
+		{
+			if ( TargetASC->HasMatchingGameplayTag(StateMultiplier.Key) )
+			{
+				ScaledDamage *= StateMultiplier.Value;
+			}
+		}
+	}
+
+	return ScaledDamage * EffectScale + DamageInfo->AdditiveTrueDamage;
 }
 
-void UYSBlueprintFunctionLibrary::SendHitEventToTarget(AActor* Instigator, AActor* Target, const FName& SkillID)
+bool UYSBlueprintFunctionLibrary::AdmitHit(AActor* Instigator, AActor* Target, TSet<TWeakObjectPtr<AActor>>* JustAvoidGranted)
+{
+	if ( IsValid(Instigator) == false || IsValid(Target) == false )
+		return false;
+
+	UAbilitySystemComponent* OwnerASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Instigator);
+	if ( IsValid(OwnerASC) == false || IsValid(OwnerASC->GetSet<UYSCharacterAttributeSetBase>()) == false )
+		return false;
+
+	const IGenericTeamAgentInterface* TeamAgent = Cast<IGenericTeamAgentInterface>(Instigator);
+	if ( TeamAgent == nullptr || TeamAgent->GetTeamAttitudeTowards(*Target) == ETeamAttitude::Friendly )
+		return false;
+
+	const IYSBattleActor* BattleActor = Cast<IYSBattleActor>(Target);
+	if ( BattleActor == nullptr || BattleActor->IsDead() )
+		return false;
+
+	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Target);
+	if ( IsValid(TargetASC) == false || IsValid(TargetASC->GetSet<UYSCharacterAttributeSetBase>()) == false )
+		return false;
+
+	// 저스트 회피 창: 피해 대신 버프를 부여한다. 이 시점의 버프가 이펙트 출력을 담당한다.
+	if ( TargetASC->HasMatchingGameplayTag(YSTags::JustAvoid_Window) )
+	{
+		// 이 창에서 이미 줬으면 다시 걸지 않는다 (Add 가 이미 있었다고 알려 준다).
+		bool bAlreadyGranted = false;
+		if ( JustAvoidGranted != nullptr )
+		{
+			JustAvoidGranted->Add(Target, &bAlreadyGranted);
+		}
+
+		const UYSDeveloperSettings* DevSetting = GetDefault<UYSDeveloperSettings>();
+
+		if ( bAlreadyGranted == false && IsValid(DevSetting) && DevSetting->JustAvoidGameplayEffect != nullptr )
+		{
+			FGameplayEffectContextHandle EffectContextHandle = OwnerASC->MakeEffectContext();
+			EffectContextHandle.AddInstigator(Instigator, Instigator);
+			FGameplayEffectSpec Spec(DevSetting->JustAvoidGameplayEffect.GetDefaultObject(), EffectContextHandle);
+			Spec.AddDynamicAssetTag(YSTags::Event_JustAvoid);
+
+			OwnerASC->ApplyGameplayEffectSpecToTarget(Spec, TargetASC);
+		}
+
+		return false;
+	}
+
+	// 창이 닫혔으면 다음 창에서 다시 받을 수 있게 기록을 지운다.
+	if ( JustAvoidGranted != nullptr )
+	{
+		JustAvoidGranted->Remove(Target);
+	}
+
+	return TargetASC->HasMatchingGameplayTag(YSTags::Invincible) == false;
+}
+
+void UYSBlueprintFunctionLibrary::SendHitEventToTarget(AActor* Instigator, AActor* Target, const FName& SkillID, float EffectScale)
 {
 	const FYSDamageInfo* DamageInfo = UYSDeveloperSettings::GetDamageInfo(SkillID);
 
@@ -72,14 +141,18 @@ void UYSBlueprintFunctionLibrary::SendHitEventToTarget(AActor* Instigator, AActo
 
 	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Instigator);
 	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Target);
-	
+
 	if ( IsValid(ASC) == false || IsValid(TargetASC) == false )
 		return;
-	
+
+	// 무적이면 피해가 통째로 버려진다(AttributeSet). 그로기 피해 · 처치 · 피격 모션(HitTag)도 보내지 않는다.
+	if ( TargetASC->HasMatchingGameplayTag(YSTags::Invincible) )
+		return;
+
 	const UYSCharacterAttributeSetBase* TargetSet = TargetASC->GetSet<UYSCharacterAttributeSetBase>();
 	const bool bWasAlive = TargetSet != nullptr && TargetSet->GetHp() > 0.f;
 
-	float FinalDamage = GetFinalDamage(ASC->GetSet<UYSCharacterAttributeSetBase>(), TargetSet, SkillID);
+	float FinalDamage = GetFinalDamage(ASC->GetSet<UYSCharacterAttributeSetBase>(), TargetSet, SkillID, EffectScale);
 	TargetASC->SetNumericAttributeBase(UYSCharacterAttributeSetBase::GetIncomingDamageAttribute(), FinalDamage);
 
 	if ( bWasAlive && TargetSet->GetHp() <= 0.f )
@@ -88,6 +161,14 @@ void UYSBlueprintFunctionLibrary::SendHitEventToTarget(AActor* Instigator, AActo
 		EventData.Instigator = Instigator;
 		EventData.Target = Target;
 		ASC->HandleGameplayEvent(YSTags::Event_OnKill, &EventData);
+	}
+
+	// HP 피해 뒤에도 살아 있을 때만.
+	const bool bStillAlive = TargetSet != nullptr && TargetSet->GetHp() > 0.f;
+
+	if ( DamageInfo->GroggyDamage > 0.f && bStillAlive )
+	{
+		UYSGroggyAttributeSet::ApplyGroggyDamage(Instigator, Target, DamageInfo->GroggyDamage * EffectScale);
 	}
 
 	FGameplayEventData EventData;
@@ -108,26 +189,56 @@ void UYSBlueprintFunctionLibrary::SpawnEffects(UObject* WorldContextObject, cons
 		return;
 	}
 	
-	
 	UNiagaraFunctionLibrary::SpawnSystemAtLocation(WorldContextObject, DamageInfo->HitEffect, Location, Rotation);
-	
-	
-	UWorld* World = WorldContextObject->GetWorld();
-	
-	if ( IsValid(World) == false )
+}
+
+void UYSBlueprintFunctionLibrary::PlayHitImpact(AActor* Instigator, const TArray<AActor*>& Targets, const FName& DamageRow)
+{
+	const FYSDamageInfo* DamageInfo = UYSDeveloperSettings::GetDamageInfo(DamageRow);
+
+	if ( DamageInfo == nullptr )
 	{
 		return;
 	}
-	
-	APlayerController* PC = World->GetFirstPlayerController();
-	
-	// 카메라 셰이크도 함께 처리
-	if (IsValid(DamageInfo->HitCameraShake) && IsValid(PC))
+
+	PlayImpact(Instigator, Targets, DamageInfo->Impact);
+}
+
+void UYSBlueprintFunctionLibrary::PlayImpact(AActor* Instigator, const TArray<AActor*>& Targets, EYSImpactGrade Grade)
+{
+	UWorld* World = IsValid(Instigator) ? Instigator->GetWorld() : nullptr;
+	const FYSImpactProfile* Profile = GetDefault<UYSDeveloperSettings>()->GetImpactProfile(Grade);
+
+	if ( World == nullptr || Profile == nullptr )
 	{
-		APlayerCameraManager* CameraManager = PC->PlayerCameraManager;
-		if (IsValid(CameraManager))
+		return;
+	}
+
+	if ( Profile->TimeDuration > 0.f )
+	{
+		if ( AYSGameModeBase* GameMode = World->GetAuthGameMode<AYSGameModeBase>() )
 		{
-			CameraManager->StartCameraShake(DamageInfo->HitCameraShake);
+			GameMode->StartTimedDilation(Profile->TimeDilation, Profile->TimeDuration, Profile->TimeScope, Instigator, Targets);
+		}
+	}
+
+	APlayerController* PC = World->GetFirstPlayerController();
+
+	if ( IsValid(PC) == false )
+	{
+		return;
+	}
+
+	if ( IsValid(Profile->ShakeClass) && IsValid(PC->PlayerCameraManager) )
+	{
+		PC->PlayerCameraManager->StartCameraShake(Profile->ShakeClass, Profile->ShakeScale);
+	}
+
+	if ( Profile->ZoomDuration > 0.f )
+	{
+		if ( UYSCameraManageComponent* CameraManage = UYSCameraManageComponent::Get(PC->GetPawn()) )
+		{
+			CameraManage->PlayImpactZoom(*Profile);
 		}
 	}
 }
@@ -254,7 +365,9 @@ void UYSBlueprintFunctionLibrary::ApplyHitEffects(AActor* Source, AActor* Instig
 	
 	for ( const FInstancedStruct& Instanced : DamageInfo->DamageEffects )
 	{
-		if ( const FYSDamageEffectBase* Effect = Instanced.GetPtr<FYSDamageEffectBase>() )
+		const FYSDamageEffectBase* Effect = Instanced.GetPtr<FYSDamageEffectBase>();
+
+		if ( Effect != nullptr && Effect->CanApply(Context) )
 		{
 			Effect->Apply(Context);
 		}

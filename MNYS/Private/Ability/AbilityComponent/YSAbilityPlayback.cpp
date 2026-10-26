@@ -15,8 +15,8 @@ void UYSAbilityPlaybackBase::Play(const TSharedPtr<FYSPlaybackContext>& Context)
 {
 	CapturedContext = Context;
 	const int32 Serial = ++PlaySerial;
-	
-	
+	bDidWork = EnterActions.Num() > 0;
+
 	for ( const UYSPlaybackAction* Action : EnterActions )
 	{
 		if ( IsValid(Action) )
@@ -39,6 +39,7 @@ void UYSAbilityPlaybackBase::Play(const TSharedPtr<FYSPlaybackContext>& Context)
 		}
 
 		Task->Start(this);
+		bDidWork |= Task->DidStartWork();
 
 		// 시작하자마자 전환이 확정됐다. 이 노드는 이미 끝났거나 새로 시작됐다.
 		if ( PlaySerial != Serial )

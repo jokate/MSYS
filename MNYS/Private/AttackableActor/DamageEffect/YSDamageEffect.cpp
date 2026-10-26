@@ -8,6 +8,35 @@
 #include "GameFramework/Character.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
 
+bool FYSDamageEffectBase::CanApply(const FYSDamageEffectContext& Context) const
+{
+	if ( RequiredTargetTags.IsEmpty() )
+	{
+		return true;
+	}
+
+	const UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Context.Target);
+	return IsValid(TargetASC) && TargetASC->HasAllMatchingGameplayTags(RequiredTargetTags);
+}
+
+void FYSDamageEffect_GameplayCue::Apply(const FYSDamageEffectContext& Context) const
+{
+	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Context.Target);
+
+	if ( CueTag.IsValid() == false || IsValid(TargetASC) == false )
+	{
+		return;
+	}
+
+	FGameplayCueParameters Parameters;
+	Parameters.Instigator = Context.Instigator;
+	Parameters.EffectCauser = IsValid(Context.Source) ? Context.Source.Get() : Context.Instigator.Get();
+	Parameters.Location = Context.HitResult.ImpactPoint;
+	Parameters.Normal = Context.HitResult.ImpactNormal;
+
+	TargetASC->ExecuteGameplayCue(CueTag, Parameters);
+}
+
 void FYSDamageEffect_Knockback::Apply(const FYSDamageEffectContext& Context) const
 {
 	ACharacter* TargetCharacter = Cast<ACharacter>(Context.Target);

@@ -51,6 +51,12 @@ protected :
 	 */
 	void ResolveStateTags(const FGameplayTag& InputGameplayTag, TArray<FGameplayTag>& OutTags);
 
+	/** 이 상태로 바꾼 GE(UYSInputStateGEComponent)를 걷어 창을 닫는다. */
+	void CloseWindow() const;
+
+	/** 요청 스택에서 이 상태 바로 아래 상태. 맨 아래거나 스택에 없으면 nullptr. */
+	UYSInputStates* FindStateBelow(const UYSInputStateMachineComponent* InputStateMachineComponent) const;
+
 protected :
 	// 이 상태가 속한 대분류. 상태마다 좁히거나 비운다.
 	UPROPERTY()
@@ -209,5 +215,18 @@ class UYSAimState : public UYSInputStates
 	{
 		StateName = TEXT("Aim");
 		State = EYSInputStatesType::Aim;
+	}
+};
+
+// 스위치 창. 타겟 전환 · 태그 교대가 여는 짧은 입력 창이다 (UYSSquadSubsystem::TryOpenSwitchWindow).
+UCLASS()
+class UYSSwitchState : public UYSInputStates
+{
+	GENERATED_BODY()
+
+	UYSSwitchState() : UYSInputStates()
+	{
+		StateName = TEXT("Switch");
+		State = EYSInputStatesType::Switch;
 	}
 };

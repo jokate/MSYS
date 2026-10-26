@@ -74,12 +74,16 @@ bool AYSCharacterBase::IsDead() const
 
 float AYSCharacterBase::GetHpRatio() const
 {
+	// IsDead 와 같은 방향(죽은 쪽)으로 실패한다. 호출자는 위상 전환 HP 조건(<=)과 AI 점수 입력이다.
 	if (IsValid(AbilitySystemComponent) == false)
-		return true;
+		return 0.f;
 
 	const UYSCharacterAttributeSetBase* AttributeSet = AbilitySystemComponent->GetSet<UYSCharacterAttributeSetBase>();
 	if (AttributeSet == nullptr)
-		return true;
+		return 0.f;
+
+	if (AttributeSet->GetMaxHp() <= 0.f)
+		return 0.f;
 
 	return AttributeSet->GetHp() / AttributeSet->GetMaxHp();
 }
