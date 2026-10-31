@@ -17,18 +17,15 @@ class MNYS_API AYSMonster : public AYSCharacterBase
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	AYSMonster(const FObjectInitializer& ObjectInitializer);
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	// 그로기 게이지는 경직 등급 2 적에게만 둔다 (기획 02_COMBAT §5.2).
+	// 그로기 게이지는 경직 등급 2 적에게만 둔다.
 	virtual void PostInitializeComponents() override;
 
 public:
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	
 public : 

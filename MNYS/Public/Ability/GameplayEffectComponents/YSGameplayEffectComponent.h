@@ -7,9 +7,6 @@
 #include "GameplayEffectTypes.h"
 #include "YSGameplayEffectComponent.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class MNYS_API UYSGameplayEffectComponent : public UGameplayEffectComponent
 {

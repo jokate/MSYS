@@ -11,9 +11,6 @@
 
 class UGameplayEffect;
 class UYSAbilitySystemComponent;
-/**
- * 
- */
 UCLASS()
 class MNYS_API UYSAbilityDataAsset : public UDataAsset
 {

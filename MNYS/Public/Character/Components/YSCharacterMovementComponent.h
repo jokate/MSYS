@@ -5,6 +5,7 @@
 #include <General/YSMacros.h>
 
 #include "CoreMinimal.h"
+#include "ActiveGameplayEffectHandle.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "General/YSEnum.h"
 #include "YSCharacterMovementComponent.generated.h"
@@ -22,27 +23,23 @@ class MNYS_API UYSCharacterMovementComponent : public UCharacterMovementComponen
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this component's properties
 	UYSCharacterMovementComponent();
 	static UYSCharacterMovementComponent* Get(AActor* InActor);
 
 protected:
-	// Called when the game starts
 	virtual void BeginPlay() override;
 
 public:
-	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 
 	virtual bool HandlePendingLaunch() override;
 	
 	virtual void OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode) override;
-	void SetGravityScale(float InGravityScale)
-	{
-		GravityScale = InGravityScale;
-	}
-	
+	/** 요청자가 하나라도 남아 있으면 중력 0. 마지막 요청자가 풀면 끄기 전 값으로 돌린다. */
+	void SuspendGravity(const UObject* Requester);
+	void ResumeGravity(const UObject* Requester);
+
 	void SetMovementBlocked(bool bBlocked) 
 	{ 
 		if (bBlocked)
@@ -55,7 +52,7 @@ public:
 			if (MovementBlockSemaphore < 0)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("MovementBlockSemaphore is negative! Check SetMovementBlocked calls."));
-				MovementBlockSemaphore = 0; // 안전장치
+				MovementBlockSemaphore = 0;
 			}
 		}
 	}
@@ -65,10 +62,7 @@ public:
 	YS_ACCESSOR(FVector, LocalSpaceVelocity);
 	YS_GETTER(FVector, LocalSpaceLastInputDirection);
 
-	/**
-	 * 몸 yaw 를 목표로 돌린다. 몸을 돌리는 곳은 모두 여기로 온다.
-	 * 각도 구간 · 출처 규칙은 플레이어 전투 프로필에서 고른다. 프로필이나 출처 행이 없으면 즉시 돈다.
-	 */
+	/** 몸 yaw 를 목표로 돌린다 (모든 회전이 여기로 온다). 구간 · 출처 규칙은 플레이어 전투 프로필에서 고르고, 프로필이나 출처 행이 없으면 즉시 돈다. */
 	void RequestFaceYaw(float TargetYaw, EYSFaceYawSource Source);
 
 	bool IsTurning() const { return bInterpTurning || ActiveTurnMontage.IsValid(); }
@@ -122,6 +116,15 @@ protected :
 	// 마지막 비-Zero 입력 방향 (로컬 스페이스, 정규화). 입력이 없어도 직전 값 유지.
 	FVector LocalSpaceLastInputDirection = FVector::ForwardVector;
 	
+	// 낙하하는 동안 거는 입력 상태. 이동이 만드는 상태라 이 컴포넌트가 걸고 뗀다.
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Input", meta = (DisplayName = "낙하 입력 상태", GetOptions = "MNYS.YSDeveloperSettings.GetInputStateOptions"))
+	FName FallingInputState = TEXT("Falling");
+
 private :
 	int32 MovementBlockSemaphore = 0;
+
+	TArray<TWeakObjectPtr<const UObject>> GravitySuspenders;
+	float SuspendedGravityScale = 1.f;
+
+	FActiveGameplayEffectHandle FallingStateHandle;
 };

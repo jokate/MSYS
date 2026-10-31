@@ -13,6 +13,7 @@
 #include "YSGameplayAbility.generated.h"
 
 struct FYSPlaybackContext;
+class UYSGameplayAbility;
 class UYSAbilityPlaybackBase;
 class UYSPlaybackGraphAsset;
 class UYSAT_Trace;
@@ -20,44 +21,33 @@ struct FYSMontageSelector;
 class UYSAbilityEventAction;
 struct FYSComboTransition;
 
-UENUM(BlueprintType)
-enum class EYSAbilityType : uint8
-{
-	None,
-	MeleeAttack UMETA(DisplayName = "근접 공격"),
-	RangedAttack UMETA(DisplayName = "원거리 공격"),
-	Dash UMETA(Displayname = "속도 적용"),
-	NeedCameraDirect UMETA(DisplayName = "카메라 연출 필요"),
-	NeedReady UMETA(DisplayName = "레디 필요"),
-	UseResource UMETA(DisplayName = "자원 소모"),
-	Hon_Only UMETA(DisplayName = "기사단장 혼 전용"),
-};
-
 struct FYSAbilityHitContext
 {
 	FYSAbilityHitContext() {};
-	FYSAbilityHitContext(AActor* Instigator) : InstigatorActor(Instigator) {}
-	
+	FYSAbilityHitContext(AActor* Instigator, UYSGameplayAbility* InOwningAbility);
+
 	void AddHitActor(AActor* HitActor) { HitActors.Add(HitActor); }
 	void UpdateHitResult(UObject* HitObject, const FHitResult& HitResult)
 	{
 		for (auto It = RecentHitResults.CreateIterator(); It; ++It)
 		{
-			if (!It.Key().IsValid()) { It.RemoveCurrent(); }  // 유령 엔트리 정리
+			if (!It.Key().IsValid()) { It.RemoveCurrent(); }
 		}
-		
+
 		RecentHitResults.FindOrAdd(HitObject).Add(HitResult);
 	}
-	void RemoveTraceEntry(UObject* HitObject)
-	{
-		for (auto It = RecentHitResults.CreateIterator(); It; ++It)
-		{
-			if (!It.Key().IsValid()) { It.RemoveCurrent(); }  // 유령 엔트리 정리
-		}
-		
-		RecentHitResults.Remove(HitObject);
-	}
-	
+
+	/** 기록하고 낸 어빌리티에 '맞혔다'를 보낸다. 어빌리티가 끝난 뒤의 맞힘은 버린다. */
+	void ReportHit(UObject* HitObject, const TArray<FHitResult>& HitResults);
+
+	/** 어빌리티가 끝날 때 부른다. 기록을 지우고, 남은 공격 액터 · 취소로 설정된 대기 스폰에 알린다. */
+	void OnOwnerEnded();
+
+	bool IsOwnerActive() const { return OwningAbility.IsValid(); }
+
+	/** 어빌리티가 끝난 뒤에 나온 공격 액터도 끝날 때의 배율을 쓴다. */
+	float GetEffectScale() const;
+
 	const TArray<FHitResult>* GetHitResultsForObject(UObject* HitObject) const
 	{
 		if (const TArray<FHitResult>* FoundResults = RecentHitResults.Find(HitObject))
@@ -110,9 +100,12 @@ struct FYSAbilityHitContext
 	}
 
 	TMulticastDelegate<void(AActor*)> OnLinkedActorEnded;
+	TMulticastDelegate<void()> OnOwnerEndedEvent;
 
 private :
 	TWeakObjectPtr<AActor> InstigatorActor;
+	TWeakObjectPtr<UYSGameplayAbility> OwningAbility;
+	float EndedEffectScale = 1.f;
 	TSet<TWeakObjectPtr<AActor>> HitActors;
 	TMap<TWeakObjectPtr<UObject>, TArray<FHitResult>> RecentHitResults;
 	TArray<TWeakObjectPtr<AActor>> LinkedActors;
@@ -124,7 +117,6 @@ struct FYSGameplayAbility_RuntimeData
 	GENERATED_BODY()
 
 public:
-	// ── Accessors ─────────────────────────────────────────────────────────
 	YS_GETTER_REF(TArray<FActiveGameplayEffectHandle>, ActiveGameplayEffectHandle)
 	
 	void AddEffectSpecHandle(const FActiveGameplayEffectHandle& Handle)
@@ -174,36 +166,24 @@ public:
 	virtual bool TryTransition(const FGameplayTag& InputGameplayTag, EYSInputPhase InputPhase);
 	
 	YS_ACCESSOR(UYSAT_Trace*, TraceTask)
-	YS_ACCESSOR_REF(TSet<EYSAbilityType>, AbilityTypes);
 	
 	void NotifyPlaybackChainFinished();
 	UYSAbilityPlaybackBase* GetPlaybackNode(int32 Index);
 
-	/**
-	 * 실제로 쓸 플레이백 배열.
-	 *
-	 * 그래프 에셋이 지정돼 있으면 그쪽 산출물의 사본이, 아니면 레거시 배열이 나온다.
-	 * 마이그레이션이 끝난 어빌리티와 안 끝난 어빌리티가 같은 코드로 돌아야 하기 때문이다.
-	 *
-	 * const 가 아닌 이유 — 첫 호출에서 사본을 만든다. 아래 EnsureRuntimePlaybacks 참고.
-	 */
+	/** 그래프 에셋의 사본, 그래프가 없으면 클래스 기본. 첫 호출에서 사본을 만들므로 const 가 아니다 (EnsureRuntimePlaybacks). */
 	const TArray<TObjectPtr<UYSAbilityPlaybackBase>>& GetPlaybackArray();
 
 #if WITH_EDITOR
-	/** 마이그레이션 전용. 그래프 에셋을 무시하고 레거시 배열을 그대로 준다. */
+	/** 그래프로 옮기기 전의 레거시 배열. 이전 도구만 쓴다. */
 	const TArray<TObjectPtr<UYSAbilityPlaybackBase>>& GetLegacyPlaybacks() const { return Playbacks; }
 #endif
 	
 	const FGameplayEventData* GetEventData() const { return &CurrentEventData; }
 	
-	/** 어빌리티가 건 GE 를 어빌리티가 끝날 때 제거한다. 핸들을 쌓아 두지 않고 종료 정리 목록에 넘긴다. */
+	/** 어빌리티가 건 GE 를 어빌리티가 끝날 때 제거한다. */
 	void AddRuntimeEffectSpecHandle(const FActiveGameplayEffectHandle& Handle);
 
-	/**
-	 * 어빌리티가 건 것을 어빌리티가 끝날 때 풀기 위한 등록구. 건 쪽이 푸는 일을 같이 넘긴다.
-	 * EndAbility 가 취소 · 정상 모두에서 등록의 역순으로 한 번씩 실행하고 비운다.
-	 * 람다는 UObject 를 weak 로 잡을 것 — 실행 시점에 대상이 사라졌을 수 있다.
-	 */
+	/** 어빌리티가 끝날 때 (취소 · 정상 모두) 등록의 역순으로 한 번씩 실행하고 비운다. 람다는 UObject 를 weak 로 잡을 것 — 그 사이 사라질 수 있다. */
 	void AddEndCleanup(TFunction<void()> Cleanup) { EndCleanups.Add(MoveTemp(Cleanup)); }
 
 	void ActivePlayback(int32 Index);
@@ -215,7 +195,10 @@ public:
 	
 	const TSharedPtr<FYSAbilityHitContext>& GetHitContext() const { return HitContext; }
 	const TSharedPtr<FYSPlaybackContext>& GetAbilityPlaybackContext() const { return PlaybackContext; }
-	
+
+	/** 이 어빌리티의 피해 · 그로기 피해에 곱하는 배율. 확정 히트 · 트레이스가 피해 함수에 넘긴다. */
+	virtual float GetEffectScale() const { return 1.f; }
+
 	virtual bool CheckCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
 	virtual void ApplyCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const override;
 	virtual void CancelAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateCancelAbility) override;
@@ -231,20 +214,13 @@ protected:
 	
 	virtual void SetupPlayBack(const FGameplayEventData* TriggerEventData);
 
-	/**
-	 * 그래프 에셋도 레거시 배열도 비었을 때 쓸 클래스 기본 플레이백. 모양이 고정된 어빌리티가 재정의한다.
-	 * 순서는 그래프 > 레거시 > 이 기본. 만든 노드의 Outer 는 this 로 둔다.
-	 */
-	virtual void BuildDefaultPlaybacks(TArray<TObjectPtr<UYSAbilityPlaybackBase>>& OutPlaybacks) {}
+	/** 그래프 첫 노드가 이 컨텍스트로 시작할 수 있는가. 그래프가 없으면 거짓. */
+	bool CanStartPlayback(const TSharedPtr<FYSPlaybackContext>& Context) const;
 
 	const FYSSkillInfo* GetSkillInfo() const;
-	
-public :
-#if UE_EDITOR
-	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
-	virtual EDataValidationResult IsDataValid(class FDataValidationContext& Context) const override;
-#endif
-	
+
+	bool HasCommitOnEnterNode();
+
 private :
 	UFUNCTION()
 	void _ProcessEvent(FGameplayEventData Payload);
@@ -256,28 +232,22 @@ private :
 
 
 public:
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Input Related", meta = (DisplayName = "바뀔 State"))
-	EYSInputStatesType ChangeInputStateType;
+	// 어빌리티가 켜져 있는 동안의 입력 상태 (입력 상태 정의 표 행). 비우면 바꾸지 않는다. 입력 상태 머신이 있는 주인만.
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Input Related", meta = (DisplayName = "바뀔 State", GetOptions = "MNYS.YSDeveloperSettings.GetInputStateOptions"))
+	FName InputState;
 
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Movement", meta = (DisplayName = "어빌리티 중 이동 차단"))
 	bool bBlockMovementDuringAbility = false;
 
-	// 어빌리티 에디터 세팅
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Event Actions", meta = (Categories = "Event"))
 	TMap<FGameplayTag, FYSEventPayload> EventActionMap;
 	
 protected :
-	UPROPERTY(EditDefaultsOnly, Category = "YS | Ability Type")
-	TSet<EYSAbilityType> AbilityTypes;
-	
-	/**
-	 * 플레이백 그래프 에셋. 지정하면 아래 레거시 배열 대신 이쪽을 쓴다.
-	 * 마이그레이션이 끝나면 레거시 배열은 비워도 된다.
-	 */
+	/** 재생할 노드의 출처. */
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Ability Playback", meta = (DisplayName = "플레이백 그래프"))
 	TObjectPtr<UYSPlaybackGraphAsset> PlaybackGraph;
 
-	/** 레거시 인라인 배열. 그래프 에셋이 없을 때만 쓰인다. */
+	/** 레거시 인라인 배열. 런타임은 읽지 않는다 — 그래프로 옮길 때만 쓴다. */
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Ability Playback", Instanced, meta = (DisplayName = "플레이백 (레거시 인라인)"))
 	TArray<TObjectPtr<UYSAbilityPlaybackBase>> Playbacks;
 
@@ -289,7 +259,6 @@ private:
 	UPROPERTY(Transient)
 	int32 CachedPlaybackSerial = INDEX_NONE;
 
-	/** 사본이 없거나 낡았으면 다시 만든다. 어빌리티 인스턴스당 한 번이면 끝난다. */
 	void EnsureRuntimePlaybacks();
 
 protected:
@@ -321,10 +290,9 @@ protected :
 	TSharedPtr<FYSAbilityHitContext> HitContext;
 	TSharedPtr<FYSPlaybackContext> PlaybackContext;
 	
-	// 인풋에 대한 어셉팅 여부
 	bool bIsInputAcceptable = false;
 
-	// NeedReady 어빌리티의 커밋 지연용. 확정 노드 진입 시 한 번만 커밋한다.
+	// 커밋은 활성마다 한 번. '진입 시 커밋' 노드가 있으면 그 노드에서, 없으면 활성 때.
 	bool bHasCommitted = false;
 
 	// 이번 활성에 일이 있는 노드가 하나라도 켜졌는가. 활성 직후 체인이 일 없이 끝났는지 가른다.
@@ -334,9 +302,6 @@ protected :
 	UYSAT_Trace* TraceTask = nullptr;
 	
 private :
-	float CachedGravityScale = 1.f;
-	bool bAirFrozen = false;
-
 	// CancelAbility 가 도는 동안. 그 사이 다른 경로로 먼저 끝나도 취소로 정리한다.
 	bool bCancelling = false;
 };

@@ -4,11 +4,9 @@
 
 #include "AbilitySystemComponent.h"
 #include "Ability/YSGameplayAbility.h"
-#include "Ability/Ability/YSGameplayAbility_ContextSwitch.h"
 #include "Ability/MotionWarp/YSMotionWarpParam.h"
 #include "Character/YSCharacterBase.h"
 #include "Character/Components/YSCharacterMovementComponent.h"
-#include "Combat/YSContextSwitchVariant.h"
 #include "Data/YSAbilityDataAsset.h"
 #include "General/YSGameplayTag.h"
 #include "MotionWarp/UYSMotionWarpingComponent.h"
@@ -31,7 +29,6 @@ void FYSMontageSelector::SetMotionWarp(const UYSGameplayAbility* Ability, bool b
 	bInSet ? Param->ResolveMotionWarp(Ability) : Param->ReleaseMotionWarp(Ability);
 }
 
-// 다 좋은데 입력 방
 UAnimMontage* FYSMontageSelector_ByDirection::SelectMontage(const UYSGameplayAbility* Ability) const
 {
 	auto GetMontage = [this](EYSMoveDirection Dir) -> UAnimMontage*
@@ -39,7 +36,6 @@ UAnimMontage* FYSMontageSelector_ByDirection::SelectMontage(const UYSGameplayAbi
 		if (const auto* Entry = DirectionMontages.Find(Dir); Entry && !Entry->IsNull())
 			return Entry->LoadSynchronous();
 
-		// 해당 방향 미등록 시 Forward 폴백
 		if (const auto* Fallback = DirectionMontages.Find(EYSMoveDirection::Forward); Fallback && !Fallback->IsNull())
 			return Fallback->LoadSynchronous();
 
@@ -49,60 +45,21 @@ UAnimMontage* FYSMontageSelector_ByDirection::SelectMontage(const UYSGameplayAbi
 	return GetMontage(GetMontageDirection(Ability));
 }
 
-EYSMoveDirection FYSMontageSelector_ControlInputDirection::GetMontageDirection(const UYSGameplayAbility* Ability) const
-{
-	// 조작감 때문에 입력에 놓여진 값들을 기준으로 가져오도록 합시다
-	AActor* AvatarActor = Ability->GetAvatarActorFromActorInfo();
-	UYSCharacterMovementComponent* Movement = UYSCharacterMovementComponent::Get(AvatarActor);
-	
-	if (!IsValid(Movement))
-		return EYSMoveDirection::Forward;
-
-	// 로컬 스페이스 정규화 벡터 (입력 없으면 ForwardVector 유지)
-	const FVector LocalInput = Movement->GetLocalSpaceLastInputDirection();
-
-	// atan2(Y, X): Y = 로컬 우측, X = 로컬 전방  →  [-180, 180]
-	const float Angle           = FMath::RadiansToDegrees(FMath::Atan2(LocalInput.Y, LocalInput.X));
-	const float NormalizedAngle = FMath::Fmod(Angle + 22.5f + 360.f, 360.f);
-	const int32 SectorIndex     = FMath::FloorToInt(NormalizedAngle / 45.f) % 8;
-	
-	return static_cast<EYSMoveDirection>(SectorIndex);
-}
-
-EYSMoveDirection FYSMontageSelector_Target::GetMontageDirection(const UYSGameplayAbility* Ability) const
-{
-	if ( IsValid(Ability) == false )
-		return EYSMoveDirection::Forward;
-	
-	const FGameplayEventData* EventData = Ability->GetEventData();
-	
-	if (EventData == nullptr )
-		return EYSMoveDirection::Forward;
-	
-	const AActor* TargetActor = EventData->Instigator;
-	AActor* OwningActor = Ability->GetOwningActorFromActorInfo();
-	if ( IsValid(TargetActor) == false )
-		return EYSMoveDirection::Forward;
-	
-	const FVector FromAttacker = ((OwningActor->GetActorLocation() - TargetActor->GetActorLocation()).GetSafeNormal2D());
-	const float Angle           = FMath::RadiansToDegrees(FMath::Atan2(FromAttacker.Y, FromAttacker.X));
-	const float NormalizedAngle = FMath::Fmod(Angle + 22.5f + 360.f, 360.f);
-	const int32 SectorIndex     = FMath::FloorToInt(NormalizedAngle / 45.f) % 8;
-	
-	return static_cast<EYSMoveDirection>(SectorIndex);
-}
-
 namespace
 {
-	// 로컬 스페이스 XY 방향을 4방향 태그로 접는다.
-	// 90° 섹터를 45° 오프셋해서, 각 방향이 섹터 중심에 오도록 정렬한다.
-	//   Forward [-45,45)  Right [45,135)  Backward [135,225)  Left [225,315)
+	// 0 번 칸이 정면 중심에 오도록 반 칸 돌려 시계방향으로 나눈다. 8칸이면 EYSMoveDirection 값과 같다.
+	int32 ToSector(const FVector& LocalDirection, int32 SectorCount)
+	{
+		const float SectorSize      = 360.f / SectorCount;
+		const float Angle           = FMath::RadiansToDegrees(FMath::Atan2(LocalDirection.Y, LocalDirection.X));
+		const float NormalizedAngle = FMath::Fmod(Angle + SectorSize * 0.5f + 360.f, 360.f);
+
+		return FMath::FloorToInt(NormalizedAngle / SectorSize) % SectorCount;
+	}
+
 	FGameplayTag FoldToDirectionTag(const FVector& LocalDirection)
 	{
-		const float Angle           = FMath::RadiansToDegrees(FMath::Atan2(LocalDirection.Y, LocalDirection.X));
-		const float NormalizedAngle = FMath::Fmod(Angle + 45.f + 360.f, 360.f);
-
-		switch (FMath::FloorToInt(NormalizedAngle / 90.f) % 4)
+		switch (ToSector(LocalDirection, 4))
 		{
 		case 1:  return YSTags::Direction_Right;
 		case 2:  return YSTags::Direction_Backward;
@@ -111,10 +68,12 @@ namespace
 		}
 	}
 
-	// 방향 산출에 실패하면 미설정을 반환한다. 이때는 방향 태그 없이 조회하고,
-	// SelectBest 가 방향 조건이 없는 항목으로 알아서 폴백한다.
+	// 실패하면 미설정을 반환한다 — 방향 태그 없이 조회하고 SelectBest 가 방향 조건 없는 항목으로 폴백한다.
 	TOptional<FVector> ResolveLocalDirection(const UYSGameplayAbility* Ability, EYSDirectionSource Source)
 	{
+		if ( IsValid(Ability) == false )
+			return {};
+
 		const AActor* OwningActor = Ability->GetOwningActorFromActorInfo();
 
 		if ( IsValid(OwningActor) == false )
@@ -136,8 +95,7 @@ namespace
 		if ( IsValid(Attacker) == false )
 			return {};
 
-		// 공격자가 "내 기준" 어느 쪽에 있는가. 월드 벡터를 그대로 쓰면 내 정면이 반영되지 않으므로
-		// 반드시 소유자 회전으로 언로테이트해서 로컬 스페이스로 내린다.
+		// 월드 벡터는 내 정면이 반영되지 않으므로 소유자 회전으로 언로테이트해 로컬로 내린다.
 		const FVector ToAttacker = (Attacker->GetActorLocation() - OwningActor->GetActorLocation()).GetSafeNormal2D();
 
 		if ( ToAttacker.IsNearlyZero() )
@@ -145,6 +103,22 @@ namespace
 
 		return OwningActor->GetActorRotation().UnrotateVector(ToAttacker);
 	}
+}
+
+EYSMoveDirection FYSMontageSelector_ControlInputDirection::GetMontageDirection(const UYSGameplayAbility* Ability) const
+{
+	// 조작감 때문에 입력에 놓인 값을 기준으로 가져온다.
+	const TOptional<FVector> LocalInput = ResolveLocalDirection(Ability, EYSDirectionSource::ControlInput);
+
+	return LocalInput ? static_cast<EYSMoveDirection>(ToSector(*LocalInput, 8)) : EYSMoveDirection::Forward;
+}
+
+EYSMoveDirection FYSMontageSelector_Target::GetMontageDirection(const UYSGameplayAbility* Ability) const
+{
+	// 공격자에서 나로 향하는 쪽(밀려나는 쪽)을 내 정면 기준으로 고른다.
+	const TOptional<FVector> ToAttacker = ResolveLocalDirection(Ability, EYSDirectionSource::Instigator);
+
+	return ToAttacker ? static_cast<EYSMoveDirection>(ToSector(-*ToAttacker, 8)) : EYSMoveDirection::Forward;
 }
 
 FGameplayTagContainer FYSMontageSelector_ByTag::BuildQueryTags(const UYSGameplayAbility* Ability) const
@@ -191,24 +165,10 @@ UAnimMontage* FYSMontageSelector_ByTag::SelectMontage(const UYSGameplayAbility* 
 	if ( IsValid(TaggedMontage) == false )
 		return nullptr;
 
-	// 조회 태그를 가장 구체적으로 만족하는 몽타주를 반환한다.
 	const TSoftObjectPtr<UAnimMontage> MontagePtr = TaggedMontage->SelectBest(BuildQueryTags(Ability));
 
 	if ( MontagePtr.IsNull() )
 		return nullptr;
 
 	return MontagePtr.LoadSynchronous();
-}
-
-UAnimMontage* FYSMontageSelector_ContextSwitch::SelectMontage(const UYSGameplayAbility* Ability) const
-{
-	const UYSGameplayAbility_ContextSwitch* ContextSwitch = Cast<UYSGameplayAbility_ContextSwitch>(Ability);
-	const FYSContextSwitchVariant* Variant = IsValid(ContextSwitch) ? ContextSwitch->GetSelectedVariant() : nullptr;
-
-	if ( Variant == nullptr || Variant->Montage.IsNull() )
-	{
-		return nullptr;
-	}
-
-	return Variant->Montage.LoadSynchronous();
 }

@@ -9,9 +9,6 @@
 
 class ALevelSequenceActor;
 class ULevelSequencePlayer;
-/**
- * 
- */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FYSSequencePlayFinishedDelegate);
 
 UCLASS()

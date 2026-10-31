@@ -8,12 +8,12 @@
 #include "TimerManager.h"
 #include "YSDeveloperSettings.h"
 #include "Ability/GameplayEffect/YSGE_GroggyBreak.h"
-#include "AI/Component/YSPhaseChangeComponent.h"
 #include "Animation/AnimMontage.h"
 #include "Character/AttributeSet/YSGroggyAttributeSet.h"
 #include "Combat/YSGroggyRules.h"
 #include "GameFramework/Character.h"
 #include "General/YSGameplayTag.h"
+#include "Subsystem/YSCombatEventSubsystem.h"
 
 UYSGroggyComponent::UYSGroggyComponent()
 {
@@ -33,9 +33,9 @@ void UYSGroggyComponent::BeginPlay()
 			.AddUObject(this, &ThisClass::OnGroggyBroken);
 	}
 
-	if ( UYSPhaseChangeComponent* PhaseChange = Owner->FindComponentByClass<UYSPhaseChangeComponent>() )
+	if ( UYSCombatEventSubsystem* CombatEvents = UYSCombatEventSubsystem::Get(this) )
 	{
-		PhaseChangedHandle = PhaseChange->OnPhaseChanged.AddUObject(this, &ThisClass::OnPhaseChanged);
+		PhaseChangedHandle = CombatEvents->OnPhaseChanged.AddUObject(this, &ThisClass::OnPhaseChanged);
 	}
 }
 
@@ -51,9 +51,9 @@ void UYSGroggyComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		}
 	}
 
-	if ( UYSPhaseChangeComponent* PhaseChange = GetOwner()->FindComponentByClass<UYSPhaseChangeComponent>() )
+	if ( UYSCombatEventSubsystem* CombatEvents = UYSCombatEventSubsystem::Get(this) )
 	{
-		PhaseChange->OnPhaseChanged.Remove(PhaseChangedHandle);
+		CombatEvents->OnPhaseChanged.Remove(PhaseChangedHandle);
 	}
 
 	Super::EndPlay(EndPlayReason);
@@ -149,8 +149,8 @@ void UYSGroggyComponent::ApplyBreakEffect(const FYSGroggyRules& Rules)
 	const float TotalDuration = Rules.EntryHoldTime + Rules.BreakDuration;
 
 	FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
-	Spec->SetSetByCallerMagnitude(UYSGE_GroggyBreak::DurationName, TotalDuration);
-	Spec->SetSetByCallerMagnitude(UYSGE_GroggyBreak::DamageTakenMultiplierName, Rules.DamageTakenMultiplier);
+	Spec->SetSetByCallerMagnitude(YSTags::Data_Groggy_BreakDuration, TotalDuration);
+	Spec->SetSetByCallerMagnitude(YSTags::Data_Groggy_DamageTakenMultiplier, Rules.DamageTakenMultiplier);
 	// SetByCaller 로 정한 시간은 스펙 생성 때 계산되지 않아 다시 잡는다.
 	Spec->SetDuration(TotalDuration, true);
 
@@ -300,8 +300,13 @@ void UYSGroggyComponent::ClearPhases()
 	}
 }
 
-void UYSGroggyComponent::OnPhaseChanged(int32 NewPhase)
+void UYSGroggyComponent::OnPhaseChanged(AActor* PhaseOwner, int32 NewPhase)
 {
+	if ( PhaseOwner != GetOwner() )
+	{
+		return;
+	}
+
 	BreakCount = 0;
 	ApplyMaxGroggy();
 }

@@ -5,7 +5,7 @@
 
 #include "NavigationSystem.h"
 #include "Character/YSCharacterBase.h"
-#include "Character/Components/YSCameraManageComponent.h"
+#include "Character/Components/YSCombatTargetComponent.h"
 #include "Character/Components/YSTargetingComponent.h"
 
 FVector FYSLocationPolicy_Socket::GetLocation(const FYSTransformPolicyContext& Context) const
@@ -77,9 +77,9 @@ FRotator FYSRotationPolicy_Control::GetRotation(const FYSTransformPolicyContext&
 
 FRotator FYSRotationPolicy_LockOnTarget::GetRotation(const FYSTransformPolicyContext& Context) const
 {
-	if (UYSCameraManageComponent* LockOn = UYSCameraManageComponent::Get(Context.OwnerActor))
+	if (const UYSCombatTargetComponent* CombatTarget = UYSCombatTargetComponent::Get(Context.OwnerActor))
 	{
-		if (AActor* Target = LockOn->GetCurrentTarget())
+		if (AActor* Target = CombatTarget->GetLockedTarget())
 		{
 			const FVector Dir = (Target->GetActorLocation() - Context.OwnerActor->GetActorLocation()).GetSafeNormal();
 			return Dir.Rotation();

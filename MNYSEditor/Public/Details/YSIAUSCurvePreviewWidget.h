@@ -5,9 +5,6 @@
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
 
-/**
- * 
- */
 class SResponseCurvePreviewWidget : public SLeafWidget
 {
 public:

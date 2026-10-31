@@ -6,21 +6,16 @@
 #include "UObject/Interface.h"
 #include "YSDamageProxy.generated.h"
 
-// This class does not need to be modified.
 UINTERFACE()
 class UYSDamageProxy : public UInterface
 {
 	GENERATED_BODY()
 };
 
-/**
- * 
- */
 class MNYS_API IYSDamageProxy
 {
 	GENERATED_BODY()
 
-	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public :
 	virtual AActor* GetDamageInstigator() const = 0;
 };

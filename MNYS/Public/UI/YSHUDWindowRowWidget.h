@@ -22,7 +22,7 @@ struct FYSHUDWindowEntry
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | HUD", meta = (DisplayName = "창 GE"))
 	TSubclassOf<UGameplayEffect> Effect;
 
-	// 여러 창이 함께 열리면 높은 쪽 하나만 보인다 (기획 §4).
+	// 여러 창이 함께 열리면 높은 쪽 하나만 보인다.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | HUD", meta = (DisplayName = "우선순위"))
 	int32 Priority = 0;
 
@@ -33,11 +33,7 @@ struct FYSHUDWindowEntry
 	FLinearColor Color = FLinearColor::White;
 };
 
-/**
- * ③ 스위치 창 · ④ 남용 쿨 (기획 11_UIUX_V4_DRAFT §3.3). 하단 아이콘 줄 하나에 시간창을 모은다.
- * 열림 · 닫힘은 UYSCombatHUDComponent 가 활성 폰 ASC 의 GE 추가 · 제거로 알려 준다.
- * 아이콘 교체 같은 모양은 OnWindowShown / OnWindowHidden 에서 WBP 가 한다.
- */
+/** 시간창(스위치 창 · 남용 쿨)을 하단 아이콘 줄 하나에 모은다. 열림 · 닫힘은 UYSCombatHUDComponent 가 활성 폰 ASC 의 GE 추가 · 제거로 알려 주고, 모양은 WBP 가 OnWindowShown / OnWindowHidden 에서 정한다. */
 UCLASS(Abstract)
 class MNYS_API UYSHUDWindowRowWidget : public UUserWidget
 {
@@ -79,7 +75,6 @@ private :
 	UPROPERTY(EditAnywhere, Category = "YS | HUD", meta = (DisplayName = "시간창 표"))
 	TArray<FYSHUDWindowEntry> Entries;
 
-	// 창이 열린 동안만 보이는 묶음
 	UPROPERTY(meta = (BindWidgetOptional))
 	TObjectPtr<UWidget> WindowPanel;
 

@@ -16,10 +16,8 @@
 #include "Components/SphereComponent.h"
 #endif
 
-// Sets default values
 AYSDamagableActor::AYSDamagableActor()
 {
-	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	
 #if WITH_EDITORONLY_DATA
@@ -30,7 +28,7 @@ AYSDamagableActor::AYSDamagableActor()
 	for (UPrimitiveComponent* Comp : { (UPrimitiveComponent*)DebugBox, (UPrimitiveComponent*)DebugSphere, (UPrimitiveComponent*)DebugCapsule })
 	{
 		Comp->SetupAttachment(GetRootComponent());
-		Comp->SetHiddenInGame(true);           // 런타임엔 완전히 숨김
+		Comp->SetHiddenInGame(true);
 		Comp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 #endif
@@ -55,65 +53,35 @@ void AYSDamagableActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
-void AYSDamagableActor::_OnHitCountDepleted()
+void AYSDamagableActor::_OnTraceEnded()
 {
-	if (bNeedToRemainAfterHitCountDepleted)
+	if ( TraceConfig.bTraceOnce == false && bNeedToRemainAfterHitCountDepleted )
 	{
 		return;
 	}
 	
-	Destroy();
-}
-
-void AYSDamagableActor::_OnTraceHit(const TArray<FHitResult>& HitResults, const FName& DamageRow)
-{
-	if ( HitContext.IsValid() )
-	{
-		for ( const FHitResult& HitResult : HitResults)
-		{
-			HitContext->AddHitActor(HitResult.GetActor());
-			HitContext->UpdateHitResult(TraceObject, HitResult);
-		}
-	}
+	ReturnToPoolAfter(0.f);
 }
 
 void AYSDamagableActor::OnActivate_Implementation()
 {
 	Super::OnActivate_Implementation();
-	TraceObject = UYSTraceObject::Create(this, this, InstigatorActor.Get(), TraceConfig);
-	TraceObject->OnHitCountDepleted.AddDynamic(this, &AYSDamagableActor::_OnHitCountDepleted);
-	TraceObject->OnTraceHit.AddDynamic(this, &AYSDamagableActor::_OnTraceHit);
-	
-	if ( IsValid(TraceObject) )
-	{
-		if (TraceConfig.bTraceOnce)
-		{
-			TraceObject->ExecuteOnce();
-			Destroy();
-		}	
-	}
+	TraceObject = UYSTraceObject::Create(this, this, InstigatorActor.Get(), TraceConfig, EffectScale, HitContext);
+	TraceObject->OnTraceEnded.AddDynamic(this, &AYSDamagableActor::_OnTraceEnded);
+	TraceObject->Start();
 }
 
 void AYSDamagableActor::SetPoolActive(bool bActive)
 {
-	if ( !bActive )
+	if ( !bActive && IsValid(TraceObject) )
 	{
-		if (IsValid(TraceObject))
-		{
-			if ( HitContext.IsValid() )
-			{
-				HitContext->RemoveTraceEntry(TraceObject);
-			}
-			TraceObject->OnHitCountDepleted.RemoveAll(this);
-			TraceObject->OnTraceHit.RemoveAll(this);
-			TraceObject = nullptr;
-		}
+		TraceObject->Stop();
+		TraceObject = nullptr;
 	}
 	
 	Super::SetPoolActive(bActive);
 }
 
-// Called every frame
 void AYSDamagableActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -129,20 +97,9 @@ void AYSDamagableActor::_Trace(float DeltaTime)
 	}
 }
 
-void AYSDamagableActor::ProcessTelegraph()
+AYSTelegraphActor* AYSDamagableActor::SpawnTelegraph(UWorld* World, const FTransform& Transform, float Duration) const
 {
-	TelegraphActor = AYSTelegraphActor::CreateTelegraph(
-		this,
-		TelegraphClass,
-		GetActorTransform(),
-		TraceConfig.Shape,
-		TraceConfig.Extent,
-		ActivationType == EYSAttackActivationType::TimeBased ? ActivateTime : 0.f);
-	
-	if ( IsValid(TelegraphActor) )
-	{
-		TelegraphActor->SetOwner(this);
-	}
+	return AYSTelegraphActor::CreateTelegraph(World, TelegraphClass, Transform, TraceConfig.Shape, TraceConfig.Extent, Duration);
 }
 
 #if UE_EDITOR
@@ -154,12 +111,10 @@ void AYSDamagableActor::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
 
 void AYSDamagableActor::_RefreshDebugVisualization()
 {
-	// Shape에 따라 해당 컴포넌트만 보이게
 	DebugBox->SetVisibility(TraceConfig.Shape == EYSTraceShape::Box);
 	DebugSphere->SetVisibility(TraceConfig.Shape == EYSTraceShape::Sphere);
 	DebugCapsule->SetVisibility(TraceConfig.Shape == EYSTraceShape::Capsule);
 
-	// Extent 동기화
 	DebugBox->SetBoxExtent(TraceConfig.Extent);
 	DebugSphere->SetSphereRadius(TraceConfig.Extent.X);
 	DebugCapsule->SetCapsuleSize(TraceConfig.Extent.X, TraceConfig.Extent.Y);

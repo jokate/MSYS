@@ -52,7 +52,6 @@ void UYSAT_RunEQSQuery::Activate()
 		return;
 	}
 	
-	// 쿼리 즉시 실행 후 처리.
 	const FVector& Location = QueryResult->GetItemAsLocation(0);
 	OnSucceeded.Execute(YSAbility, Location);
 	EndTask();

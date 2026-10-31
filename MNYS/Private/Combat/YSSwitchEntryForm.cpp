@@ -108,7 +108,7 @@ void FYSSwitchEntryForm::ApplyToTargets(AActor* Instigator, const TArray<AActor*
 		Context.AddInstigator(Instigator, Instigator);
 
 		FGameplayEffectSpec Spec(GetDefault<UYSGE_SwitchEntryGroggy>(), Context);
-		Spec.SetSetByCallerMagnitude(UYSGE_SwitchEntryGroggy::GroggyDamageName, GroggyDamage * Scale);
+		Spec.SetSetByCallerMagnitude(YSTags::Data_Groggy_SwitchEntryDamage, GroggyDamage * Scale);
 
 		SourceASC->ApplyGameplayEffectSpecToTarget(Spec, TargetASC);
 	}

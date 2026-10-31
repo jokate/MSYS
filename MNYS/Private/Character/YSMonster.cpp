@@ -9,21 +9,19 @@
 #include "Combat/YSGroggyComponent.h"
 #include "General/YSDefine.h"
 
-// Sets default values
 AYSMonster::AYSMonster(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
-	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	
 	PhaseChangeComponent = CreateDefaultSubobject<UYSPhaseChangeComponent>(TEXT("PhaseChangeComponent"));
 }
 
-// Called when the game starts or when spawned
 void AYSMonster::BeginPlay()
 {
 	Super::BeginPlay();
 	SetGenericTeamId(YS_MONSTER_START);
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	AbilitySystemComponent->ApplyLevelHpScale();
 	AbilitySystemComponent->GiveInitAbility();
 }
 
@@ -41,7 +39,6 @@ void AYSMonster::PostInitializeComponents()
 	}
 }
 
-// Called every frame
 void AYSMonster::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);

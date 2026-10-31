@@ -11,11 +11,9 @@
 #include "MotionWarp/UYSMotionWarpingComponent.h"
 
 
-// Sets default values
 AYSCharacterBase::AYSCharacterBase(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UYSCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
-	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	//SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComponent"));
@@ -29,7 +27,6 @@ AYSCharacterBase::AYSCharacterBase(const FObjectInitializer& ObjectInitializer)
 	
 }
 
-// Called when the game starts or when spawned
 void AYSCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -88,7 +85,6 @@ float AYSCharacterBase::GetHpRatio() const
 	return AttributeSet->GetHp() / AttributeSet->GetMaxHp();
 }
 
-// Called every frame
 void AYSCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -99,7 +95,6 @@ UYSCharacterMovementComponent* AYSCharacterBase::GetYSCharacterMovement()
 	return Cast<UYSCharacterMovementComponent>(GetCharacterMovement());
 }
 
-// Called to bind functionality to input
 void AYSCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);

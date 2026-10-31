@@ -18,6 +18,7 @@
 #include "General/YSGameplayTag.h"
 #include "General/YSInputGameplayTags.h"
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
+#include "Subsystem/YSCombatEventSubsystem.h"
 #include "Subsystem/YSSquadSubsystem.h"
 
 
@@ -89,8 +90,7 @@ void UYSCombatTargetComponent::BindPawn(APawn* Pawn)
 		return;
 	}
 
-	// 타겟 전환은 어빌리티가 아니다. 상태 해석을 거치지 않는 원본 입력 통로로 받고,
-	// 활성 콤보가 Q/E 를 받아 체인을 끊지 않게 소비 등록한다.
+	// 타겟 전환은 어빌리티가 아니다. 상태 해석을 거치지 않는 원본 입력 통로로 받고, 활성 콤보가 Q/E 를 받아 체인을 끊지 않게 소비 등록한다.
 	if ( UYSInputStateMachineComponent* InputStateMachine = UYSInputStateMachineComponent::Get(Pawn) )
 	{
 		InputStateMachine->OnRawInputAccepted.AddUniqueDynamic(this, &UYSCombatTargetComponent::HandleRawInput);
@@ -347,7 +347,7 @@ AActor* UYSCombatTargetComponent::SelectBest(const TArray<AActor*>& Candidates) 
 		const float Score = ScoreCandidate(Candidate);
 		const float DistSq = FVector::DistSquared(Pawn->GetActorLocation(), Candidate->GetActorLocation());
 
-		// 동점이면 가까운 쪽, 그래도 같으면 직전 타겟(§5).
+		// 동점이면 가까운 쪽, 그래도 같으면 직전 타겟.
 		const bool bBetter = Score > BestScore + KINDA_SMALL_NUMBER
 			|| ( FMath::IsNearlyEqual(Score, BestScore) && ( DistSq < BestDistSq || ( FMath::IsNearlyEqual(DistSq, BestDistSq) && Candidate == CurrentTarget.Get() ) ) );
 
@@ -364,22 +364,73 @@ AActor* UYSCombatTargetComponent::SelectBest(const TArray<AActor*>& Candidates) 
 
 void UYSCombatTargetComponent::SetTarget(AActor* NewTarget, EYSTargetChangeReason Reason)
 {
+	const bool bLock = IsValid(NewTarget) && ( Reason != EYSTargetChangeReason::Auto || bLockedOn );
+	ApplyTarget(NewTarget, bLock, Reason);
+}
+
+void UYSCombatTargetComponent::ApplyTarget(AActor* NewTarget, bool bNewLockedOn, EYSTargetChangeReason Reason)
+{
 	AActor* OldTarget = CurrentTarget.Get();
+	const bool bWasLockedOn = bLockedOn;
 	LostSinceTime = -1.f;
 
-	if ( OldTarget == NewTarget )
+	// 파괴로 약참조만 끊긴 타겟도 바뀐 것이다.
+	const bool bTargetChanged = OldTarget != NewTarget || ( bHasTarget && CurrentTarget.IsValid() == false );
+
+	CurrentTarget = NewTarget;
+	bHasTarget = IsValid(NewTarget);
+	bLockedOn = bNewLockedOn && bHasTarget;
+
+	if ( bTargetChanged )
+	{
+		UE_LOG(LogYSMeasure, Verbose, TEXT("[CombatTarget] t=%.3f Old=%s New=%s Reason=%d Lock=%d"),
+			GetWorld()->GetTimeSeconds(), *GetNameSafe(OldTarget), *GetNameSafe(NewTarget), static_cast<int32>(Reason), bLockedOn);
+
+		bHasLastBand = false;
+		OnTargetChanged.Broadcast(OldTarget, NewTarget, Reason);
+	}
+
+	if ( bWasLockedOn != bLockedOn || ( bLockedOn && bTargetChanged ) )
+	{
+		OnLockOnChanged.Broadcast(GetLockedTarget());
+	}
+}
+
+void UYSCombatTargetComponent::ForceLockOn(AActor* Target)
+{
+	if ( IsValid(Target) == false )
 	{
 		return;
 	}
 
-	UE_LOG(LogYSMeasure, Verbose, TEXT("[CombatTarget] t=%.3f Old=%s New=%s Reason=%d"),
-		GetWorld()->GetTimeSeconds(), *GetNameSafe(OldTarget), *GetNameSafe(NewTarget), static_cast<int32>(Reason));
+	if ( ForcedLockOnRestore.IsSet() == false )
+	{
+		ForcedLockOnRestore = FYSForcedLockOnRestore{ CurrentTarget, bLockedOn };
+	}
 
-	CurrentTarget = NewTarget;
-	bHasTarget = IsValid(NewTarget);
-	bHasLastBand = false;
+	SetTarget(Target, EYSTargetChangeReason::Forced);
+}
 
-	OnTargetChanged.Broadcast(OldTarget, NewTarget, Reason);
+void UYSCombatTargetComponent::ReleaseForcedLockOn()
+{
+	if ( ForcedLockOnRestore.IsSet() == false )
+	{
+		return;
+	}
+
+	const FYSForcedLockOnRestore Restore = ForcedLockOnRestore.GetValue();
+	ForcedLockOnRestore.Reset();
+
+	AActor* Previous = Restore.Target.Get();
+
+	if ( Restore.Target.IsExplicitlyNull() == false && ( IsValid(Previous) == false || IsExcluded(Previous) ) )
+	{
+		TArray<AActor*> Candidates;
+		GatherCandidates(Candidates);
+		Previous = SelectBest(Candidates);
+	}
+
+	ApplyTarget(Previous, Restore.bLockedOn, EYSTargetChangeReason::Forced);
 }
 
 AActor* UYSCombatTargetComponent::RefreshTarget()
@@ -398,7 +449,7 @@ AActor* UYSCombatTargetComponent::RefreshTarget()
 
 bool UYSCombatTargetComponent::CycleTarget(bool bNext)
 {
-	// 저스트 파생 대상은 이 규칙이 덮어쓰지 않는다(§1 예외).
+	// 저스트 파생 대상은 이 규칙이 덮어쓰지 않는다.
 	if ( IsJustAvoidWindowActive() )
 	{
 		return false;
@@ -458,13 +509,9 @@ bool UYSCombatTargetComponent::CycleTarget(bool bNext)
 
 	SetTarget(NewTarget, EYSTargetChangeReason::Manual);
 
-	// 타겟 전환도 스위치 창을 열 수 있다. 열지 말지 · 남용 제어는 스쿼드가 설정을 보고 정한다.
-	if ( const UGameInstance* GameInstance = GetWorld()->GetGameInstance() )
+	if ( UYSCombatEventSubsystem* CombatEvents = UYSCombatEventSubsystem::Get(this) )
 	{
-		if ( UYSSquadSubsystem* Squad = GameInstance->GetSubsystem<UYSSquadSubsystem>() )
-		{
-			Squad->TryOpenSwitchWindow(EYSSwitchTrigger::TargetSwitch, NewTarget, 0.f);
-		}
+		CombatEvents->OnManualTargetSwitched.Broadcast(NewTarget);
 	}
 
 	return true;
@@ -509,21 +556,7 @@ void UYSCombatTargetComponent::MaintainTarget()
 		{
 			TArray<AActor*> Candidates;
 			GatherCandidates(Candidates);
-			AActor* Next = SelectBest(Candidates);
-
-			CurrentTarget.Reset();
-			bHasTarget = false;
-			bHasLastBand = false;
-			LostSinceTime = -1.f;
-
-			if ( IsValid(Next) )
-			{
-				SetTarget(Next, EYSTargetChangeReason::Auto);
-			}
-			else
-			{
-				OnTargetChanged.Broadcast(nullptr, nullptr, EYSTargetChangeReason::Auto);
-			}
+			SetTarget(SelectBest(Candidates), EYSTargetChangeReason::Auto);
 		}
 		return;
 	}

@@ -37,14 +37,7 @@ bool FYSTargetingActorCondition::TestCondition(FStateTreeExecutionContext& Conte
 		return false;
 	}
 	
-	UYSAIPerceptionComponent* AIPerceptionComponent = Controller->MainPerceptionComponent;
-	
-	if ( IsValid(AIPerceptionComponent) == false )
-	{
-		return false;
-	}
-	
-	return IsValid(AIPerceptionComponent->GetBestTargetActor()) ^ InstanceData->bInvert;
+	return IsValid(UYSAIPerceptionComponent::GetBestTarget(Controller)) ^ InstanceData->bInvert;
 }
 
 bool FYSHasTagCondition::TestCondition(FStateTreeExecutionContext& Context) const

@@ -6,9 +6,6 @@
 #include "YSGameplayEffectComponent.h"
 #include "YSLockOnGEComponent.generated.h"
 
-/**
- * 
- */
 UCLASS(DisplayName = "버프 대상 락온 (플레이어 한정)")
 class MNYS_API UYSLockOnGEComponent : public UYSGameplayEffectComponent
 {

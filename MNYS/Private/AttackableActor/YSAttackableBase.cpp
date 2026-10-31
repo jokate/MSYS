@@ -10,10 +10,8 @@
 #include "Subsystem/YSObjectPoolingSubsystem.h"
 
 
-// Sets default values
 AYSAttackableBase::AYSAttackableBase()
 {
-	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	
 	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
@@ -36,6 +34,8 @@ bool AYSAttackableBase::OnSpawnInitialize(AActor* InOwnerActor, AActor* InInstig
 	{
 		InitializeHitContext(InHitContext);    
 	}
+
+	EffectScale = InHitContext.IsValid() ? InHitContext->GetEffectScale() : 1.f;
 	
 	return true;
 }
@@ -53,15 +53,18 @@ void AYSAttackableBase::SetPoolActive(bool bActive)
 		// 컨텍스트를 놓기 전에 알린다. 안 빼두면 다음 사용이 이 액터를 재사용할 때 이전 컨텍스트의 Release 에 같이 걸린다.
 		_NotifyLinkedActorEnded();
 		HitContext = nullptr;
+		EffectScale = 1.f;
 		DeprocessActivationType();
 		GetWorldTimerManager().ClearTimer(DestroyTimerHandle);
+		ClearTelegraph();
 	}
 }
 
 void AYSAttackableBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	// 풀을 거치지 않고 Destroy() 로 끝나는 경로.
+	// 풀이 정리하며 지우거나 풀 밖에서 지워지는 경로.
 	_NotifyLinkedActorEnded();
+	ClearTelegraph();
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -93,14 +96,11 @@ void AYSAttackableBase::_NotifyLinkedActorEnded()
 
 void AYSAttackableBase::OnActivate_Implementation()
 {
-	if ( IsValid(TelegraphActor) ) 
-	{
-		TelegraphActor->Destroy();
-	}
+	ClearTelegraph();
 	
 	if ( DestroyDelay > 0.f )
 	{
-		GetWorldTimerManager().SetTimer(DestroyTimerHandle, this, &AYSAttackableBase::DestroyActor, DestroyDelay, false);	
+		ReturnToPoolAfter(DestroyDelay);
 	}
 }
 
@@ -134,8 +134,12 @@ void AYSAttackableBase::ProcessActivationType()
 			break;
 		}
 	}
-	
-	ProcessTelegraph();
+
+	// 한 번 판정은 활성 중에 이미 반환됐을 수 있다. 반환된 액터에 예고를 띄우면 남는다.
+	if ( IsPoolActive() )
+	{
+		ProcessTelegraph();
+	}
 }
 
 void AYSAttackableBase::DeprocessActivationType()
@@ -168,20 +172,41 @@ void AYSAttackableBase::DeprocessActivationType()
 
 void AYSAttackableBase::OnActivateTagCallback(const FGameplayEventData* GameplayEventData)
 {	
-	//2026.06.15 일단은 태그 이벤트가 들어왔을 때, 공격이 활성화 되는 형태로 만들어 놓긴 했는데,
-	//추후에 태그 이벤트가 들어왔을 때마다 공격이 활성화 되는 형태로 만들 수도 있을 것 같긴 함 ( 그럴 경우에는 ActivateTimeBased 같은 형태로 만들어야 할 듯 )
+	// 지금은 태그 이벤트가 들어오면 공격이 활성화된다. 이벤트마다 활성화하려면 ActivateTimeBased 같은 형태가 필요할 수 있다.
 	OnActivate();
 }
 
-void AYSAttackableBase::DestroyActor()
+void AYSAttackableBase::ProcessTelegraph()
 {
-	UYSObjectPoolingSubsystem* ObjectPoolingSubsystem = UYSObjectPoolingSubsystem::Get(GetWorld());
-	if ( IsValid(ObjectPoolingSubsystem) )
+	TelegraphActor = SpawnTelegraph(GetWorld(), GetActorTransform(), ActivationType == EYSAttackActivationType::TimeBased ? ActivateTime : 0.f);
+
+	if ( IsValid(TelegraphActor) )
 	{
-		ObjectPoolingSubsystem->ReturnPooledActor(this);
+		TelegraphActor->SetOwner(this);
 	}
-	else
+}
+
+void AYSAttackableBase::ClearTelegraph()
+{
+	if ( IsValid(TelegraphActor) )
 	{
-		Destroy();
+		TelegraphActor->Destroy();
 	}
+
+	TelegraphActor = nullptr;
+}
+
+void AYSAttackableBase::ReturnToPoolAfter(float Delay)
+{
+	if ( Delay <= 0.f )
+	{
+		GetWorldTimerManager().ClearTimer(DestroyTimerHandle);
+		UYSObjectPoolingSubsystem::ReturnToPool(this);
+		return;
+	}
+
+	GetWorldTimerManager().SetTimer(DestroyTimerHandle, FTimerDelegate::CreateWeakLambda(this, [this]()
+	{
+		UYSObjectPoolingSubsystem::ReturnToPool(this);
+	}), Delay, false);
 }

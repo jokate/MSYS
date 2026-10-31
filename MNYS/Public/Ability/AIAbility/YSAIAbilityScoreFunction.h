@@ -10,11 +10,7 @@
 
 struct FYSTargetingActorCollections;
 struct FGameplayAbilityActorInfo;
-/**
- * 어빌리티 유틸리티 스코어의 팩터 하나를 담당한다.
- * 파생 클래스는 GetInputValue()로 "측정"만 하고, 점수 매핑은 InputRange 정규화 + ResponseCurve가 담당한다.
- * GetInputValue()가 false를 반환하면 팩터 0 = 거부권(veto)으로 어빌리티 전체가 탈락한다.
- */
+/** 어빌리티 유틸리티 스코어의 팩터 하나. GetInputValue() 로 "측정"만 하고 점수 매핑은 InputRange 정규화 + ResponseCurve 가 맡는다. false 면 팩터 0 = 거부권(veto)으로 어빌리티 전체가 탈락. */
 UCLASS(Abstract, EditInlineNew, DefaultToInstanced, CollapseCategories)
 class MNYS_API UYSAIAbilityScoreFunctionBase : public UObject
 {
@@ -25,7 +21,6 @@ public :
 
 	float ProcessIAUSFunction(float NormalizedInput) const;
 protected :
-	// 측정값을 OutRawInput에 담아 반환. false 반환 = 측정 불가 = 거부권(팩터 0)
 	virtual bool GetInputValue(const FGameplayAbilityActorInfo* ActorInfo, const FYSTargetingActorCollections* TargetingActorCollections, float& OutRawInput) const
 	{
 		OutRawInput = InputRange.Max;
@@ -38,7 +33,6 @@ public :
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | AI", meta = (DisplayName = "입력 범위 (이 구간을 0~1로 정규화)"))
 	FFloatInterval InputRange = FFloatInterval(0.f, 1.f);
 
-	//IAUS 적용.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | AI")
 	EYSIAUSType IAUSType = EYSIAUSType::LinearQuadratic;
 	

@@ -10,11 +10,7 @@
 class UCanvasPanel;
 class UImage;
 
-/**
- * 주변 적 레이더. 원 둘레에 감지된 적마다 점을 세운다 — 위가 카메라 정면이다.
- * 적 목록 · 현재 타겟은 UYSCombatHUDComponent 가 이벤트로 내리고, 틱은 점 위치만 옮긴다.
- * 점은 PipCanvas 아래에 코드가 만든다. 점 모양은 브러시 두 개(일반 · 현재 타겟)로만 정한다.
- */
+/** 주변 적 레이더. 원 둘레에 감지된 적마다 점을 세운다 — 위가 카메라 정면이다. 적 목록 · 현재 타겟은 UYSCombatHUDComponent 가 이벤트로 내리고 틱은 점 위치만 옮긴다. 점은 PipCanvas 아래에 코드가 만들며 모양은 브러시 두 개(일반 · 현재 타겟)로만 정한다. */
 UCLASS(Abstract)
 class MNYS_API UYSNearbyRadarWidget : public UUserWidget
 {

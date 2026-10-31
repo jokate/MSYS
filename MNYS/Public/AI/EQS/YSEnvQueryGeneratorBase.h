@@ -8,9 +8,6 @@
 
 class AYSMonster;
 class AYSAIController;
-/**
- * 
- */
 UCLASS()
 class MNYS_API UYSEnvQueryGeneratorBase : public UEnvQueryGenerator
 {

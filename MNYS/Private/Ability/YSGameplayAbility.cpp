@@ -9,16 +9,55 @@
 #include "Ability/EventAction/YSAbilityEventAction.h"
 #include "Ability/AbilityComponent/YSAbilityPlayback.h"
 #include "Ability/AbilityComponent/YSPlaybackGraphAsset.h"
-#include "Character/YSCharacterPlayer.h"
 #include "Character/Components/YSCharacterMovementComponent.h"
 #include "Character/Components/YSTargetingComponent.h"
 #include "General/YSGameplayTag.h"
+#include "Input/StateMachine/YSInputStateMachineComponent.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
 #include "Subsystem/YSWorldTagSubsystem.h"
 
-#if UE_EDITOR
-#include "Misc/DataValidation.h"
-#endif
+FYSAbilityHitContext::FYSAbilityHitContext(AActor* Instigator, UYSGameplayAbility* InOwningAbility)
+	: InstigatorActor(Instigator), OwningAbility(InOwningAbility)
+{
+}
+
+void FYSAbilityHitContext::ReportHit(UObject* HitObject, const TArray<FHitResult>& HitResults)
+{
+	UYSGameplayAbility* Ability = OwningAbility.Get();
+
+	if ( IsValid(Ability) == false )
+	{
+		return;
+	}
+
+	for ( const FHitResult& HitResult : HitResults )
+	{
+		AddHitActor(HitResult.GetActor());
+		UpdateHitResult(HitObject, HitResult);
+	}
+
+	if ( UYSAbilityPlaybackBase* Playback = Ability->GetCurrentPlayback() )
+	{
+		Playback->OnHit(HitResults);
+	}
+}
+
+void FYSAbilityHitContext::OnOwnerEnded()
+{
+	EndedEffectScale = GetEffectScale();
+	OwningAbility = nullptr;
+	HitActors.Reset();
+	RecentHitResults.Reset();
+
+	OnOwnerEndedEvent.Broadcast();
+	OnOwnerEndedEvent.Clear();
+}
+
+float FYSAbilityHitContext::GetEffectScale() const
+{
+	const UYSGameplayAbility* Ability = OwningAbility.Get();
+	return IsValid(Ability) ? Ability->GetEffectScale() : EndedEffectScale;
+}
 
 UYSGameplayAbility::UYSGameplayAbility()
 {
@@ -36,7 +75,6 @@ void UYSGameplayAbility::OnGameplayTagChanged(const FGameplayTag& Tag, bool bInI
 		if (IsValid(PlaybackBase) == false)
 			return;
 	
-		// 입력에 대한 심사가 끝났다면 인풋에 대한 컨텍스트 처리를 담당해야 한다.
 		if (!bInIsActive)
 		{
 			PlaybackBase->HandleInputWindowClosed();
@@ -61,9 +99,7 @@ void UYSGameplayAbility::ActivePlayback(int32 Index)
 
 	UYSAbilityPlaybackBase* Playback = PlaybackArray.IsValidIndex(Index) ? PlaybackArray[Index].Get() : nullptr;
 
-	// 끝으로 가는 정상 경로는 INDEX_NONE → NotifyPlaybackChainFinished 다. 여기 오는 범위 밖 · null 은 데이터 오류이고,
-	// 그냥 돌려보내면 체인을 이어갈 주체가 없어 어빌리티가 켜진 채 남는다.
-	// 현재 노드의 EndPlay 는 EndAbility 가 부르므로 그 앞에서 판정한다.
+	// 범위 밖 · null 은 데이터 오류다. 그냥 돌려보내면 체인을 이어갈 주체가 없어 어빌리티가 켜진 채 남는다.
 	if ( IsValid(Playback) == false )
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[Playback] %s: 노드 %d 를 켤 수 없다(범위 밖 또는 null, 노드 %d개). 어빌리티를 종료한다."),
@@ -80,9 +116,7 @@ void UYSGameplayAbility::ActivePlayback(int32 Index)
 	CurrentPlayback = Playback;
 	CurrentPlaybackIndex = Index;
 
-	// 시전이 확정되는 노드에서 커밋한다.
-	// NeedReady 어빌리티는 활성 시점에 커밋을 미뤄뒀으므로 여기가 쿨다운이 도는 지점이다.
-	// 조준 단계에서 취소되면 이 노드에 도달하지 않아 쿨다운이 소모되지 않는다.
+	// 조준하다 취소해도 쿨다운이 돌지 않게, 시전이 확정되는 노드까지 커밋을 미룰 수 있다.
 	if ( Playback->bCommitOnEnter && bHasCommitted == false )
 	{
 		bHasCommitted = true;
@@ -153,13 +187,13 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 
 	AActor* OwnerActor = GetOwningActorFromActorInfo();
 
-	if ( IsValid(OwnerActor) )
+	if ( const UYSInputStateMachineComponent* InputStateMachine = UYSInputStateMachineComponent::Get(OwnerActor) )
 	{
-		AYSCharacterPlayer* Character = Cast<AYSCharacterPlayer>(OwnerActor);
+		const FActiveGameplayEffectHandle StateHandle = InputStateMachine->ApplyStateEffect(InputState);
 
-		if ( IsValid(Character) )
+		if ( StateHandle.IsValid() )
 		{
-			Character->AddStateToStateMachine(ChangeInputStateType);
+			AddRuntimeEffectSpecHandle(StateHandle);
 		}
 	}
 	
@@ -180,10 +214,16 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 	{
 		if ( bFreezeInAirDuringAbility )
 		{
-			CachedGravityScale = MovementComponent->GravityScale;
-			MovementComponent->SetGravityScale(0.f);
+			MovementComponent->SuspendGravity(this);
 			MovementComponent->Velocity = FVector::ZeroVector;
-			bAirFrozen = true;	
+
+			AddEndCleanup([WeakMovement = TWeakObjectPtr<UYSCharacterMovementComponent>(MovementComponent), this]()
+			{
+				if ( UYSCharacterMovementComponent* Movement = WeakMovement.Get() )
+				{
+					Movement->ResumeGravity(this);
+				}
+			});
 		}
 			
 		YSASC->AddAirUsage(Handle);
@@ -191,28 +231,22 @@ void UYSGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 	
 	_PrepareForAbilityEvent();
 	
-	HitContext = MakeShared<FYSAbilityHitContext>(GetOwningActorFromActorInfo());
+	HitContext = MakeShared<FYSAbilityHitContext>(GetOwningActorFromActorInfo(), this);
 	PlaybackContext = MakeShared<FYSPlaybackContext>();
 	bHasCommitted = false;
 	bPlaybackDidWork = false;
 
-	// SetupPlayBack 안에서 체인이 동기로 끝나면 EndAbility 가 먼저 돈다.
-	// 월드 태그를 그 뒤에 더하면 짝이 되는 제거가 없어 영구히 남으므로 앞서 더한다.
+	// 체인이 동기로 끝나면 EndAbility 가 먼저 도므로 월드 태그를 앞서 더한다 (뒤에 더하면 짝이 되는 제거가 없어 영구히 남음).
 	_AddWorldTag();
 	SetupPlayBack(TriggerEventData);
 
-	// 일이 시작된 노드가 하나도 없이 체인이 끝났다(빈 노드 · 범위 밖 · null · 몽타주 재생 실패). 아무것도 안 한 어빌리티에 쿨다운을 걸지 않는다.
-	// 즉발 어빌리티는 진입 행동이나 시작된 태스크가 있어 일이 있는 노드로 세므로 그대로 커밋한다.
+	// 일이 시작된 노드 없이 체인이 끝났다(빈 노드 · 범위 밖 · null · 몽타주 재생 실패). 아무것도 안 한 어빌리티에 쿨다운을 걸지 않는다.
 	if ( IsActive() == false && bPlaybackDidWork == false )
 	{
 		return;
 	}
 
-	// NeedReady 는 조준·레디 단계를 거치는 어빌리티다.
-	// 여기서 커밋하면 조준하다 취소해도 쿨다운이 돌아버리므로,
-	// 시전이 확정되는 노드(bCommitOnEnter)까지 커밋을 미룬다.
-	// 0번 노드가 bCommitOnEnter 면 SetupPlayBack 안에서 이미 커밋됐으므로 다시 하지 않는다.
-	if ( AbilityTypes.Contains(EYSAbilityType::NeedReady) == false && bHasCommitted == false )
+	if ( bHasCommitted == false && HasCommitOnEnterNode() == false )
 	{
 		bHasCommitted = true;
 		CommitAbility(Handle, ActorInfo, ActivationInfo);
@@ -238,16 +272,6 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 
 	AActor* OwnerActor = GetOwningActorFromActorInfo();
 
-	if ( IsValid(OwnerActor) )
-	{
-		AYSCharacterPlayer* Character = Cast<AYSCharacterPlayer>(OwnerActor);
-
-		if ( IsValid(Character) )
-		{
-			Character->RemoveStateToStateMachine(ChangeInputStateType);
-		}
-	}
-	
 	UYSAbilitySystemComponent* YSASC = Cast<UYSAbilitySystemComponent>(GetAbilitySystemComponentFromActorInfo());
 
 	if ( IsValid(YSASC) )
@@ -260,8 +284,7 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 		YSASC->RemoveActiveEffectsWithTags(BuffTags);
 	}
 
-	// 어빌리티가 건 큐 · 카메라 모드 등. 실행 중 새 등록이 생겨도 이번 목록만 돌도록 옮겨서 돈다.
-	// ASC 유무와 무관하게 돌아야 하므로 위 블록 밖에 둔다. 대상이 사라졌는지는 각 람다가 본다.
+	// 실행 중 새 등록이 생겨도 이번 목록만 돌도록 옮겨서 돈다. ASC 유무와 무관하게 돌아야 하므로 위 블록 밖에 둔다.
 	{
 		TArray<TFunction<void()>> Cleanups = MoveTemp(EndCleanups);
 		EndCleanups.Reset();
@@ -275,8 +298,7 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 	if ( IsValid(CurrentPlayback.Get()) )
 	{
 		CurrentPlayback.Get()->ReleaseMotionWarp();
-		// 시퀀스 플레이어는 어빌리티 태스크가 아니라 어빌리티가 끝나도 스스로 멈추지 않는다.
-		// 여기서 끊지 않으면 OnFinished 가 null 컨텍스트로 되돌아오거나, bPauseAtEnd 상태로 영영 굳는다.
+		// 시퀀스 플레이어는 어빌리티가 끝나도 스스로 멈추지 않는다. 안 끊으면 OnFinished 가 null 컨텍스트로 돌아오거나 bPauseAtEnd 로 굳는다.
 		CurrentPlayback.Get()->EndPlay();
 	}
 	
@@ -290,18 +312,6 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 		}
 	}
 	
-	if ( bAirFrozen )
-	{
-		UYSCharacterMovementComponent* MovementComponent = UYSCharacterMovementComponent::Get(OwnerActor);
-
-		if ( IsValid(MovementComponent) )
-		{
-			MovementComponent->SetGravityScale(CachedGravityScale);
-		}
-
-		bAirFrozen = false;
-	}
-	
 	if ( UYSTargetingComponent* Targeting = UYSTargetingComponent::Get(OwnerActor) )
 	{
 		Targeting->EndTargeting(this);
@@ -311,10 +321,14 @@ void UYSGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, con
 
 	bHasCommitted = false;
 
-	// 취소면 이번 사용이 남긴 연결 액터도 같이 걷는다.
-	if ( ( bWasCancelled || bCancelling ) && HitContext.IsValid() )
+	if ( HitContext.IsValid() )
 	{
-		HitContext->ReleaseAllLinkedActors(EYSReleaseReason::Cancelled);
+		if ( bWasCancelled || bCancelling )
+		{
+			HitContext->ReleaseAllLinkedActors(EYSReleaseReason::Cancelled);
+		}
+
+		HitContext->OnOwnerEnded();
 	}
 
 	HitContext = nullptr;
@@ -342,9 +356,7 @@ bool UYSGameplayAbility::TryTransition(const FGameplayTag& InputGameplayTag, EYS
 	}
 	
 	
-	// 바로 트랜지션 가능하면 Dispatch Next를 호출하는게 좋을 듯 싶다.. ( 원래는 어셉트 되고 예약이 된다면 return true를 시켰었음..
-	// 사유는 인풋에 따른 처리가 부가적으로 필요한 경우에는 TryTransition에서 true를 리턴해서 인풋이 처리되었다는 것을 알려주는게 좋을 것 같아서임
-	//  ( 예시로는 콤보 입력이 들어왔을 때, 콤보 입력이 처리된 건지, 아니면 인풋이 무시된 건지 구분하기 위해서 )
+	// 입력 처리 여부를 TryTransition 의 반환으로 알린다 (예: 콤보 입력이 처리됐는지 무시됐는지 구분).
 	return	AbilityPlaybackBase->HandleInput(InputGameplayTag, InputPhase);
 }
 
@@ -370,21 +382,11 @@ void UYSGameplayAbility::EnsureRuntimePlaybacks()
 {
 	if ( IsValid(PlaybackGraph) == false || PlaybackGraph->Playbacks.Num() == 0 )
 	{
-		// 그래프도 레거시 배열도 비었으면 클래스 기본으로 한 번 채운다.
-		if ( RuntimePlaybacks.Num() == 0 && Playbacks.Num() == 0 )
-		{
-			BuildDefaultPlaybacks(RuntimePlaybacks);
-
-			if ( RuntimePlaybacks.Num() > 0 )
-			{
-				UE_LOG(LogTemp, Verbose, TEXT("[Playback] %s: 그래프 · 레거시가 비어 클래스 기본 플레이백(%d 노드)을 쓴다."), *GetName(), RuntimePlaybacks.Num());
-			}
-		}
+		RuntimePlaybacks.Reset();
 		return;
 	}
 
-	// 같은 컴파일 결과로 이미 사본을 떴으면 그대로 쓴다.
-	// 개수만 비교하면 에디터에서 노드를 바꿔 다시 컴파일했을 때 낡은 사본을 계속 쓰게 된다.
+	// 같은 컴파일 결과로 이미 사본을 떴으면 그대로 쓴다. 개수만 비교하면 노드를 바꿔 다시 컴파일해도 낡은 사본을 쓴다.
 	if ( RuntimePlaybacks.Num() > 0 && CachedPlaybackSerial == PlaybackGraph->CompileSerial )
 	{
 		return;
@@ -394,25 +396,26 @@ void UYSGameplayAbility::EnsureRuntimePlaybacks()
 
 	for ( const TObjectPtr<UYSAbilityPlaybackBase>& Source : PlaybackGraph->Playbacks )
 	{
-		// Outer 를 this 로 둔다. 이 어빌리티 인스턴스와 수명을 같이하고,
-		// 다른 액터의 어빌리티 인스턴스는 자기 사본을 따로 갖는다.
+		// Outer 는 this — 어빌리티 인스턴스마다 자기 사본을 갖고 수명을 같이한다.
 		RuntimePlaybacks.Add(IsValid(Source) ? DuplicateObject<UYSAbilityPlaybackBase>(Source, this) : nullptr);
 	}
 
 	CachedPlaybackSerial = PlaybackGraph->CompileSerial;
 }
 
+bool UYSGameplayAbility::CanStartPlayback(const TSharedPtr<FYSPlaybackContext>& Context) const
+{
+	// 사본이 아니라 그래프 원본을 본다. 발동 전이라 사본이 없을 수 있고, 조건만 읽는다.
+	const UYSAbilityPlaybackBase* First = IsValid(PlaybackGraph) && PlaybackGraph->Playbacks.Num() > 0 ? PlaybackGraph->Playbacks[0].Get() : nullptr;
+
+	return IsValid(First) && First->CanStartWith(Context);
+}
+
 const TArray<TObjectPtr<UYSAbilityPlaybackBase>>& UYSGameplayAbility::GetPlaybackArray()
 {
 	EnsureRuntimePlaybacks();
 
-	// 그래프가 있어도 컴파일이 안 됐으면 비어 있다. 그때는 레거시로 떨어진다.
-	if ( RuntimePlaybacks.Num() > 0 )
-	{
-		return RuntimePlaybacks;
-	}
-
-	return Playbacks;
+	return RuntimePlaybacks;
 }
 
 
@@ -516,113 +519,15 @@ const FYSSkillInfo* UYSGameplayAbility::GetSkillInfo() const
 	return SkillRow.GetRow<FYSSkillInfo>(TEXT("context"));
 }
 
-#if UE_EDITOR
-void UYSGameplayAbility::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+bool UYSGameplayAbility::HasCommitOnEnterNode()
 {
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-	
-	FName PropertyName = (PropertyChangedEvent.Property != NULL) ? PropertyChangedEvent.Property->GetFName() : NAME_None;
-	
-	if ( PropertyName == GET_MEMBER_NAME_CHECKED(UYSGameplayAbility, AbilityTypes) )
+	for ( const TObjectPtr<UYSAbilityPlaybackBase>& Playback : GetPlaybackArray() )
 	{
-		EventActionMap.Empty();
-		
-		for ( EYSAbilityType AbilityType : AbilityTypes )
+		if ( IsValid(Playback) && Playback->bCommitOnEnter )
 		{
-			switch (AbilityType )
-			{
-			case EYSAbilityType::None:
-				break;
-			case EYSAbilityType::MeleeAttack :
-				{
-					FYSEventPayload TraceStart;
-					TraceStart.EventActions.Add(NewObject<UYSAbilityEventAction_StartTrace>(this));
-					EventActionMap.Add(YSTags::Event_TraceStart, TraceStart);
-			
-					FYSEventPayload TraceEnd;
-					TraceEnd.EventActions.Add(NewObject<UYSAbilityEventAction_StopTrace>(this));
-					EventActionMap.Add(YSTags::Event_TraceEnd, TraceEnd);
-					break;
-				}
-			case EYSAbilityType::RangedAttack :
-				{
-					FYSEventPayload SpawnActor;
-					SpawnActor.EventActions.Add(NewObject<UYSAbilityEventAction_SpawnActor>(this));
-					EventActionMap.Add(YSTags::Event_SpawnActor, SpawnActor);
-					break;
-				}
-			case EYSAbilityType::Dash :
-				{
-					FYSEventPayload Velocity;
-					Velocity.EventActions.Add(NewObject<UYSAbilityEventAction_ApplyVelocity>(this));
-					EventActionMap.Add(YSTags::Event_ApplyVelocity, Velocity);
-					break;
-				}
-			case EYSAbilityType::NeedCameraDirect :
-				{
-					FYSEventPayload CameraPush;
-					CameraPush.EventActions.Add(NewObject<UYSAbilityEventAction_PushCamera>(this));
-					EventActionMap.Add(YSTags::Event_PushCamera, CameraPush);
-					
-					FYSEventPayload CameraPop;
-					CameraPop.EventActions.Add(NewObject<UYSAbilityEventAction_PopCamera>(this));
-					EventActionMap.Add(YSTags::Event_PopCamera, CameraPop);
-					break;
-				}
-			case EYSAbilityType::NeedReady :
-				{
-					FYSEventPayload Ready;
-					Ready.EventActions.Add(NewObject<UYSAbilityEventAction_AimStart>(this));
-					EventActionMap.Add(YSTags::Event_AimStart, Ready);
-					
-					FYSEventPayload EndReady;
-					EndReady.EventActions.Add(NewObject<UYSAbilityEventAction_AimStop>(this));
-					EventActionMap.Add(YSTags::Event_AimStop, EndReady);
-					break;
-				}
-			case EYSAbilityType::UseResource :
-				{
-					FYSEventPayload Resource;
-					Resource.EventActions.Add(NewObject<UYSAbilityEventAction_ConsumeResource>(this));
-					EventActionMap.Add(YSTags::Event_ConsumeResource, Resource);
-					break;
-				}
-			case EYSAbilityType::Hon_Only :
-				{
-					FYSEventPayload Record;
-					Record.EventActions.Add(NewObject<UYSAbilityEventAction_SaveAbilityRecord>(this));
-					EventActionMap.Add(YSTags::Event_Record, Record);
-					break;
-				}
-			default:
-				break;
-			}
-		}
-	}
-}
-
-EDataValidationResult UYSGameplayAbility::IsDataValid(FDataValidationContext& Context) const
-{
-	EDataValidationResult Result = Super::IsDataValid(Context);
-
-	bool bHasActionType = false;
-
-	for ( EYSAbilityType AbilityType : AbilityTypes )
-	{
-		if ( AbilityType != EYSAbilityType::None )
-		{
-			bHasActionType = true;
-			break;
+			return true;
 		}
 	}
 
-	// PostEditChangeProperty 를 안 거치고 AbilityTypes 만 써 넣으면 이 상태가 된다 (리플렉션 직접 쓰기, 외부 툴).
-	if ( bHasActionType && EventActionMap.IsEmpty() )
-	{
-		Context.AddError(FText::FromString(TEXT("AbilityTypes 가 있는데 EventActionMap 이 비어 있다. AbilityTypes 를 에디터에서 다시 지정해 EventActionMap 을 재생성할 것.")));
-		Result = EDataValidationResult::Invalid;
-	}
-
-	return Result;
+	return false;
 }
-#endif

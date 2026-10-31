@@ -46,7 +46,7 @@ void UYSPlaybackGraphNode_Base::GetNodeContextMenuActions(UToolMenu* Menu, UGrap
 		return;
 	}
 
-	// 핀을 직접 우클릭한 경우는 엔진이 알아서 핀 메뉴를 띄운다. 노드 동작만 얹는다.
+	// 핀을 직접 우클릭한 경우는 엔진이 핀 메뉴를 띄운다.
 	if (Context->Pin != nullptr)
 	{
 		return;
@@ -54,14 +54,11 @@ void UYSPlaybackGraphNode_Base::GetNodeContextMenuActions(UToolMenu* Menu, UGrap
 
 	FToolMenuSection& Section = Menu->AddSection(TEXT("YSPlaybackNodeActions"), LOCTEXT("NodeActionsHeader", "노드 동작"));
 
-	// 여기 올리는 커맨드는 툴킷의 GraphEditorCommands 에 매핑돼 있어야 눌린다.
-	// 매핑 없이 올리면 항목은 뜨는데 회색으로 죽어 있다.
+	// 툴킷의 GraphEditorCommands 에 매핑돼 있어야 한다. 아니면 항목이 회색으로 죽어 있다.
 	Section.AddMenuEntry(FGenericCommands::Get().Delete);
 	Section.AddMenuEntry(FGraphEditorCommands::Get().BreakNodeLinks);
 }
 
-
-// ── 상태 노드 ────────────────────────────────────────────────────────────
 
 void UYSPlaybackGraphNode_State::AllocateDefaultPins()
 {
@@ -73,7 +70,7 @@ void UYSPlaybackGraphNode_State::PostPlacedNewNode()
 {
 	Super::PostPlacedNewNode();
 
-	// 붙여넣기로 온 노드는 이미 인스턴스를 갖고 있다. 비어 있을 때만 만든다.
+	// 붙여넣기로 온 노드는 이미 인스턴스를 갖고 있다.
 	if (Playback == nullptr && PlaybackClass != nullptr)
 	{
 		Playback = NewObject<UYSAbilityPlaybackBase>(this, PlaybackClass, NAME_None, RF_Transactional);
@@ -112,8 +109,6 @@ FText UYSPlaybackGraphNode_State::GetTooltipText() const
 }
 
 
-// ── 진입 노드 ────────────────────────────────────────────────────────────
-
 void UYSPlaybackGraphNode_Entry::AllocateDefaultPins()
 {
 	CreatePin(EGPD_Output, UYSPlaybackGraphSchema::PC_Transition, TEXT("Entry"));
@@ -129,8 +124,6 @@ FLinearColor UYSPlaybackGraphNode_Entry::GetNodeTitleColor() const
 	return FLinearColor(0.10f, 0.45f, 0.15f);
 }
 
-
-// ── 종료 / 유지 노드 ─────────────────────────────────────────────────────
 
 void UYSPlaybackGraphNode_Exit::AllocateDefaultPins()
 {
@@ -165,7 +158,35 @@ FText UYSPlaybackGraphNode_Stay::GetTooltipText() const
 }
 
 
-// ── 전환 노드 ────────────────────────────────────────────────────────────
+void UYSPlaybackGraphNode_Transition::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+	// 기본값을 0 으로 두고 새 노드만 최신으로 올린다 — 기본값이 최신이면 버전 칸이 없는 옛 에셋도 최신으로 읽힌다.
+	if ( HasAnyFlags(RF_ClassDefaultObject | RF_NeedLoad | RF_WasLoaded) == false )
+	{
+		DataVersion = CurrentDataVersion;
+	}
+}
+
+void UYSPlaybackGraphNode_Transition::Serialize(FArchive& Ar)
+{
+	Super::Serialize(Ar);
+
+	// 런타임 산출물은 옛 정렬로 이미 구워져 있다. 다시 컴파일해도 같은 순서가 나오게 편집 값만 맞춘다.
+	// PostLoad 가 아니라 여기서 한다 — 에디터 시작 중 일찍 로드되는 그래프는 PostLoad 에서 고친 값이 남지 않았다.
+	if ( Ar.IsLoading() == false || DataVersion >= CurrentDataVersion )
+	{
+		return;
+	}
+
+	if ( DataVersion < 1 )
+	{
+		PriorityOrder = -PriorityOrder;
+	}
+
+	DataVersion = CurrentDataVersion;
+}
 
 void UYSPlaybackGraphNode_Transition::AllocateDefaultPins()
 {
@@ -209,7 +230,6 @@ void UYSPlaybackGraphNode_Transition::CreateConnections(UYSPlaybackGraphNode_Bas
 		return;
 	}
 
-	// 이 전환은 딱 한 쌍만 잇는다. 남아 있던 연결은 끊는다.
 	MyInput->Modify();
 	MyInput->BreakAllPinLinks();
 
@@ -260,7 +280,7 @@ UYSPlaybackGraphNode_State* UYSPlaybackGraphNode_Transition::GetPreviousState() 
 
 FText UYSPlaybackGraphNode_Transition::GetNodeTitle(ENodeTitleType::Type TitleType) const
 {
-	// 어느 Task 의 어느 출력인지가 곧 이 전환의 정체다. 같은 종류의 Task 가 여럿일 수 있어 인덱스를 붙인다.
+	// 같은 종류의 Task 가 여럿일 수 있어 인덱스를 붙인다.
 	const UYSPlaybackTask* Task = GetSourceTask();
 
 	if (Task == nullptr || HasValidOutput() == false)
@@ -274,7 +294,6 @@ FText UYSPlaybackGraphNode_Transition::GetNodeTitle(ENodeTitleType::Type TitleTy
 		Task->GetClass()->GetDisplayNameText(),
 		Task->GetOutputDisplayName(OutputIndex));
 
-	// 행동이 달린 화살표는 선 위에서 티가 나야 한다. 목적지만 봐서는 알 수 없다.
 	if (Actions.Num() > 0)
 	{
 		return FText::Format(LOCTEXT("TransitionTitleWithActions", "{0}  ▸ 행동 {1}"), OutputText, FText::AsNumber(Actions.Num()));

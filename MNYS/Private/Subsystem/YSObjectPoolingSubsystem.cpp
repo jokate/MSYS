@@ -71,6 +71,29 @@ AActor* UYSObjectPoolingSubsystem::GetPooledActor(TSubclassOf<AActor> ActorClass
 	return nullptr;
 }
 
+void UYSObjectPoolingSubsystem::ReturnToPool(AActor* Actor)
+{
+	if ( IsValid(Actor) == false )
+	{
+		return;
+	}
+
+	UYSObjectPoolingSubsystem* ObjectPooling = Get(Actor->GetWorld());
+	if ( IsValid(ObjectPooling) && ObjectPooling->IsPooled(Actor) )
+	{
+		ObjectPooling->ReturnPooledActor(Actor);
+		return;
+	}
+
+	Actor->Destroy();
+}
+
+bool UYSObjectPoolingSubsystem::IsPooled(const AActor* Actor) const
+{
+	const TArray<TWeakObjectPtr<AActor>>* ActorPool = PooledActors.Find(Actor->GetClass());
+	return ActorPool != nullptr && ActorPool->Contains(Actor);
+}
+
 void UYSObjectPoolingSubsystem::ReturnPooledActor(AActor* Actor)
 {
 	if ( IsValid(Actor) == false )
@@ -82,6 +105,14 @@ void UYSObjectPoolingSubsystem::ReturnPooledActor(AActor* Actor)
 	Actor->SetActorEnableCollision(false);
 	Actor->SetActorTickEnabled(false);
 	Actor->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+
+	// 붙어 있던 공격 액터가 다음 재사용 때 같이 끌려가지 않게 떼어 둔다.
+	TArray<AActor*> AttachedActors;
+	Actor->GetAttachedActors(AttachedActors);
+	for ( AActor* AttachedActor : AttachedActors )
+	{
+		AttachedActor->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	}
 
 	if ( IYSSpawnInitializable* Initializable = Cast<IYSSpawnInitializable>(Actor) )
 	{

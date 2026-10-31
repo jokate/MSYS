@@ -3,6 +3,7 @@
 
 #include "AI/EQS/Test/YSEnvQueryTest_TeamCheck.h"
 
+#include "AI/Component/YSAIPerceptionComponent.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AIPerceptionListenerInterface.h"
 #include "EnvironmentQuery/EnvQueryTypes.h"
@@ -61,12 +62,9 @@ void UYSEnvQueryTest_TeamCheck::RunTest(FEnvQueryInstance& QueryInstance) const
 				continue;
 			}
 			
-			switch (Affiliation)
+			if (UYSAIPerceptionComponent::MatchesAffiliation(*Info, Affiliation) == false)
 			{
-				case EYSPerceptionAffiliation::Hostile:  if (Info->bIsHostile == false)  { continue; } break;
-				case EYSPerceptionAffiliation::Friendly: if (Info->bIsFriendly == false)  { continue; } break;
-				case EYSPerceptionAffiliation::Neutral:  if (Info->bIsHostile || Info->bIsFriendly) { continue; } break;
-			default: break; 
+				continue;
 			}
 			
 			bFinalRes = true; 
@@ -78,7 +76,6 @@ void UYSEnvQueryTest_TeamCheck::RunTest(FEnvQueryInstance& QueryInstance) const
 
 FText UYSEnvQueryTest_TeamCheck::GetDescriptionTitle() const
 {
-	// 베이스 제목(필터/스코어 표기) 뒤에 제휴 종류를 덧붙인다.
 	return FText::Format(
 		LOCTEXT("TeamCheckTitle", "{0}: 제휴 {1}"),
 		Super::GetDescriptionTitle(),

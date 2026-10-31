@@ -6,9 +6,6 @@
 #include "Ability/YSGameplayAbility.h"
 #include "YSGameplayAbility_Jump.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class MNYS_API UYSGameplayAbility_Jump : public UYSGameplayAbility
 {

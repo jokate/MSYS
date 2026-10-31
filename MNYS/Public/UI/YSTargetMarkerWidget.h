@@ -6,11 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "YSTargetMarkerWidget.generated.h"
 
-/**
- * ① 현재 타겟 표지 (기획 11_UIUX_V4_DRAFT §3.1). 적 몸통 좌우 꺾쇠 [ ].
- * 화면 전체를 덮는 캔버스 안에서 LeftBracket · RightBracket 을 대상의 화면 영역 옆에 세운다.
- * 대상은 이벤트로만 바뀌고, 틱은 대상이 있을 때 화면 투영만 한다.
- */
+/** 현재 타겟 표지: 적 몸통 좌우 꺾쇠 [ ]. 화면 전체를 덮는 캔버스 안에서 LeftBracket · RightBracket 을 대상의 화면 영역 옆에 세운다. 대상은 이벤트로만 바뀌고 틱은 화면 투영만 한다. */
 UCLASS(Abstract)
 class MNYS_API UYSTargetMarkerWidget : public UUserWidget
 {

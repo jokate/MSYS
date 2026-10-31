@@ -4,20 +4,18 @@
 #include "Ability/GameplayEffect/YSGE_GroggyBreak.h"
 
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
-
-const FName UYSGE_GroggyBreak::DurationName(TEXT("Groggy.BreakDuration"));
-const FName UYSGE_GroggyBreak::DamageTakenMultiplierName(TEXT("Groggy.DamageTakenMultiplier"));
+#include "General/YSGameplayTag.h"
 
 UYSGE_GroggyBreak::UYSGE_GroggyBreak()
 {
 	DurationPolicy = EGameplayEffectDurationType::HasDuration;
 
 	FSetByCallerFloat Duration;
-	Duration.DataName = DurationName;
+	Duration.DataTag = YSTags::Data_Groggy_BreakDuration;
 	DurationMagnitude = FGameplayEffectModifierMagnitude(Duration);
 
 	FSetByCallerFloat Multiplier;
-	Multiplier.DataName = DamageTakenMultiplierName;
+	Multiplier.DataTag = YSTags::Data_Groggy_DamageTakenMultiplier;
 
 	FGameplayModifierInfo DamageTaken;
 	DamageTaken.Attribute = UYSCharacterAttributeSetBase::GetIncomingDamageMultiplierAttribute();

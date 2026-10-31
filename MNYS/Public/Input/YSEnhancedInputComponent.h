@@ -34,10 +34,7 @@ class MNYS_API UYSEnhancedInputComponent : public UEnhancedInputComponent
 	GENERATED_BODY()
 
 public:
-	/**
-	 * 태그로 InputAction을 찾아 바인딩한다.
-	 * 페이로드 인자를 가변으로 받으므로 (InputTag, EYSInputPhase)처럼 2개 이상도 넘길 수 있다.
-	 */
+	/** 태그로 InputAction 을 찾아 바인딩한다. 페이로드 인자를 가변으로 받아 (InputTag, EYSInputPhase) 처럼 2개 이상도 넘길 수 있다. */
 	template<class UserClass, typename FuncType, typename... VarTypes>
 	void BindActionByTag(const UYSInputConfig* InputConfig, const FGameplayTag& InputTag, ETriggerEvent TriggerEvent, UserClass* Object, FuncType Func, VarTypes... Vars);
 

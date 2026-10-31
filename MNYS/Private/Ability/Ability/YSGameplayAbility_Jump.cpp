@@ -9,7 +9,6 @@ UYSGameplayAbility_Jump::UYSGameplayAbility_Jump()
 {
 }
 
-// 사실상 점프만 트리거 하고 나머지는 외부 관리가 되는게 좋아보임.
 void UYSGameplayAbility_Jump::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
 	const FGameplayEventData* TriggerEventData)

@@ -33,7 +33,6 @@ class MNYS_API UYSAbilitySystemComponent : public UAbilitySystemComponent
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this component's properties
 	UYSAbilitySystemComponent();
 	static UYSAbilitySystemComponent* Get(AActor* Owner);
 	virtual void BeginPlay() override;
@@ -46,6 +45,9 @@ public:
 	void ApplyResourceRecharge(const FYSCharacterInfo* CharacterInfo);
 
 	void ApplyDerivedStats(bool bRefillHp = false);
+
+	// 최대 체력이 정해진 직후 한 번만 부른다. 다시 부르면 배율이 겹친다.
+	void ApplyLevelHpScale();
 
 	void GiveInitAbility();
 

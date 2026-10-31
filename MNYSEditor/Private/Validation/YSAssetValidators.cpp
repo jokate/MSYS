@@ -12,10 +12,7 @@
 
 namespace YSPlaybackValidation
 {
-	/**
-	 * Task 의 종류·순서와 몽타주 선택기가 같은가.
-	 * 경로(OutputRoutes)는 비교하지 않는다 — 컴파일러가 화살표로 다시 쓰는 값이라 노드 쪽 값은 쓰이지 않는다.
-	 */
+	// 경로(OutputRoutes)는 비교하지 않는다 — 컴파일러가 화살표로 다시 쓰는 값이라 노드 쪽 값은 쓰이지 않는다.
 	static bool HasSameTasks(const UYSAbilityPlaybackBase& A, const UYSAbilityPlaybackBase& B)
 	{
 		if (A.Tasks.Num() != B.Tasks.Num())

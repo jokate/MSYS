@@ -8,9 +8,6 @@
 #include "General/YSStruct.h"
 #include "YSDamageEffect.generated.h"
 
-/**
- * 
- */
 
 class UGameplayEffect;
 
@@ -48,9 +45,7 @@ struct MNYS_API FYSDamageEffectBase
 	FGameplayTagContainer RequiredTargetTags;
 };
 
-/**
- * 대상에게 Cue 를 한 번 실행한다 (Execute). 트랙형 YS Cue 액터는 Execute 를 받지 않으니 Burst 계열 Cue 애셋을 쓴다.
- */
+/** 대상에게 Cue 를 한 번 실행한다 (Execute). 트랙형 YS Cue 액터는 Execute 를 받지 않으니 Burst 계열 Cue 애셋을 쓴다. */
 USTRUCT(DisplayName = "게임 플레이 큐 실행")
 struct FYSDamageEffect_GameplayCue : public FYSDamageEffectBase
 {

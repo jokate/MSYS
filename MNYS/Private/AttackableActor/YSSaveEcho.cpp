@@ -4,6 +4,7 @@
 #include "AttackableActor/YSSaveEcho.h"
 
 #include "YSAbilitySystemComponent.h"
+#include "YSDeveloperSettings.h"
 #include "Character/Components/YSSaveComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Character.h"
@@ -12,17 +13,14 @@
 #include "General/YSGameplayTag.h"
 #include "Subsystem/YSObjectPoolingSubsystem.h"
 
-// Sets default values
 AYSSaveEcho::AYSSaveEcho()
 {
-	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 	
 	AbilitySystemComponent = CreateDefaultSubobject<UYSAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 
-	// NoCollision 이면 PhysWalking 이 쿼리 콜리전 게이트에서 즉시 리턴해 루트모션이 위치를 못 옮긴다.
-	// 바닥 스윕만 살리고 나머지는 EchoBody 프로파일에서 전부 무시한다.
-	GetCapsuleComponent()->SetCollisionProfileName(TEXT("EchoBody"));
+	// NoCollision 이면 PhysWalking 이 쿼리 콜리전 게이트에서 리턴해 루트모션이 위치를 못 옮긴다. 바닥 스윕만 살리고 나머지는 EchoBody 프로파일에서 무시한다.
+	GetCapsuleComponent()->SetCollisionProfileName(GetDefault<UYSDeveloperSettings>()->EchoCollisionProfile);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	// 루트모션은 살린다 — 발도의 돌진을 재현해야 하기 때문이다.
@@ -40,13 +38,11 @@ AActor* AYSSaveEcho::GetDamageInstigator() const
 {
 	return Master.Get();
 }
-// 디플로이 시킨다.
-void AYSSaveEcho::Initialize(ACharacter* InMaster, const FYSSavedTechnique& InTechnique)
+bool AYSSaveEcho::Initialize(ACharacter* InMaster, const FYSSavedTechnique& InTechnique)
 {
 	if ( IsValid(InMaster) == false || InTechnique.IsValid() == false )
 	{
-		Destroy();
-		return;
+		return false;
 	}
 
 	Master = InMaster;
@@ -67,10 +63,11 @@ void AYSSaveEcho::Initialize(ACharacter* InMaster, const FYSSavedTechnique& InTe
 
 	GetWorldTimerManager().SetTimer(LifeTimerHandle, FTimerDelegate::CreateWeakLambda(this, [this]()
 	{
-		ReturnToPoolActor();
+		UYSObjectPoolingSubsystem::ReturnToPool(this);
 	}), MaxLifeTime, false);
 	
 	SavedTechnique = InTechnique;
+	return true;
 }
 
 
@@ -109,13 +106,12 @@ bool AYSSaveEcho::OnSpawnInitialize(AActor* InOwnerActor, AActor* InInstigator, 
 
 	FYSSavedTechnique Technique;
 
-	if ( IsValid(InMaster) == false || IsValid(SaveComponent) == false || SaveComponent->TryConsumeSlot(Technique) == false )
+	if ( IsValid(InMaster) == false || IsValid(SaveComponent) == false || SaveComponent->TakeEchoTechnique(HitContext, Technique) == false )
 	{
 		return false;
 	}
 
-	Initialize(InMaster, Technique);
-	return true;
+	return Initialize(InMaster, Technique);
 }
 
 void AYSSaveEcho::SetPoolActive(bool bActive)
@@ -124,8 +120,7 @@ void AYSSaveEcho::SetPoolActive(bool bActive)
 
 	if ( bActive )
 	{
-		// 이벤트로 활성하는 이유 — TryActivateAbility 로는 시작 노드를 전달할 방법이 없다.
-		// 활성 후에 ActivePlayback 을 따로 부르면 0번 몽타주가 한 프레임 재생됐다 끊긴다.
+		// 이벤트로 활성하는 이유 — TryActivateAbility 로는 시작 노드를 전달할 방법이 없고, 활성 후에 ActivePlayback 을 따로 부르면 0번 몽타주가 한 프레임 재생됐다 끊긴다.
 		FGameplayEventData EventData;
 		EventData.EventTag = YSTags::Event_Replay;
 		EventData.EventMagnitude = SavedTechnique.PlaybackIndex;
@@ -151,19 +146,6 @@ void AYSSaveEcho::SetPoolActive(bool bActive)
 	}
 }
 
-void AYSSaveEcho::ReturnToPoolActor()
-{
-	UYSObjectPoolingSubsystem* PoolingSubsystem = GetWorld()->GetSubsystem<UYSObjectPoolingSubsystem>();
-	if ( IsValid(PoolingSubsystem) )
-	{
-		PoolingSubsystem->ReturnPooledActor(this);
-	}
-	else
-	{
-		Destroy();
-	}
-}
-
 void AYSSaveEcho::OnReplayEnded(const FAbilityEndedData& EndedData)
 {
 	if ( EndedData.AbilitySpecHandle != ReplayHandle )
@@ -171,5 +153,5 @@ void AYSSaveEcho::OnReplayEnded(const FAbilityEndedData& EndedData)
 		return;
 	}
 
-	ReturnToPoolActor();
+	UYSObjectPoolingSubsystem::ReturnToPool(this);
 }

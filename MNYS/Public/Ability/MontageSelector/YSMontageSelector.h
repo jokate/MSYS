@@ -10,16 +10,7 @@
 
 class UYSGameplayAbility;
 
-// ─── 8방향 열거형 ─────────────────────────────────────────────────────────────
-//
-//  atan2(LocalVelocity.Y, LocalVelocity.X) 각도 기준으로 22.5° 간격 섹터에 매핑.
-//  열거값 순서 = 섹터 인덱스 (0°에서 시계방향으로 45° 단위).
-//
-//       0 Forward (0°)
-//  7 FL          1 FR
-//  6 Left        2 Right
-//  5 BL          3 BR
-//       4 Backward (±180°)
+// 열거값 = 8섹터 인덱스. atan2(Y, X) 각도를 22.5° 오프셋으로 시계방향 45° 단위로 나눈다 (0 Forward, 4 Backward).
 
 UENUM(BlueprintType)
 enum class EYSMoveDirection : uint8
@@ -35,7 +26,6 @@ enum class EYSMoveDirection : uint8
 };
 
 
-// ─── Base ────────────────────────────────────────────────────────────────────
 
 USTRUCT(BlueprintType)
 struct MNYS_API FYSMontageSelector
@@ -48,16 +38,12 @@ struct MNYS_API FYSMontageSelector
 	virtual void SetMotionWarp(const UYSGameplayAbility* Ability, bool bInSet) const;
 	
 public :
-	// 차후 모션워핑 정책이 달라질 수 있음, 달라지면 이것도 InstancedStruct로 개설하도록 합니다
-	UPROPERTY(EditAnywhere, meta = (DisplayName = "모션 워핑 사용"))
-	bool bUseMotionWarping = false;
-
-	UPROPERTY(EditAnywhere, meta = (DisplayName = "모션 워핑 파라미터", EditCondition = bUseMotionWarping, EditConditionHides,  BaseStruct = "/Script/MNYS.YSMotionWarpParam", ExcludeBaseStruct))
+	// 비우면 워핑하지 않는다.
+	UPROPERTY(EditAnywhere, meta = (DisplayName = "모션 워핑 파라미터", BaseStruct = "/Script/MNYS.YSMotionWarpParam", ExcludeBaseStruct))
 	FInstancedStruct MotionWarpingParam;
 };
 
 
-// ─── 단일 몽타주 ─────────────────────────────────────────────────────────────
 USTRUCT(BlueprintType, DisplayName = "단일 몽타주 선택")
 struct MNYS_API FYSMontageSelector_Default : public FYSMontageSelector
 {
@@ -75,11 +61,7 @@ public:
 };
 
 
-// ─── 이동 방향 기반 (8방향) ───────────────────────────────────────────────────
-//
-//  로컬 속도 XY 평면의 각도를 45° 단위 8섹터로 분할하여 몽타주를 선택한다.
-//  섹터 경계는 22.5° 오프셋으로 각 방향 중심에 정렬된다.
-//  등록되지 않은 방향은 Forward로 폴백.
+// 로컬 속도 XY 각도를 45° 8섹터로 나눠 몽타주를 고른다.
 
 USTRUCT(NotBlueprintType)
 struct MNYS_API FYSMontageSelector_ByDirection : public FYSMontageSelector
@@ -115,7 +97,6 @@ public :
 	virtual EYSMoveDirection GetMontageDirection(const UYSGameplayAbility* Ability) const override;
 };
 
-// ─── 방향 태그 산출 기준 ──────────────────────────────────────────────────────
 UENUM(BlueprintType)
 enum class EYSDirectionSource : uint8
 {
@@ -127,13 +108,7 @@ enum class EYSDirectionSource : uint8
 };
 
 
-// ─── 태그별 몽타주 셀렉터 ─────────────────────────────────────────────────────
-//
-//  조회 태그를 런타임에 조립해서 UYSTaggedMontageAsset::SelectBest 에 넘긴다.
-//  조회 태그 = 이벤트 태그(Hit.Big 등) + 추가 태그 + (옵션) 4방향 태그.
-//
-//  방향은 공격자가 실어보낼 수 없는 값이다 — 공격자는 피격자가 어딜 보는지 모른다.
-//  그래서 저작하는 태그가 아니라 피격 시점에 계산해 합성하는 태그로 다룬다.
+// 조회 태그(이벤트 태그 + 추가 태그 + 옵션 4방향 태그)를 런타임에 조립해 SelectBest 에 넘긴다. 방향은 공격자가 모르는 값이라 피격 시점에 계산해 합성한다.
 
 USTRUCT(BlueprintType, DisplayName = "태그별 몽타주 선택")
 struct MNYS_API FYSMontageSelector_ByTag : public FYSMontageSelector
@@ -143,11 +118,9 @@ struct MNYS_API FYSMontageSelector_ByTag : public FYSMontageSelector
 public:
 	virtual UAnimMontage* SelectMontage(const UYSGameplayAbility* Ability) const override;
 
-	// 이번 재생에 쓸 조회 태그를 조립한다.
 	FGameplayTagContainer BuildQueryTags(const UYSGameplayAbility* Ability) const;
 
 public:
-	// 조회 태그에 방향을 얹을지
 	UPROPERTY(EditAnywhere, meta = (DisplayName = "방향 태그 사용"))
 	bool bUseDirectionTag = false;
 
@@ -160,16 +133,4 @@ public:
 	
 	UPROPERTY(EditAnywhere, meta = (DisplayName = "옵션 태그"))
 	FGameplayTagContainer OwnedTagFilter;
-};
-
-
-// ─── 컨텍스트 스위치 변형 ─────────────────────────────────────────────────────
-//  UYSGameplayAbility_ContextSwitch 가 고른 변형 표 행의 몽타주. 워프는 UYSPlaybackTask_ContextSwitchHit 이 건다.
-USTRUCT(BlueprintType, DisplayName = "컨텍스트 스위치 변형 몽타주")
-struct MNYS_API FYSMontageSelector_ContextSwitch : public FYSMontageSelector
-{
-	GENERATED_BODY()
-
-public:
-	virtual UAnimMontage* SelectMontage(const UYSGameplayAbility* Ability) const override;
 };

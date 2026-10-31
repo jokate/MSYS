@@ -14,8 +14,7 @@ namespace YSIndicatorParams
 	static const FName Color(TEXT("Color"));
 }
 
-// 데칼을 아래로 투영시키는 로컬 회전.
-// 이 상태에서 데칼의 로컬 Z축이 액터의 전방을 향하므로, DecalSize.Z 가 전방 길이가 된다.
+// 데칼을 아래로 투영시키는 로컬 회전. 이 상태에서 데칼의 로컬 Z축이 액터 전방이라 DecalSize.Z 가 전방 길이가 된다.
 static const FRotator YSIndicatorDecalRotation(-90.f, 0.f, 0.f);
 
 AYSSkillIndicator::AYSSkillIndicator()

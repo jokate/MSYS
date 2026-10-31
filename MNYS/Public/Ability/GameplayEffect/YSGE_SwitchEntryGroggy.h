@@ -6,9 +6,7 @@
 #include "GameplayEffect.h"
 #include "YSGE_SwitchEntryGroggy.generated.h"
 
-/**
- * 스위치 어택 진입기의 그로기 피해. 양은 FYSSwitchEntryForm 이 SetByCaller(이름)로 넣는다 — 새 태그 · 애셋 없이 이 클래스만으로 돈다.
- */
+/** 스위치 어택 진입기의 그로기 피해. 양은 FYSSwitchEntryForm 이 SetByCaller(Data.Groggy.SwitchEntryDamage)로 넣는다 (애셋 불필요). */
 UCLASS()
 class MNYS_API UYSGE_SwitchEntryGroggy : public UGameplayEffect
 {
@@ -16,6 +14,4 @@ class MNYS_API UYSGE_SwitchEntryGroggy : public UGameplayEffect
 
 public :
 	UYSGE_SwitchEntryGroggy();
-
-	static const FName GroggyDamageName;
 };

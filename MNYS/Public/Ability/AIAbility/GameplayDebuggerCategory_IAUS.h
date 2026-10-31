@@ -8,7 +8,6 @@
 class MNYS_API FGameplayDebuggerCategory_IAUS : public FGameplayDebuggerCategory
 {
 public:
-	// Sets default values for this actor's properties
 	FGameplayDebuggerCategory_IAUS();
 
 	virtual void CollectData(APlayerController* OwnerPC, AActor* DebugActor) override;

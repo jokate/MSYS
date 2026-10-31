@@ -6,7 +6,6 @@
 #include "Factories/Factory.h"
 #include "YSPlaybackGraphFactory.generated.h"
 
-/** 콘텐츠 브라우저 우클릭 → 플레이백 그래프 생성. */
 UCLASS()
 class UYSPlaybackGraphFactory : public UFactory
 {

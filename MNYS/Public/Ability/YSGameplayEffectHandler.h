@@ -9,9 +9,6 @@
 
 struct FGameplayEffectModifierMagnitude;
 class UGameplayEffect;
-/**
- * 
- */
 USTRUCT(BlueprintType)
 struct MNYS_API FYSGameplayEffectHandler
 {

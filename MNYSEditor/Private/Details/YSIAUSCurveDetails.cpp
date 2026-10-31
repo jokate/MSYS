@@ -55,7 +55,6 @@ void FYSIAUSCurveDetails::CustomizeDetails(IDetailLayoutBuilder& DetailLayout)
 		}
 	}
 
-	// UtilityScore가 속한 카테고리(YS | Condition) 안에서 배열 바로 아래에 프리뷰를 끼워 넣는다.
 	// AddProperty로 순서를 명시하면 기본 배치 대신 추가한 순서대로 나열된다.
 	IDetailCategoryBuilder& ConditionCategory = DetailLayout.EditCategory(UtilityScoreHandle->GetDefaultCategoryName());
 	ConditionCategory.AddProperty(UtilityScoreHandle);
@@ -86,7 +85,6 @@ void FYSIAUSCurveDetails::CustomizeDetails(IDetailLayoutBuilder& DetailLayout)
 		PreviewWidgets.Add(PreviewWidget);
 	}
 
-	// 프리뷰 행 뒤에 오도록 나머지 프로퍼티를 원래 선언 순서대로 다시 추가한다
 	ConditionCategory.AddProperty(DetailLayout.GetProperty(GET_MEMBER_NAME_CHECKED(UYSGameplayAbility_AIBase, BaseUtilityScore)));
 	ConditionCategory.AddProperty(DetailLayout.GetProperty(GET_MEMBER_NAME_CHECKED(UYSGameplayAbility_AIBase, UtilityScoreThreshold)));
 }

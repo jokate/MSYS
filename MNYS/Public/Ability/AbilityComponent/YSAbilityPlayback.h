@@ -16,9 +16,7 @@ class ULevelSequencePlayer;
 class UAbilityTask_PlayMontageAndWait;
 class ALevelSequenceActor;
 
-// 해당 구조의 가장 큰 문제점은 어빌리티의 플레이 백을 의미하다보니 다른 어빌리티에서 동작 시, Race Condition이 발생할 수 있음.
-// 사실 이게 다양한 상황에서의 전제가 있다고 가정한다면, 애니메이션이 좀 꼬일 수 있겠다는 생각은 드는 편.
-// 그렇다면 규칙이 있음, 예를 들어서
+// 주의: 어빌리티의 플레이백을 뜻하므로 다른 어빌리티에서 동작하면 Race Condition 이 생길 수 있다.
 
 UCLASS(EditInlineNew, DefaultToInstanced, CollapseCategories)
 class MNYS_API UYSAbilityPlaybackBase : public UObject
@@ -40,6 +38,9 @@ public :
 
 	/** 조건을 통과한 첫 경로로 전환한다. 통과한 경로가 없으면 아무것도 안 하고 false. */
 	bool TryResolveRoutes(const TArray<FYSPlaybackRoute>& Routes);
+
+	/** 재생 전에 본다. 첫 태스크가 즉시 분기면 통과할 경로가 있어야 참. 조건을 소비하지 않는다. */
+	bool CanStartWith(const TSharedPtr<FYSPlaybackContext>& Context) const;
 
 	const TSharedPtr<FYSPlaybackContext>& GetContext() const { return CapturedContext; }
 
@@ -87,7 +88,7 @@ public :
 	bool DidWork() const { return bDidWork; }
 
 protected :
-	bool AreConditionsSatisfied(const TArray<FInstancedStruct>& Conditions) const;
+	static bool AreConditionsSatisfied(const TArray<FInstancedStruct>& Conditions, const TSharedPtr<FYSPlaybackContext>& Context);
 	void ConsumeConditions(const TArray<FInstancedStruct>& Conditions) const;
 
 protected :

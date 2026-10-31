@@ -16,16 +16,13 @@ class MNYS_API AYSAIController : public AAIController
 
 public:
 	static AYSAIController* Get(AActor* InActor);
-	// Sets default values for this actor's properties
 	AYSAIController();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 
 public:
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	virtual void OnPossess(APawn* InPawn) override;
 	void StartLogic() const;

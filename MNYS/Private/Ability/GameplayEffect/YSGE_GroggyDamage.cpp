@@ -4,15 +4,14 @@
 #include "Ability/GameplayEffect/YSGE_GroggyDamage.h"
 
 #include "Character/AttributeSet/YSGroggyAttributeSet.h"
-
-const FName UYSGE_GroggyDamage::GroggyDamageName(TEXT("Groggy.Damage"));
+#include "General/YSGameplayTag.h"
 
 UYSGE_GroggyDamage::UYSGE_GroggyDamage()
 {
 	DurationPolicy = EGameplayEffectDurationType::Instant;
 
 	FSetByCallerFloat Damage;
-	Damage.DataName = GroggyDamageName;
+	Damage.DataTag = YSTags::Data_Groggy_Damage;
 
 	FGameplayModifierInfo Modifier;
 	Modifier.Attribute = UYSGroggyAttributeSet::GetIncomingGroggyDamageAttribute();

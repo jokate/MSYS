@@ -19,27 +19,22 @@ class MNYS_API AYSDamagableActor : public AYSAttackableBase
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this actor's properties
 	AYSDamagableActor();
 	
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	UFUNCTION()
-	virtual void _OnHitCountDepleted();
-
-	UFUNCTION()
-	void _OnTraceHit(const TArray<FHitResult>& HitResults, const FName& DamageRow);
+	virtual void _OnTraceEnded();
 	virtual void OnActivate_Implementation() override;
 	virtual void SetPoolActive(bool bActive) override;
 	
 public:
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-	
-protected : 
+	virtual AYSTelegraphActor* SpawnTelegraph(UWorld* World, const FTransform& Transform, float Duration) const override;
+
+protected :
 	void _Trace(float DeltaTime);
-	virtual void ProcessTelegraph() override;
 
 protected : 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Damagable")
@@ -51,7 +46,6 @@ protected :
 	UPROPERTY()
 	TObjectPtr<UYSTraceObject> TraceObject;
 	
-	// AYSDamagableActor.h
 #if WITH_EDITORONLY_DATA
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "YS | Debug")

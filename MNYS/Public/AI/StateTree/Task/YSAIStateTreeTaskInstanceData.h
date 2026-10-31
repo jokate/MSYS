@@ -10,13 +10,11 @@
 #include "YSAIStateTreeTaskInstanceData.generated.h"
 
 class AYSAIController;
-class UYSAIUseAbilityTask;
+class UAbilitySystemComponent;
+struct FAbilityEndedData;
 struct FYSTargetingActorCollections;
 class UEnvQuery;
 struct FStateTreeExecutionContext;
-/**
- * 
- */
 UCLASS()
 class MNYS_API UYSAIStateTreeTaskInstanceData : public UObject
 {
@@ -54,7 +52,7 @@ private :
 	void _SearchBestTarget(const FStateTreeExecutionContext& Context) const;
 	
 public : 
-	// Invalid 한 경우 ( 실패 한 경우에 타겟을 놓을 것인가? 예를 들어서 퍼셉션 된 타겟이 없다면의 가정 조치. )
+	// 검색이 실패했을 때(예: 퍼셉션된 타겟 없음) 기존 타겟을 놓을지 여부.
 	UPROPERTY(EditAnywhere, Category = "Input | Parameters")
 	bool NeedToReleaseInvalidResult = false;
 	
@@ -103,11 +101,16 @@ public :
 	virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context, const float DeltaTime) override;
 	virtual void ExitState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) override;
 
+private :
+	void OnAbilityEnded(const FAbilityEndedData& AbilityEndedData);
+	void UnbindAbilityEnded();
+
 protected : 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Parameter)
 	FGameplayAbilitySpecHandle AbilityToUse;
 	
 private :
-	UPROPERTY(Transient)
-	TObjectPtr<UYSAIUseAbilityTask> UseAbilityTask;
+	TWeakObjectPtr<UAbilitySystemComponent> BoundASC;
+	FDelegateHandle AbilityEndedHandle;
+	bool bAbilityEnded = false;
 };

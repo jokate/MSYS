@@ -10,10 +10,8 @@
 #include "Library/YSBlueprintFunctionLibrary.h"
 
 
-// Sets default values
 AYSAttackSpawner::AYSAttackSpawner()
 {
-	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 }
 
@@ -23,37 +21,24 @@ void AYSAttackSpawner::OnActivate_Implementation()
 	TrySpawnActor();
 }
 
-void AYSAttackSpawner::SpawnActorByConfig(FYSSpawnActorConfig SpawnConfig)
-{
-	++SpawnCount;
-
-	// 위치 기준은 스포너 자신. 공격자는 스포너의 프록시(GetDamageInstigator)로 체인을 따라 넘어간다.
-	UYSBlueprintFunctionLibrary::SpawnByConfig(
-		this,
-		SpawnConfig,
-		FYSTransformPolicyContext(this, TargetActor.Get()),
-		/*AttachParent*/ this, HitContext);
-
-	if ( SpawnCount >= SpawnActorConfigs.Num() )
-	{
-		Destroy();
-	}
-}
-
 void AYSAttackSpawner::TrySpawnActor()
 {
+	float LastSpawnDelay = 0.f;
+
 	for ( const FYSSpawnActorConfig& SpawnConfig : SpawnActorConfigs )
 	{
-		if (SpawnConfig.SpawnDelay > 0.f )
-		{
-			FTimerHandle TempSpawnTimerHandle;
-			GetWorldTimerManager().SetTimer(TempSpawnTimerHandle, FTimerDelegate::CreateUObject(this, &AYSAttackSpawner::SpawnActorByConfig, SpawnConfig), SpawnConfig.SpawnDelay, false);			
-		}
-		else
-		{
-			SpawnActorByConfig(SpawnConfig);
-		}
+		// 위치 기준은 스포너 자신. 공격자는 스포너의 프록시(GetDamageInstigator)로 체인을 따라 넘어간다.
+		UYSBlueprintFunctionLibrary::SpawnByConfig(
+			this,
+			SpawnConfig,
+			FYSTransformPolicyContext(this, TargetActor.Get()),
+			/*AttachParent*/ this, HitContext);
+
+		LastSpawnDelay = FMath::Max(LastSpawnDelay, SpawnConfig.SpawnDelay);
 	}
+
+	// 지연 스폰의 어태치 · 체인 기준이라 마지막 스폰까지 남는다. 같은 시각이면 스폰이 먼저 돌도록 조금 늦춘다.
+	ReturnToPoolAfter(LastSpawnDelay > 0.f ? LastSpawnDelay + KINDA_SMALL_NUMBER : 0.f);
 }
 
 

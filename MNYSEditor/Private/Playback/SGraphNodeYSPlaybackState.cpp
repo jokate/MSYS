@@ -16,8 +16,6 @@
 
 #define LOCTEXT_NAMESPACE "SGraphNodeYSPlaybackState"
 
-// ── 노드 전체를 덮는 핀 ──────────────────────────────────────────────────
-
 void SYSPlaybackStatePin::Construct(const FArguments& InArgs, UEdGraphPin* InPin)
 {
 	SetCursor(EMouseCursor::Default);
@@ -46,8 +44,6 @@ const FSlateBrush* SYSPlaybackStatePin::GetPinBorder() const
 		: FAppStyle::GetBrush(TEXT("Graph.AnimStateNode.Pin.Background"));
 }
 
-
-// ── 상태 노드 ────────────────────────────────────────────────────────────
 
 void SGraphNodeYSPlaybackState::Construct(const FArguments& InArgs, UYSPlaybackGraphNode_Base* InNode)
 {
@@ -80,7 +76,6 @@ FLinearColor SGraphNodeYSPlaybackState::GetSpillColor() const
 
 FSlateColor SGraphNodeYSPlaybackState::GetBorderBackgroundColor() const
 {
-	// 선택됐을 때만 밝게. 나머지는 얌전한 회색이라 상태 이름이 튀어 보인다.
 	const FLinearColor InactiveColor(0.08f, 0.08f, 0.08f);
 	const FLinearColor ActiveColor(1.00f, 0.60f, 0.35f);
 
@@ -120,7 +115,6 @@ void SGraphNodeYSPlaybackState::UpdateGraphNode()
 			[
 				SNew(SOverlay)
 
-				// 핀 영역 — 본체 전체를 덮는다.
 				+ SOverlay::Slot()
 				.HAlign(HAlign_Fill)
 				.VAlign(VAlign_Fill)
@@ -135,7 +129,6 @@ void SGraphNodeYSPlaybackState::UpdateGraphNode()
 					]
 				]
 
-				// 이름 영역
 				+ SOverlay::Slot()
 				.HAlign(HAlign_Center)
 				.VAlign(VAlign_Center)
@@ -187,8 +180,7 @@ void SGraphNodeYSPlaybackState::CreatePinWidgets()
 {
 	const UYSPlaybackGraphNode_Base* Node = CastChecked<UYSPlaybackGraphNode_Base>(GraphNode);
 
-	// 핀 위젯은 하나만 만든다. 두 개를 겹쳐두면 어느 쪽에서 드래그가 시작되는지 애매해진다.
-	// 출력이 있으면 출력을(선을 끌어내는 쪽), 없으면 입력을(종료·유지처럼 받기만 하는 쪽) 쓴다.
+	// 두 개를 겹쳐두면 어느 쪽에서 드래그가 시작되는지 애매해서 핀 위젯은 하나만 만든다. 출력이 있으면 출력, 없으면 입력.
 	UEdGraphPin* PinToShow = Node->GetOutputPin();
 
 	if (PinToShow == nullptr)
@@ -252,8 +244,6 @@ void SGraphNodeYSPlaybackState::OnNameTextCommited(const FText& InText, ETextCom
 }
 
 
-// ── 시작 노드 ────────────────────────────────────────────────────────────
-
 void SGraphNodeYSPlaybackEntry::Construct(const FArguments& InArgs, UYSPlaybackGraphNode_Base* InNode)
 {
 	SGraphNodeYSPlaybackState::Construct(SGraphNodeYSPlaybackState::FArguments(), InNode);
@@ -280,8 +270,6 @@ FLinearColor SGraphNodeYSPlaybackEntry::GetSpillColor() const
 }
 
 
-// ── 종료 노드 ────────────────────────────────────────────────────────────
-
 void SGraphNodeYSPlaybackExit::Construct(const FArguments& InArgs, UYSPlaybackGraphNode_Base* InNode)
 {
 	SGraphNodeYSPlaybackState::Construct(SGraphNodeYSPlaybackState::FArguments(), InNode);
@@ -307,8 +295,6 @@ FLinearColor SGraphNodeYSPlaybackExit::GetSpillColor() const
 	return FLinearColor(0.80f, 0.25f, 0.20f);
 }
 
-
-// ── 유지 노드 ────────────────────────────────────────────────────────────
 
 void SGraphNodeYSPlaybackStay::Construct(const FArguments& InArgs, UYSPlaybackGraphNode_Base* InNode)
 {

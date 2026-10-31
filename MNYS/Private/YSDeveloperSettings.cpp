@@ -8,12 +8,13 @@
 #include "DataRegistryId.h"
 #include "DataRegistrySubsystem.h"
 #include "GameplayEffect.h"
+#include "Engine/World.h"
 #include "Ability/GameplayEffect/YSGE_GroggyBreak.h"
 #include "Combat/YSSwitchAbusePolicy.h"
 #include "Combat/YSSwitchEntryForm.h"
 #include "Combat/YSSwitchWindowCloseCondition.h"
 #include "Data/YSCombatProfile.h"
-#include "General/YSInputGameplayTags.h"
+#include "Data/YSDataStruct.h"
 
 namespace
 {
@@ -22,7 +23,7 @@ namespace
 	{
 		static const TMap<EYSImpactGrade, FYSImpactProfile> Defaults = []()
 		{
-			// 히트스톱만 있던 때의 값이다. 셰이크 · 줌은 비워 둔다 — 값은 사장님이 정한다.
+			// 셰이크 · 줌은 기획 값이 아직 없어 비워 둔다.
 			const TPair<EYSImpactGrade, float> HitStops[] = {
 				{ EYSImpactGrade::S, 0.05f },
 				{ EYSImpactGrade::M, 0.08f },
@@ -53,32 +54,67 @@ namespace
 		Reported.Add(Grade, &bAlreadyReported);
 		return bAlreadyReported == false;
 	}
+
+	// ini 에 없으면 코드 기본값으로 돈다는 것을 알린다. 새 칸은 여기 한 줄.
+	const FName CodeDefaultReportedKeys[] = {
+		GET_MEMBER_NAME_CHECKED(UYSDeveloperSettings, RelativeEvaluationBonus),
+		GET_MEMBER_NAME_CHECKED(UYSDeveloperSettings, SwitchEntryInputWindowLimit),
+		GET_MEMBER_NAME_CHECKED(UYSDeveloperSettings, TagSwapCameraBlendTime),
+		GET_MEMBER_NAME_CHECKED(UYSDeveloperSettings, EchoCollisionProfile),
+		GET_MEMBER_NAME_CHECKED(UYSDeveloperSettings, NavProjectionMaxHeight),
+		GET_MEMBER_NAME_CHECKED(UYSDeveloperSettings, FrontwardMaxAngle),
+		GET_MEMBER_NAME_CHECKED(UYSDeveloperSettings, BackwardMinAngle),
+		GET_MEMBER_NAME_CHECKED(UYSDeveloperSettings, InputSaveSlotName),
+		GET_MEMBER_NAME_CHECKED(UYSDeveloperSettings, SequenceInstigatorBindingTag),
+		GET_MEMBER_NAME_CHECKED(UYSDeveloperSettings, SequenceTargetBindingTag),
+		GET_MEMBER_NAME_CHECKED(UYSDeveloperSettings, RunStageCount),
+		GET_MEMBER_NAME_CHECKED(UYSDeveloperSettings, ZoneLoadDistance),
+		GET_MEMBER_NAME_CHECKED(UYSDeveloperSettings, ZoneUnloadDistance),
+	};
 }
 
 UYSDeveloperSettings::UYSDeveloperSettings()
 {
-	// 기획 미결 항목의 기본값 (S4 제어 = ① 전역 쿨, S3 = A 파생만 창 소비 · ADS 중 LMB = 사격).
-	// 태그는 컨테이너가 아니라 배열로 둔다 — CDO 생성 시점에 태그 매니저를 건드리지 않기 위해서다.
+	// 남용 정책은 기획 미결이라 전역 쿨을 임시 기본으로 둔다.
 	SwitchAbusePolicy.InitializeAs<FYSSwitchAbusePolicy_GlobalCooldown>();
 
-	// 수동 Q/E 창만 전환 회전이 끝나면 닫는다 (재정의 §9). 태그 교대 창은 상한까지.
+	// 수동 Q/E 창만 전환 회전이 끝나면 닫는다. 태그 교대 창은 상한까지.
 	SwitchWindowCloseConditions.Add(EYSSwitchTrigger::TargetSwitch, FInstancedStruct::Make<FYSSwitchWindowCloseCondition_ControlYawAligned>());
-
-	FYSInputWindowRule JustAvoidRule;
-	JustAvoidRule.CloseInputs = { YSInputTags::InputAttack, YSInputTags::InputSkill1, YSInputTags::InputSkill2 };
-	JustAvoidRule.AimHeldPassThroughInputs = { YSInputTags::InputAttack };
-	JustAvoidRule.Priority = 10;	// 저스트 창이 스위치 창을 덮는다 (위험 지도 E8).
-	InputWindowRules.Add(EYSInputStatesType::JustAvoid, JustAvoidRule);
-
-	FYSInputWindowRule SwitchRule;
-	SwitchRule.CloseInputs = { YSInputTags::InputAttack, YSInputTags::InputSkill1, YSInputTags::InputSkill2 };
-	// 창 안 공격은 늘 무언가 나간다 — 변형이 안 맞으면 평소 입력으로.
-	SwitchRule.UnhandledFallThroughInputs = { YSInputTags::InputAttack, YSInputTags::InputSkill1, YSInputTags::InputSkill2 };
-	InputWindowRules.Add(EYSInputStatesType::Switch, SwitchRule);
 
 	GroggyBreakEffect = UYSGE_GroggyBreak::StaticClass();
 
 	ImpactProfiles = GetCodeDefaultImpactProfiles();
+}
+
+void UYSDeveloperSettings::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+	if ( HasAnyFlags(RF_ClassDefaultObject) == false || GConfig == nullptr )
+	{
+		return;
+	}
+
+	const FString Section = GetClass()->GetPathName();
+	const FString& ConfigFile = GetClass()->GetConfigName();
+
+	for ( const FName& Key : CodeDefaultReportedKeys )
+	{
+		FString IniValue;
+
+		if ( GConfig->GetString(*Section, *Key.ToString(), IniValue, ConfigFile) == false )
+		{
+			const FProperty* Property = GetClass()->FindPropertyByName(Key);
+			FString DefaultValue;
+
+			if ( Property != nullptr )
+			{
+				Property->ExportTextItem_InContainer(DefaultValue, this, nullptr, nullptr, PPF_None);
+			}
+
+			UE_LOG(LogTemp, Log, TEXT("[Settings] %s 가 ini 에 없어 코드 기본값 %s 을 쓴다."), *Key.ToString(), *DefaultValue);
+		}
+	}
 }
 
 bool UYSDeveloperSettings::ShouldOpenSwitchWindow(EYSSwitchTrigger Trigger) const
@@ -94,6 +130,20 @@ bool UYSDeveloperSettings::ShouldOpenSwitchWindow(EYSSwitchTrigger Trigger) cons
 	default :
 		return false;
 	}
+}
+
+float UYSDeveloperSettings::GetLevelHpScale(const UWorld* World) const
+{
+	if (World == nullptr || LevelHpScales.IsEmpty())
+	{
+		return 1.f;
+	}
+
+	// PIE 월드는 경로에 UEDPIE_n_ 접두가 붙어 표의 레벨 애셋 경로와 달라진다.
+	const TSoftObjectPtr<UWorld> Level(FSoftObjectPath(UWorld::RemovePIEPrefix(World->GetPathName())));
+	const float* Scale = LevelHpScales.Find(Level);
+
+	return Scale ? *Scale : 1.f;
 }
 
 float UYSDeveloperSettings::GetSwitchWindowDuration() const
@@ -143,16 +193,52 @@ const FYSSwitchEntryForm* UYSDeveloperSettings::FindSwitchEntryForm(FName RowNam
 	return Table->FindRow<FYSSwitchEntryForm>(RowName, TEXT("SwitchEntryForm"), false);
 }
 
-const FYSContextSwitchVariant* UYSDeveloperSettings::FindContextSwitchVariant(FName RowName) const
+const UDataTable* UYSDeveloperSettings::GetStageTable() const
 {
-	const UDataTable* Table = ContextSwitchVariantTable.LoadSynchronous();
+	const UDataTable* Table = StageTable.LoadSynchronous();
 
-	if ( IsValid(Table) == false || RowName.IsNone() )
+	if ( IsValid(Table) == false || Table->GetRowStruct() == nullptr || Table->GetRowStruct()->IsChildOf(FYSStageDefinition::StaticStruct()) == false )
 	{
 		return nullptr;
 	}
 
-	return Table->FindRow<FYSContextSwitchVariant>(RowName, TEXT("ContextSwitchVariant"), false);
+	return Table;
+}
+
+const UDataTable* UYSDeveloperSettings::GetInputStateTable() const
+{
+	const UDataTable* Table = InputStateTable.LoadSynchronous();
+
+	if ( IsValid(Table) == false || Table->GetRowStruct() == nullptr || Table->GetRowStruct()->IsChildOf(FYSInputStateDefinition::StaticStruct()) == false )
+	{
+		return nullptr;
+	}
+
+	return Table;
+}
+
+const FYSInputStateDefinition* UYSDeveloperSettings::FindInputStateDefinition(FName State) const
+{
+	const UDataTable* Table = GetInputStateTable();
+
+	if ( Table == nullptr || State.IsNone() )
+	{
+		return nullptr;
+	}
+
+	return Table->FindRow<FYSInputStateDefinition>(State, TEXT("InputState"), false);
+}
+
+const FYSInputWindowRule* UYSDeveloperSettings::FindInputWindowRule(FName State) const
+{
+	const FYSInputStateDefinition* Definition = FindInputStateDefinition(State);
+	return ( Definition != nullptr && Definition->bIsWindow ) ? &Definition->WindowRule : nullptr;
+}
+
+TArray<FName> UYSDeveloperSettings::GetInputStateOptions()
+{
+	const UDataTable* Table = GetDefault<UYSDeveloperSettings>()->GetInputStateTable();
+	return Table != nullptr ? Table->GetRowNames() : TArray<FName>();
 }
 
 const FYSImpactProfile* UYSDeveloperSettings::GetImpactProfile(EYSImpactGrade Grade) const

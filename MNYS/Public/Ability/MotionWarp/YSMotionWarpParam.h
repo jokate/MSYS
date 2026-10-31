@@ -7,9 +7,7 @@
 #include "YSMotionWarpParam.generated.h"
 
 class UYSGameplayAbility;
-/**
- * 모션 워핑에 대한 파라미터를 담는 클래스입니다. 모션 워핑의 경우, 단순히 타겟 위치로 이동하는 것 이상의 다양한 정책이 나올 수 있기 때문에, 해당 클래스를 상속받아서 필요한 데이터를 담도록 합니다.
- */
+/** 모션 워핑 파라미터. 타겟 이동 이상의 정책이 나올 수 있어 상속해서 필요한 데이터를 담는다. */
 USTRUCT(BlueprintType)
 struct MNYS_API FYSMotionWarpParam 
 {
@@ -21,6 +19,13 @@ struct MNYS_API FYSMotionWarpParam
 	virtual bool GetWarpTargetData(const UYSGameplayAbility* InAbility, FMotionWarpingTarget& OutTarget) const { return false; }
 	virtual void ResolveMotionWarp(const UYSGameplayAbility* InAbility) const;
 	virtual void ReleaseMotionWarp(const UYSGameplayAbility* InAbility) const;
+
+	/** 이 파라미터를 받는 몽타주의 워프 구간이 위치 이동까지 써야 하나. */
+	virtual bool RequiresTranslation() const { return false; }
+
+protected :
+	/** 재생 중인 몽타주가 이 워프를 받을 수 없으면(루트 모션 꺼짐 · 같은 이름 구간 없음 · 이동 꺼짐) 몽타주마다 한 번 경고한다. */
+	void WarnIfMontageCannotWarp(const UYSGameplayAbility* InAbility) const;
 	
 public : 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -46,4 +51,21 @@ struct MNYS_API FYSMotionWarpParam_Target : public FYSMotionWarpParam
 public : 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "타겟을 향할 것인가?")
 	bool bFaceTarget = true;
+};
+
+// 타겟 앞까지 반드시 이동한다. 회전만 하는 모션은 '타겟 기준 (회전)' 파라미터를 쓴다.
+USTRUCT(BlueprintType, DisplayName = "타겟 앞까지 모션 워핑 ( 위치 · 회전 )")
+struct MNYS_API FYSMotionWarpParam_TargetFront : public FYSMotionWarpParam
+{
+	GENERATED_BODY()
+
+	virtual bool GetWarpTargetData(const UYSGameplayAbility* InAbility, FMotionWarpingTarget& OutTarget) const override;
+	virtual bool RequiresTranslation() const override { return true; }
+
+public :
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "타겟 앞 정지 거리 (cm)", ClampMin = "0"))
+	float StopDistance = 100.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "이동 상한 (cm)", ClampMin = "0"))
+	float MaxDistance = 800.f;
 };

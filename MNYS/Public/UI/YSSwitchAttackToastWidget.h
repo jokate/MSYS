@@ -9,11 +9,7 @@
 
 class UTextBlock;
 
-/**
- * 스위치 공격 표시. 변형이 나가면 행 이름 · 임팩트 등급을 잠깐 띄운다.
- * 보고는 UYSCombatHUDComponent 가 스쿼드의 OnSwitchAttackFired 에서 받아 내린다.
- * 등장 · 퇴장 애니메이션 같은 모양은 OnToastShown / OnToastHidden 에서 WBP 가 한다.
- */
+/** 스위치 공격 표시. 변형이 나가면 행 이름 · 임팩트 등급을 잠깐 띄운다. 보고는 UYSCombatHUDComponent 가 스쿼드의 OnSwitchAttackFired 에서 받아 내리고, 모양은 WBP 가 OnToastShown / OnToastHidden 에서 정한다. */
 UCLASS(Abstract)
 class MNYS_API UYSSwitchAttackToastWidget : public UUserWidget
 {

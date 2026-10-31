@@ -22,9 +22,8 @@
 #include "Character/Components/YSSaveComponent.h"
 #include "General/YSDefine.h"
 #include "General/YSGameplayTag.h"
-#include "Input/StateMachine/YSInputStateMachineComponent.h"
-#include "Interface/YSDamageProxy.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
+#include "Subsystem/YSObjectPoolingSubsystem.h"
 #include "YSBattleActor.h"
 #include "Components/PrimitiveComponent.h"
 #include "Engine/HitResult.h"
@@ -85,25 +84,18 @@ bool UYSAbilityEventAction_HitContextTarget::Execute_Implementation(UYSGameplayA
 	if ( IsValid(Instigator) == false || IsValid(Target) == false )
 		return false;
 
-	// 분신이 재현 중이면 시전자는 분신이다. 분신은 팀 · 속성 세트가 없어 AdmitHit 이 막으므로 트레이스처럼 Master 로 푼다.
-	AActor* DamageInstigator = Instigator;
-	if ( const IYSDamageProxy* Proxy = Cast<IYSDamageProxy>(Instigator) )
-	{
-		DamageInstigator = Proxy->GetDamageInstigator();
-	}
-
-	// 트레이스 입구와 같은 검사. 걸러지면 히트 이벤트 · 이펙트 · 히트 컨텍스트 기록 · OnHit 모두 건너뛴다.
-	if ( UYSBlueprintFunctionLibrary::AdmitHit(DamageInstigator, Target) == false )
-		return false;
+	// 분신은 팀 · 속성 세트가 없어 AdmitHit 이 막으므로 Master 로 푼다.
+	AActor* DamageInstigator = UYSBlueprintFunctionLibrary::ResolveDamageInstigator(Instigator);
 
 	// 시퀀스가 두 액터의 위치를 쥐고 있으므로 스윕 대신 타겟 위치를 히트 지점으로 쓴다.
 	const FVector HitLocation = Target->GetActorLocation();
 	const FVector HitDirection = (HitLocation - Instigator->GetActorLocation()).GetSafeNormal2D();
 	const FHitResult HitResult(Target, Cast<UPrimitiveComponent>(Target->GetRootComponent()), HitLocation, -HitDirection);
 
-	UYSBlueprintFunctionLibrary::SendHitEventToTarget(DamageInstigator, Target, Payload->DamageRow);
-	UYSBlueprintFunctionLibrary::SpawnEffects(Instigator, Payload->DamageRow, HitLocation, HitDirection.ToOrientationRotator());
-	UYSBlueprintFunctionLibrary::ApplyHitEffects(Instigator, DamageInstigator, Target, Payload->DamageRow, HitResult);
+	// 걸러지면 히트 컨텍스트 기록 · OnHit 도 건너뛴다.
+	if ( UYSBlueprintFunctionLibrary::ApplyHitToTarget(Instigator, DamageInstigator, Target, Payload->DamageRow,
+		OwningAbility->GetEffectScale(), HitResult, HitDirection.ToOrientationRotator()) == false )
+		return false;
 
 	TArray<AActor*> HitActors;
 	HitActors.Add(Target);
@@ -131,7 +123,7 @@ void UYSAbilityEventAction_Destroy::DestroyActor()
 	if ( DestroyTarget.IsValid() == false )
 		return;
 	
-	DestroyTarget->Destroy();
+	UYSObjectPoolingSubsystem::ReturnToPool(DestroyTarget.Get());
 }
 
 bool UYSAbilityEventAction_Destroy::Execute_Implementation(UYSGameplayAbility* OwningAbility,
@@ -150,24 +142,6 @@ bool UYSAbilityEventAction_Destroy::Execute_Implementation(UYSGameplayAbility* O
 	World->GetTimerManager().SetTimer(DeathTimerHandle, this, &ThisClass::DestroyActor, DestroyTime, false);
 	
 	return true;
-}
-
-bool UYSAbilityEventAction_TransitionState::Execute_Implementation(UYSGameplayAbility* OwningAbility,
-	const FGameplayEventData& EventData)
-{
-	if ( IsValid(OwningAbility) == false )
-		return false;
-
-	AActor* AvatarActor = OwningAbility->GetAvatarActorFromActorInfo();
-	UYSInputStateMachineComponent* StateMachineComponent = UYSInputStateMachineComponent::Get(AvatarActor);
-	
-	if ( IsValid(StateMachineComponent) == false )
-		return false;
-	
-	StateMachineComponent->RemoveStateStack(OwningAbility->ChangeInputStateType);
-	
-	return true;
-	
 }
 
 bool UYSAbilityEventAction_GameplayCue::Execute_Implementation(UYSGameplayAbility* OwningAbility,
@@ -239,18 +213,16 @@ bool UYSAbilityEventAction_GameplayEffect::Execute_GameplayEffectFromInstigator(
 	if ( ASI == nullptr )
 		return false;
 	
-	UAbilitySystemComponent* TargetASC = ASI->GetAbilitySystemComponent();
+	UAbilitySystemComponent* InstigatorASC = ASI->GetAbilitySystemComponent();
 	UAbilitySystemComponent* OwnerASC = OwningAbility->GetAbilitySystemComponentFromActorInfo();
-	if ( IsValid(TargetASC) == false || IsValid(OwnerASC) == false )
+	if ( IsValid(InstigatorASC) == false || IsValid(OwnerASC) == false )
 		return false;
-	
-	
-	FGameplayEffectContextHandle EffectContextHandle = OwnerASC->MakeEffectContext();
-	EffectContextHandle.SetAbility(OwningAbility);
-	EffectContextHandle.AddInstigator(OwningAbility->GetAvatarActorFromActorInfo(), OwningAbility->GetOwningActorFromActorInfo());
-	FGameplayEffectSpec Spec(GameplayEffect.GetDefaultObject(), EffectContextHandle);	
-	
-	const FActiveGameplayEffectHandle Handle = OwnerASC->ApplyGameplayEffectSpecToSelf(Spec);
+
+	// 받는 쪽은 나, 거는 쪽(원인 · 수치 출처)은 가해자다.
+	FGameplayEffectContextHandle EffectContextHandle = InstigatorASC->MakeEffectContext();
+	FGameplayEffectSpec Spec(GameplayEffect.GetDefaultObject(), EffectContextHandle);
+
+	const FActiveGameplayEffectHandle Handle = InstigatorASC->ApplyGameplayEffectSpecToTarget(Spec, OwnerASC);
 	
 	if (bRemoveWhenFinished)
 	{
@@ -262,10 +234,13 @@ bool UYSAbilityEventAction_GameplayEffect::Execute_GameplayEffectFromInstigator(
 
 void UYSAbilityEventAction_ApplyVelocity::OnTimedOut()
 {
-	if (VelocityData->bSetNewMovementMode)
+	// 비행 모드로 끝나면 어빌리티가 끝날 때까지 떠 있어야 한다.
+	if ( VelocityData->bSetNewMovementMode && VelocityData->MoveMode != MOVE_Flying )
 	{
-		UYSCharacterMovementComponent* CharacterMovement = UYSCharacterMovementComponent::Get(OwningActor);
-		CharacterMovement->SetGravityScale(VelocityData->MoveMode == MOVE_Flying ? 0.f : 1.0f);
+		if ( UYSCharacterMovementComponent* CharacterMovement = UYSCharacterMovementComponent::Get(OwningActor) )
+		{
+			CharacterMovement->ResumeGravity(this);
+		}
 	}
 }
 
@@ -294,7 +269,6 @@ bool UYSAbilityEventAction_ApplyVelocity::Execute_Implementation(UYSGameplayAbil
 		+ DirectionVector
 		* ( VelocityData->Velocity * VelocityData->Duration );
 	
-	// 뒤로 쭉 밀려서 들어가야 하는 경우라면?
 	if ( VelocityData->bRotateActorToDirection )
 	{
 		if ( UYSCharacterMovementComponent* Movement = UYSCharacterMovementComponent::Get(OwningActor) )
@@ -309,8 +283,19 @@ bool UYSAbilityEventAction_ApplyVelocity::Execute_Implementation(UYSGameplayAbil
 	
 	if (VelocityData->bSetNewMovementMode)
 	{
-		UYSCharacterMovementComponent* CharacterMovement = UYSCharacterMovementComponent::Get(OwningActor);
-		CharacterMovement->SetGravityScale(0.0f);
+		if ( UYSCharacterMovementComponent* CharacterMovement = UYSCharacterMovementComponent::Get(OwningActor) )
+		{
+			CharacterMovement->SuspendGravity(this);
+
+			// 시간 전에 어빌리티가 끝나면 태스크가 OnTimedOut 없이 사라지므로 종료 정리에서 되돌린다.
+			OwningAbility->AddEndCleanup([WeakMovement = TWeakObjectPtr<UYSCharacterMovementComponent>(CharacterMovement), WeakAction = TWeakObjectPtr<UYSAbilityEventAction_ApplyVelocity>(this)]()
+			{
+				if ( UYSCharacterMovementComponent* Movement = WeakMovement.Get() )
+				{
+					Movement->ResumeGravity(WeakAction.Get());
+				}
+			});
+		}
 	}
 	
 	UAbilityTask_ApplyRootMotionMoveToForce* ApplyVelocityTask = 
@@ -407,75 +392,6 @@ void UYSAbilityEventAction_RunEQS::OnEQSQueryFinished_Implementation(UYSGameplay
 	FVector Location)
 {
 	UE_LOG(LogTemp, Log, TEXT("EQS Query Completed"));
-}
-
-bool UYSAbilityEventAction_PushCamera::Execute_Implementation(UYSGameplayAbility* OwningAbility,
-	const FGameplayEventData& EventData)
-{	
-	const UYSAbilityTriggerPayload_CameraEffect* PushCamera = UYSAbilityTriggerPayload::GetPayload<UYSAbilityTriggerPayload_CameraEffect>(&EventData);
-	
-	if ( IsValid(PushCamera) == false || IsValid(OwningAbility) == false )
-	{
-		return false;
-	}
-	
-	AActor* AvatarActor = OwningAbility->GetAvatarActorFromActorInfo();
-	
-	if ( IsValid(AvatarActor) == false )
-	{
-		return false;
-	}
-	
-	UYSCameraManageComponent* CameraManager = UYSCameraManageComponent::Get(AvatarActor);
-	if ( IsValid(CameraManager) == false )
-	{
-		return false;
-	}
-	
-	// 같은 요청자의 재호출은 갱신이므로 처음 올릴 때만 해제를 등록한다. 중간에 Pop 액션이 먼저 빼면 Pop 은 빈 호출이 된다.
-	const bool bAlreadyPushed = CameraManager->HasCameraMode(OwningAbility);
-
-	CameraManager->PushCameraMode(OwningAbility, PushCamera->CameraEffectParams, PushCamera->CameraEffectPriority);
-
-	if ( bAlreadyPushed == false )
-	{
-		OwningAbility->AddEndCleanup([WeakCamera = TWeakObjectPtr<UYSCameraManageComponent>(CameraManager),
-			WeakAbility = TWeakObjectPtr<UYSGameplayAbility>(OwningAbility)]()
-		{
-			UYSCameraManageComponent* Camera = WeakCamera.Get();
-			UYSGameplayAbility* Ability = WeakAbility.Get();
-
-			if ( IsValid(Camera) && IsValid(Ability) )
-			{
-				Camera->PopCameraMode(Ability);
-			}
-		});
-	}
-
-	return true;
-}
-
-bool UYSAbilityEventAction_PopCamera::Execute_Implementation(UYSGameplayAbility* OwningAbility,
-	const FGameplayEventData& EventData)
-{
-	if ( IsValid(OwningAbility) == false )
-		return false;
-
-	AActor* AvatarActor = OwningAbility->GetAvatarActorFromActorInfo();
-	
-	if ( IsValid(AvatarActor) == false )
-	{
-		return false;
-	}
-	
-	UYSCameraManageComponent* CameraManager = UYSCameraManageComponent::Get(AvatarActor);
-	if ( IsValid(CameraManager) == false )
-	{
-		return false;
-	}
-	
-	CameraManager->PopCameraMode(OwningAbility);
-	return true;
 }
 
 bool UYSAbilityEventAction_AimStart::Execute_Implementation(UYSGameplayAbility* OwningAbility,
@@ -589,7 +505,7 @@ bool UYSAbilityEventAction_SaveAbilityRecord::Execute_Implementation(UYSGameplay
 	if ( ASC->HasMatchingGameplayTag(YSTags::State_Save_TripleEcho) )
 	{
 		const FYSSavedTechnique Technique(OwningAbility->GetClass(), OwningAbility->GetCurrentPlaybackIndex(), 1.0f);
-		SaveComponent->ExecuteTripleEcho(Technique);
+		SaveComponent->ExecuteTripleEcho(Technique, OwningAbility->GetHitContext());
 		return true;
 	}
 	

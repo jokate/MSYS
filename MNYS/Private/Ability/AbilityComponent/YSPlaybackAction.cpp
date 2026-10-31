@@ -24,24 +24,7 @@ void UYSPlaybackAction_SendGameplayEvent::Execute(const TSharedPtr<FYSPlaybackCo
 		return;
 	}
 
-	FGameplayEventData Payload;
-	Payload.EventTag = EventData.TargetToTrigger;
-	Payload.Instigator = Context->Instigator;
-	Payload.Target = Context->Target;
-
-	// AnimNotify 가 쏘는 것과 같은 경로다. 페이로드 슬롯은 두 개뿐이다.
-	const TArray<UYSAbilityTriggerPayload*>& TriggerPayloads = EventData.TriggerPayloads;
-
-	if ( TriggerPayloads.IsValidIndex(0) )
-	{
-		Payload.OptionalObject = TriggerPayloads[0];
-	}
-
-	if ( TriggerPayloads.IsValidIndex(1) )
-	{
-		Payload.OptionalObject2 = TriggerPayloads[1];
-	}
-
+	const FGameplayEventData Payload = EventData.MakeEventData(Context->Instigator, Context->Target);
 	ASC->HandleGameplayEvent(EventData.TargetToTrigger, &Payload);
 }
 

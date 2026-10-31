@@ -28,11 +28,9 @@ void FYSAbilityTestCharacterDetails::CustomizeDetails(IDetailLayoutBuilder& Deta
     AYSCharacterBase* TestCharacter = Cast<AYSCharacterBase>(Objects[0].Get());
     if (!TestCharacter) return;
 
-    // 기본 프로퍼티 표시
     DetailBuilder.EditCategory("YS | Test")
         .SetSortOrder(0);
 
-    // 커스텀 카테고리 추가
     IDetailCategoryBuilder& AbilityCategory = DetailBuilder.EditCategory("YS | Abilities", FText::FromString("Abilities"), ECategoryPriority::Important);
     
     GenerateAbilityButtons(AbilityCategory, TestCharacter);

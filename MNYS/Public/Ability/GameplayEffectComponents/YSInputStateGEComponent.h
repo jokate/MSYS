@@ -6,10 +6,6 @@
 #include "YSGameplayEffectComponent.h"
 #include "YSInputStateGEComponent.generated.h"
 
-enum class EYSInputStatesType : uint8;
-/**
- * 
- */
 UCLASS(DisplayName = "입력 State 전환 (플레이어 한정)")
 class MNYS_API UYSInputStateGEComponent : public UYSGameplayEffectComponent
 {
@@ -22,6 +18,6 @@ protected :
 	virtual void OnActiveGameplayEffectRemoved(const FGameplayEffectRemovalInfo& GameplayEffectRemovalInfo, FActiveGameplayEffectsContainer* ActiveGEContainer) const override;
 	
 public :
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, DisplayName = "변경할 State")
-	EYSInputStatesType TargetToChange;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, DisplayName = "변경할 State", meta = (GetOptions = "MNYS.YSDeveloperSettings.GetInputStateOptions"))
+	FName TargetToChange;
 };

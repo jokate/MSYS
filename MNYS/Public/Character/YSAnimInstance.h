@@ -9,9 +9,6 @@
 
 class UCharacterMovementComponent;
 class AYSCharacterBase;
-/**
- * 
- */
 UCLASS()
 class MNYS_API UYSAnimInstance : public UAnimInstance
 {

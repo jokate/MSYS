@@ -12,9 +12,6 @@ class UYSCombatTargetComponent;
 class UYSCombatHUDComponent;
 class UYSTargetingComponent;
 class UInputMappingContext;
-/**
- * 
- */
 UCLASS()
 class MNYS_API AYSPlayerController : public APlayerController
 {
@@ -34,8 +31,7 @@ public :
 	UPROPERTY(EditDefaultsOnly, Category="YS | Lock On")
 	TObjectPtr<UYSCameraManageComponent> LockOnComponent;
 
-	// 폰이 아니라 컨트롤러에 둔다. 스쿼드 태그 교대로 폰이 바뀌어도
-	// 인디케이터 인스턴스와 조준 상태가 유지돼야 하기 때문이다.
+	// 폰이 아니라 컨트롤러에 둔다. 스쿼드 태그 교대로 폰이 바뀌어도 인디케이터 인스턴스와 조준 상태가 유지돼야 한다.
 	UPROPERTY(EditDefaultsOnly, Category="YS | Comp")
 	TObjectPtr<UYSTargetingComponent> TargetingComponent;
 

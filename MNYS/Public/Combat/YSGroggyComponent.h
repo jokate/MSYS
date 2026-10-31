@@ -18,13 +18,7 @@ struct FYSGroggyRules;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FYSOnBreakPhaseChanged, EYSBreakPhase, Phase, bool, bActive);
 
-/**
- * 브레이크 규칙(기획 02_COMBAT §5.2, A안)을 한 곳에서 갖는다.
- * Event.Groggy.Broken → 어빌리티 취소 · UYSGE_GroggyBreak · 몽타주.
- * 브레이크 종료 → 최대치 증가(상한) · 그로기 게이지 가득 · 유예. 평소엔 회복 지연 뒤 초당 회복. 페이즈 전환 때 최대치 초기화.
- * 연출은 단계(진입 · 무방비 · 회복 예고 · 유예)의 시작과 끝만 정하고, 단계마다 Rules.PhaseCues 의 Cue 를 켜고 끈다.
- * 수치는 FYSGroggyRules (프로필 → 없으면 설정 기본값).
- */
+/** 브레이크 규칙을 한 곳에서 갖는다. Event.Groggy.Broken → 어빌리티 취소 · UYSGE_GroggyBreak · 몽타주, 종료 → 최대치 증가(상한) · 게이지 가득 · 유예, 평소엔 회복 지연 뒤 초당 회복, 페이즈 전환 때 최대치 초기화. 연출은 단계의 시작과 끝만 정하고 단계마다 Rules.PhaseCues 의 Cue 를 켜고 끈다. 수치는 FYSGroggyRules. */
 UCLASS(ClassGroup=(Custom))
 class MNYS_API UYSGroggyComponent : public UActorComponent
 {
@@ -55,7 +49,7 @@ private :
 
 	void OnGroggyBroken(const FGameplayEventData* Payload);
 	void OnBreakEffectRemoved(const FGameplayEffectRemovalInfo& RemovalInfo);
-	void OnPhaseChanged(int32 NewPhase);
+	void OnPhaseChanged(AActor* PhaseOwner, int32 NewPhase);
 
 	void CancelActiveAbilities(const FYSGroggyRules& Rules);
 	void ApplyBreakEffect(const FYSGroggyRules& Rules);

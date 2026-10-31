@@ -17,10 +17,6 @@ struct FYSComboTransition;
 struct FGameplayEventData;
 class UYSGameplayAbility;
 class UGameplayAbility;
-/**
- * 어빌리티 이벤트 어셉팅에 따른, 동작 방식에 대해서 정의합니다.
- * 특정 이벤트가 들어온 상황이라면, 각 상황에 맞게 처리가 될 것입니다.
- */
 UCLASS(Abstract, EditInlineNew, DefaultToInstanced, BlueprintType, Blueprintable)
 class MNYS_API UYSAbilityEventAction : public UObject
 {
@@ -32,7 +28,6 @@ public :
 	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) { return true; }
 };
 
-// 트레이스 시작.
 UCLASS(DisplayName = "트레이스 시작")
 class MNYS_API UYSAbilityEventAction_StartTrace : public UYSAbilityEventAction
 {
@@ -78,16 +73,6 @@ protected :
 private : 
 	UPROPERTY()
 	TWeakObjectPtr<AActor> DestroyTarget;
-};
-
-// 정지 되었다는 것을 의미.
-UCLASS(DisplayName = "(플레이어) State 제거.")
-class MNYS_API UYSAbilityEventAction_TransitionState : public UYSAbilityEventAction
-{
-	GENERATED_BODY()
-	
-public : 
-	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
 };
 
 UCLASS(DisplayName = "Gameplay Cue 트리거")
@@ -174,25 +159,6 @@ public :
 	UFUNCTION(BlueprintNativeEvent)
 	void OnEQSQueryFinished(UYSGameplayAbility* OwningAbility, FVector Location);
 	virtual void OnEQSQueryFinished_Implementation(UYSGameplayAbility* OwningAbility, FVector Location);
-};
-
-UCLASS(DisplayName = "카메라 진입")
-class MNYS_API UYSAbilityEventAction_PushCamera : public UYSAbilityEventAction
-{
-	GENERATED_BODY()	
-	
-public : 
-	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
-	
-};
-
-UCLASS(DisplayName = "카메라 해제")
-class MNYS_API UYSAbilityEventAction_PopCamera : public UYSAbilityEventAction
-{
-	GENERATED_BODY()	
-	
-public : 
-	virtual bool Execute_Implementation(UYSGameplayAbility* OwningAbility, const FGameplayEventData& EventData) override;
 };
 
 UCLASS(DisplayName = "인디케이터 조준")

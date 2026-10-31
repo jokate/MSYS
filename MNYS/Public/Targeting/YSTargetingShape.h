@@ -35,14 +35,7 @@ struct FYSTargetingResult
 	bool bValid = false;
 };
 
-/**
- * 스킬 하나가 어떤 도형으로 조준되는지 선언합니다.
- *
- * 도형마다 기준점이 다릅니다 —
- *  - 조준점 기준 : 원형·사각형 (커서가 도형의 중심)
- *  - 시전자 기준 : 직선·부채꼴·자기중심원 (커서는 방향만 결정)
- * 이 차이 때문에 사거리 클램프와 사거리 링의 의미도 도형마다 달라집니다.
- */
+/** 스킬 하나가 어떤 도형으로 조준되는지 선언한다. 조준점 기준(원형 · 사각형)과 시전자 기준(직선 · 부채꼴 · 자기중심원)은 사거리 클램프와 링의 의미가 다르다. */
 USTRUCT()
 struct FYSTargetingShape
 {
@@ -54,10 +47,7 @@ struct FYSTargetingShape
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "사거리 링 표시"))
 	bool bShowRangeRing = true;
 
-	/**
-	 * 사거리 밖을 겨눴을 때 끝으로 당길지 여부 (LoL 기본 동작).
-	 * 끄면 사거리 밖은 무효 처리되어 인디케이터가 붉게 뜨고 확정이 막힌다.
-	 */
+	/** 사거리 밖을 겨눴을 때 끝으로 당길지 (LoL 기본 동작). 끄면 무효 처리되어 인디케이터가 붉게 뜨고 확정이 막힌다. */
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting", meta = (DisplayName = "사거리 밖이면 끝으로 클램프"))
 	bool bClampToRange = true;
 
@@ -70,10 +60,7 @@ struct FYSTargetingShape
 	/** 인디케이터에 도형을 그린다. 사거리 링은 여기서 공통 처리한다. */
 	void Draw(AYSSkillIndicator* Indicator, const FYSTargetingResult& Result, const FVector& CasterLocation) const;
 
-	/**
-	 * 도형 안의 폰을 모은다. 표시와 판정이 같은 값을 쓰게 하려고 도형이 직접 겹침을 낸다.
-	 * 시전자 기준 도형만 판정을 지원한다. 조준점 기준 도형은 false.
-	 */
+	/** 도형 안의 폰을 모은다. 표시와 판정이 같은 값을 쓰게 도형이 직접 겹침을 낸다. 시전자 기준 도형만 지원하고 조준점 기준은 false. */
 	virtual bool CollectActors(const UWorld* World, const FVector& Origin, const FVector& Forward, const AActor* Ignore, TArray<AActor*>& OutActors) const { return false; }
 
 protected:

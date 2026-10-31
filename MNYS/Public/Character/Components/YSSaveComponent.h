@@ -8,13 +8,11 @@
 #include "YSSaveComponent.generated.h"
 
 
-/*
- * 기사단장 혼이 사용할 컴포넌트
- * 혼은 세이브를 이용한 공격을 전제로 합니다.
- */
+/* 기사단장 혼이 사용할 컴포넌트. 세이브를 이용한 공격을 전제로 한다. */
 
 class AYSSaveEcho;
 struct FGameplayTag;
+struct FYSAbilityHitContext;
 class UYSAbilitySystemComponent;
 class UYSGameplayAbility;
 
@@ -67,7 +65,6 @@ class MNYS_API UYSSaveComponent : public UActorComponent
 
 public:
 	static UYSSaveComponent* Get(AActor* Owner);
-	// Sets default values for this component's properties
 	UYSSaveComponent();
 
 	void MarkSavable(TSubclassOf<UYSGameplayAbility> AbilityClass, int32 PlaybackIndex, float Multiplier);
@@ -78,10 +75,13 @@ public:
 	/** 배치 시 호출. 가장 오래된 슬롯 1건을 꺼내 비운다. */
 	bool TryConsumeSlot(FYSSavedTechnique& OutTechnique);
 
-	void ExecuteTripleEcho(const FYSSavedTechnique& Technique);
+	/** 분신이 스폰될 때 부른다. 같은 히트 기록으로 대기 중인 삼백의 참격 기술이 있으면 그것을, 없으면 슬롯을 꺼낸다. */
+	bool TakeEchoTechnique(const TSharedPtr<FYSAbilityHitContext>& HitContext, FYSSavedTechnique& OutTechnique);
+
+	/** 기술을 대기열에 넣고 분신을 스폰한다. 낸 어빌리티나 궁극기가 스폰 전에 끝나면 그 기술은 버려진다. */
+	void ExecuteTripleEcho(const FYSSavedTechnique& Technique, const TSharedPtr<FYSAbilityHitContext>& HitContext);
 	
 protected:
-	// Called when the game starts
 	virtual void BeginPlay() override;
 	
 	
@@ -100,7 +100,7 @@ protected:
 
 	UFUNCTION()
 	void HandleTagStateChanged(const FGameplayTag& Tag, bool bTagExists);
-	
+
 public:
 	UPROPERTY(BlueprintAssignable, Category = "YS | Save", meta = (DisplayName = "세이브 상태 변경"))
 	FOnSaveStateChanged OnSaveStateChanged;
@@ -115,13 +115,10 @@ protected:
 	void RefreshStateTags();
 
 	UYSAbilitySystemComponent* GetOwnerASC() const;
-	
-	/** 타이머 페이로드로 넘어가므로 값으로 받는다. CreateUObject 가 VarTypes 를 값으로 추론한다. */
-	void ExecuteTripleEcho_Internal(const FTransform SpawnTransform, const FYSSavedTechnique Technique);
 
 	/** 궁극기가 끝나면 예약분은 나가지 않는다. 버프 밖에서 참격이 나오면 안 된다. */
 	void CancelPendingEchoes();
-	
+
 protected:
 	// 혼의 세이브는 컨셉상 2개 2개만 저장해야 한다./
 	UPROPERTY(VisibleAnywhere, Category = "YS | Save", meta = (DisplayName = "저장된 동작들"))
@@ -140,6 +137,7 @@ protected:
 	FYSSpawnActorConfig TripleEchoSpawnConfig;
 	
 private :
-	TArray<FTimerHandle> PendingEchoTimers;
+	// 스폰을 기다리는 삼백의 참격 기술과 그것을 낸 어빌리티의 히트 기록. 요청 순서대로 나온다.
+	TArray<TPair<FYSSavedTechnique, TWeakPtr<FYSAbilityHitContext>>> QueuedEchoTechniques;
 	
 };

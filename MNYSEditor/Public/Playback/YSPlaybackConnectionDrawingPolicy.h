@@ -8,16 +8,8 @@
 
 class UEdGraph;
 
-/**
- * 플레이백 그래프의 선 그리기.
- *
- * 여기가 AnimBP 느낌의 핵심이다.
- * 데이터상 연결은 [상태A]→[전환]→[상태B] 두 개지만, 이 정책이
- * DetermineLinkGeometry 에서 양 끝 기하를 상태A·상태B 로 바꿔치기해서
- * **선 하나**로 그린다. 그래서 전환 노드가 선 위에 얹힌 아이콘처럼 보인다.
- *
- * 엔진의 FStateMachineConnectionDrawingPolicy 와 같은 방식이다.
- */
+// 데이터상 연결은 [상태A]→[전환]→[상태B] 두 개지만, DetermineLinkGeometry 에서 양 끝 기하를
+// 상태A·상태B 로 바꿔치기해 선 하나로 그린다. 그래서 전환 노드가 선 위에 얹힌 아이콘처럼 보인다.
 class FYSPlaybackConnectionDrawingPolicy : public FConnectionDrawingPolicy
 {
 public:
@@ -41,12 +33,10 @@ protected:
 
 	UEdGraph* GraphObj = nullptr;
 
-	// 노드 오브젝트 → 배치된 위젯 인덱스. 전환을 상태 기하로 바꿔치기할 때 쓴다.
 	TMap<UEdGraphNode*, int32> NodeWidgetMap;
 };
 
 
-/** 위 정책을 이 그래프에만 물린다. 모듈 시작 시 등록한다. */
 class FYSPlaybackConnectionFactory : public FGraphPanelPinConnectionFactory
 {
 public:

@@ -6,9 +6,6 @@
 #include "Ability/YSGameplayAbility.h"
 #include "YSGameplayAbility_Hit.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class MNYS_API UYSGameplayAbility_Hit : public UYSGameplayAbility
 {

@@ -16,10 +16,7 @@ enum class EYSGroggyGaugeState : uint8
 	Broken		UMETA(DisplayName = "브레이크"),
 };
 
-/**
- * ⑤ 그로기 게이지 · ⑥ 브레이크 (기획 11_UIUX_V4_DRAFT §3.5 · §3.6). 상단 중앙 고정.
- * 상태와 값은 UYSCombatHUDComponent 가 내린다. 브레이크 중에는 게이지 자리에 BrokenPanel 을 띄운다.
- */
+/** 그로기 게이지와 브레이크 표시. 상단 중앙 고정. 상태와 값은 UYSCombatHUDComponent 가 내리고, 브레이크 중에는 게이지 자리에 BrokenPanel 을 띄운다. */
 UCLASS(Abstract)
 class MNYS_API UYSGroggyGaugeWidget : public UUserWidget
 {

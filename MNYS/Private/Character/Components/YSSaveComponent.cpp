@@ -102,7 +102,7 @@ void UYSSaveComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		ASC->OnGameplayTagStateChanged.RemoveDynamic(this, &UYSSaveComponent::HandleTagStateChanged);
 	}
 
-	CancelPendingEchoes();
+	QueuedEchoTechniques.Empty();
 
 	Super::EndPlay(EndPlayReason);
 }
@@ -186,44 +186,57 @@ bool UYSSaveComponent::TryConsumeSlot(FYSSavedTechnique& OutTechnique)
 	return true;
 }
 
-void UYSSaveComponent::ExecuteTripleEcho(const FYSSavedTechnique& Technique)
+bool UYSSaveComponent::TakeEchoTechnique(const TSharedPtr<FYSAbilityHitContext>& HitContext, FYSSavedTechnique& OutTechnique)
 {
-	UWorld* World = GetWorld();
-	AActor* Owner = GetOwner();
-	if ( IsValid(World) == false || IsValid(Owner) == false || Technique.IsValid() == false )
+	// 대기 스폰이 히트 기록을 쥐고 있으므로, 기록이 사라진 항목은 스폰이 오지 않는다.
+	QueuedEchoTechniques.RemoveAll([](const TPair<FYSSavedTechnique, TWeakPtr<FYSAbilityHitContext>>& Queued)
 	{
-		return;
-	}
-	
-	const FTransform SpawnTransform = UYSBlueprintFunctionLibrary::CalculateSpawnTransform(this, TripleEchoSpawnConfig, FYSTransformPolicyContext(Owner));
-	if ( TripleEchoSpawnConfig.SpawnDelay <= 0.f  )
-	{
-		ExecuteTripleEcho_Internal(SpawnTransform, Technique);
-		return;
-	}
-
-	FTimerManager& TimerManager = World->GetTimerManager();
-
-	PendingEchoTimers.RemoveAll([&TimerManager](const FTimerHandle& Handle)
-	{
-		return TimerManager.IsTimerActive(Handle) == false;
+		return Queued.Value.IsValid() == false;
 	});
 
-	FTimerHandle& TimerHandle = PendingEchoTimers.AddDefaulted_GetRef();
-	TimerManager.SetTimer(TimerHandle, FTimerDelegate::CreateUObject(this, &UYSSaveComponent::ExecuteTripleEcho_Internal, SpawnTransform, Technique), TripleEchoSpawnConfig.SpawnDelay, false);
+	const int32 QueuedIndex = HitContext.IsValid() == false ? INDEX_NONE : QueuedEchoTechniques.IndexOfByPredicate(
+		[&HitContext](const TPair<FYSSavedTechnique, TWeakPtr<FYSAbilityHitContext>>& Queued)
+		{
+			return Queued.Value.Pin() == HitContext;
+		});
+
+	if ( QueuedIndex == INDEX_NONE )
+	{
+		return TryConsumeSlot(OutTechnique);
+	}
+
+	const FYSSavedTechnique Technique = QueuedEchoTechniques[QueuedIndex].Key;
+	QueuedEchoTechniques.RemoveAt(QueuedIndex);
+
+	// 궁극기가 끝나 취소된 참격은 슬롯으로 넘어가지 않는다.
+	if ( Technique.IsValid() == false )
+	{
+		return false;
+	}
+
+	OutTechnique = Technique;
+	return true;
+}
+
+void UYSSaveComponent::ExecuteTripleEcho(const FYSSavedTechnique& Technique, const TSharedPtr<FYSAbilityHitContext>& HitContext)
+{
+	AActor* Owner = GetOwner();
+	if ( IsValid(Owner) == false || Technique.IsValid() == false || HitContext.IsValid() == false || TripleEchoSpawnConfig.ActorClass == nullptr )
+	{
+		return;
+	}
+
+	QueuedEchoTechniques.Emplace(Technique, HitContext);
+	UYSBlueprintFunctionLibrary::SpawnByConfig(this, TripleEchoSpawnConfig, FYSTransformPolicyContext(Owner), nullptr, HitContext);
 }
 
 void UYSSaveComponent::CancelPendingEchoes()
 {
-	if ( UWorld* World = GetWorld() )
+	// 지우지 않고 비워 둔다. 스폰 타이머는 그대로 돌아 분신이 와서 찾으므로, 없으면 슬롯을 꺼내 버린다.
+	for ( TPair<FYSSavedTechnique, TWeakPtr<FYSAbilityHitContext>>& Queued : QueuedEchoTechniques )
 	{
-		for ( FTimerHandle& TimerHandle : PendingEchoTimers )
-		{
-			World->GetTimerManager().ClearTimer(TimerHandle);
-		}
+		Queued.Key.Reset();
 	}
-
-	PendingEchoTimers.Empty();
 }
 
 void UYSSaveComponent::HandleTagStateChanged(const FGameplayTag& Tag, bool bTagExists)
@@ -287,41 +300,4 @@ void UYSSaveComponent::RefreshStateTags()
 UYSAbilitySystemComponent* UYSSaveComponent::GetOwnerASC() const
 {
 	return UYSAbilitySystemComponent::Get(GetOwner());
-}
-
-void UYSSaveComponent::ExecuteTripleEcho_Internal(const FTransform SpawnTransform, const FYSSavedTechnique Technique)
-{
-	ACharacter* MasterActor = GetOwner<ACharacter>();
-	if ( IsValid(MasterActor) == false || Technique.IsValid() == false )
-	{
-		return;
-	}
-
-	UWorld* World = GetWorld();
-	if ( IsValid(World) == false )
-	{
-		return;
-	}
-
-	if ( TripleEchoSpawnConfig.ActorClass == nullptr || TripleEchoSpawnConfig.ActorClass->IsChildOf(AYSSaveEcho::StaticClass()) == false )
-	{
-		return;
-	}
-
-	// 슬롯은 이미 소비된 뒤다. OnSpawnInitialize 가 한 번 더 꺼내면 안 되므로
-	// SpawnByConfig 대신 액터 확보만 빌려 쓰고 기술을 직접 넘긴다.
-	AYSSaveEcho* Echo = Cast<AYSSaveEcho>(UYSBlueprintFunctionLibrary::AcquirePooledActor(World, TripleEchoSpawnConfig.ActorClass, SpawnTransform));
-	
-	if ( IsValid(Echo) == false )
-	{
-		return;
-	}
-
-	Echo->Initialize(MasterActor, Technique);
-	if ( IsValid(Echo) == false )
-	{
-		return;
-	}
-
-	Echo->SetPoolActive(true);
 }

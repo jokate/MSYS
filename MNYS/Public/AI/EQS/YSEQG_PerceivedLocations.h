@@ -7,10 +7,7 @@
 #include "General/YSEnum.h"
 #include "YSEQG_PerceivedLocations.generated.h"
 
-/**
- * 퍼셉션으로 감지된 '자극 위치'를 Point 아이템으로 생성한다.
- * 시각의 실시간 위치가 아니라 자극 발생 위치(GetStimulusLocation)를 쓰므로 청각/놓침 조사에 적합.
- */
+/** 퍼셉션으로 감지된 '자극 위치'를 Point 아이템으로 생성한다. 시각의 실시간 위치가 아니라 자극 발생 위치(GetStimulusLocation)를 쓰므로 청각 / 놓침 조사에 적합. */
 UCLASS()
 class MNYS_API UYSEQG_PerceivedLocations : public UYSEnvQueryGeneratorBase
 {

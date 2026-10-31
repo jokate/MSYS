@@ -84,8 +84,7 @@ void UYSCharacterAttributeSetBase::PostAttributeChange(const FGameplayAttribute&
  
 		UAbilitySystemComponent* TargetASC = GetOwningAbilitySystemComponent();
  
-		// 무적 상태면 데미지를 통째로 버린다.
-		// 저스트 회피의 완전 무적이 여기서 성립한다.
+		// 무적 상태면 데미지를 통째로 버린다 (저스트 회피의 완전 무적이 여기서 성립한다).
 		if (TargetASC && TargetASC->HasMatchingGameplayTag(YSTags::Invincible))
 		{
 			return;
@@ -180,13 +179,11 @@ void UYSCharacterAttributeSetBase::AutoRegisterHandler()
 	for (TFieldIterator<FStructProperty> It(GetClass()); It; ++It)
 	{
 		FStructProperty* Prop = *It;
-		// FGameplayAttributeData 타입만 처리
 		if (Prop->Struct != FGameplayAttributeData::StaticStruct())
 		{
 			continue;
 		}
 		
-		// Max 속성 자체는 클램핑 대상이 아님
 		if (Prop->GetName().StartsWith(TEXT("Max")))
 		{
 			continue;

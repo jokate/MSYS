@@ -6,9 +6,6 @@
 #include "YSGameplayEffectComponent.h"
 #include "YSAddBuffOnRemovalGEComponent.generated.h"
 
-/**
- * 
- */
 UCLASS(DisplayName = "버프 제거 시, 버프 추가.")
 class MNYS_API UYSAddBuffOnRemovalGEComponent : public UYSGameplayEffectComponent
 {

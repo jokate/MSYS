@@ -21,28 +21,19 @@ class MNYS_API AYSCharacterPlayer : public AYSCharacterBase
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	AYSCharacterPlayer(const FObjectInitializer& ObjectInitializer);
-	
-	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode = 0) override;
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
 	void ProcessInput(FGameplayTag InputTag, EYSInputPhase InputPhase);
 
-	void AddStateToStateMachine(EYSInputStatesType InputStateType) const;
-	void RemoveStateToStateMachine(EYSInputStatesType InputStateType) const;
-	
 	void Look(const FInputActionValue& Value);
 	void Move(const FInputActionValue& Value);
 	void OnMovementComplete();

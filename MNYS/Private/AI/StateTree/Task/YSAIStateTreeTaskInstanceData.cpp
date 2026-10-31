@@ -5,7 +5,8 @@
 
 #include "StateTreeExecutionContext.h"
 #include "AI/YSAIController.h"
-#include "AI/AITask/YSAIUseAbilityTask.h"
+#include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
 #include "AI/Component/YSAIPerceptionComponent.h"
 #include "EnvironmentQuery/EnvQueryManager.h"
 #include "General/YSStruct.h"
@@ -26,21 +27,14 @@ EStateTreeRunStatus UYSAIStateTreeTask_TargetActor::EnterState(FStateTreeExecuti
                                                                const FStateTreeTransitionResult& Transition)
 {
 	AYSAIController* Controller = GetAIControllerFromContext(Context);
-	
+
 	if ( IsValid(Controller) == false )
 	{
 		return EStateTreeRunStatus::Failed;
 	}
-	
-	UYSAIPerceptionComponent* AIPerceptionComponent = Controller->MainPerceptionComponent;
-	
-	if ( IsValid(AIPerceptionComponent) == false )
-	{
-		return EStateTreeRunStatus::Failed;
-	}
-	
-	TargetingActorCollections = AIPerceptionComponent->GetTargetingActorCollections();
-	
+
+	TargetingActorCollections = UYSAIPerceptionComponent::GetTargetingCollection(Controller);
+
 	if ( Policy == EYSTargetingPolicy::Fixed )
 	{
 		_SearchBestTarget(Context);
@@ -114,13 +108,7 @@ void UYSAIStateTreeTask_TargetActor::_SearchBestTarget(const FStateTreeExecution
 
 AActor* UYSAIStateTreeTask_FocusTarget::GetFocusTarget(const FStateTreeExecutionContext& Context) const
 {
-	const AYSAIController* Controller = GetAIControllerFromContext(Context);
-	if ( IsValid(Controller) == false || IsValid(Controller->MainPerceptionComponent) == false )
-	{
-		return nullptr;
-	}
-
-	return Controller->MainPerceptionComponent->GetBestTargetActor();
+	return UYSAIPerceptionComponent::GetBestTarget(GetAIControllerFromContext(Context));
 }
 
 EStateTreeRunStatus UYSAIStateTreeTask_FocusTarget::EnterState(FStateTreeExecutionContext& Context,
@@ -181,32 +169,30 @@ EStateTreeRunStatus UYSAIStateTreeTask_UseAbility::EnterState(FStateTreeExecutio
 	const FStateTreeTransitionResult& Transition)
 {
 	AYSAIController* Controller = GetAIControllerFromContext(Context);
+	UAbilitySystemComponent* ASC = IsValid(Controller) ? UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Controller->GetPawn()) : nullptr;
 
-	if ( IsValid(Controller) == false || AbilityToUse.IsValid() == false )
+	if ( IsValid(ASC) == false || AbilityToUse.IsValid() == false )
 	{
 		return EStateTreeRunStatus::Failed;
 	}
 
-	UseAbilityTask = UYSAIUseAbilityTask::CreateTask(Controller, AbilityToUse);
+	// 발동 중에 바로 끝나는 어빌리티도 놓치지 않게 발동 전에 묶는다.
+	bAbilityEnded = false;
+	BoundASC = ASC;
+	AbilityEndedHandle = ASC->OnAbilityEnded.AddUObject(this, &ThisClass::OnAbilityEnded);
 
-	if ( IsValid(UseAbilityTask) == false )
+	if ( ASC->TryActivateAbility(AbilityToUse) == false )
 	{
+		UnbindAbilityEnded();
 		return EStateTreeRunStatus::Failed;
 	}
 
-	UseAbilityTask->ReadyForActivation();
-
-	return EStateTreeRunStatus::Running;
+	return bAbilityEnded ? EStateTreeRunStatus::Succeeded : EStateTreeRunStatus::Running;
 }
 
 EStateTreeRunStatus UYSAIStateTreeTask_UseAbility::Tick(FStateTreeExecutionContext& Context, const float DeltaTime)
 {
-	if ( IsValid(UseAbilityTask) == false )
-	{
-		return EStateTreeRunStatus::Failed;
-	}
-
-	if ( UseAbilityTask->IsFinished() )
+	if ( bAbilityEnded )
 	{
 		return EStateTreeRunStatus::Succeeded;
 	}
@@ -217,13 +203,30 @@ EStateTreeRunStatus UYSAIStateTreeTask_UseAbility::Tick(FStateTreeExecutionConte
 void UYSAIStateTreeTask_UseAbility::ExitState(FStateTreeExecutionContext& Context,
 	const FStateTreeTransitionResult& Transition)
 {
-	// 상위 State 전이 등으로 어빌리티 종료 전에 State가 빠져나가는 경우 AITask 정리
-	if ( IsValid(UseAbilityTask) && UseAbilityTask->IsFinished() == false )
-	{
-		UseAbilityTask->ExternalCancel();
-	}
-
-	UseAbilityTask = nullptr;
+	// 상태를 나가도 어빌리티는 취소하지 않는다. 기다리기만 멈춘다.
+	UnbindAbilityEnded();
 
 	Super::ExitState(Context, Transition);
+}
+
+void UYSAIStateTreeTask_UseAbility::OnAbilityEnded(const FAbilityEndedData& AbilityEndedData)
+{
+	if ( AbilityEndedData.AbilitySpecHandle != AbilityToUse )
+	{
+		return;
+	}
+
+	bAbilityEnded = true;
+	UnbindAbilityEnded();
+}
+
+void UYSAIStateTreeTask_UseAbility::UnbindAbilityEnded()
+{
+	if ( UAbilitySystemComponent* ASC = BoundASC.Get() )
+	{
+		ASC->OnAbilityEnded.Remove(AbilityEndedHandle);
+	}
+
+	AbilityEndedHandle.Reset();
+	BoundASC.Reset();
 }

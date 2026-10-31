@@ -4,42 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "Combat/YSGroggyRules.h"
-#include "Combat/YSContextSwitchVariant.h"
 #include "Combat/YSSwitchAbusePolicy.h"
 #include "Data/YSDataStruct.h"
 #include "General/YSStruct.h"
 #include "Engine/DeveloperSettings.h"
 #include "Input/Combo/YSComboData.h"
+#include "Input/StateMachine/YSInputStates.h"
 #include "StructUtils/InstancedStruct.h"
 #include "YSDeveloperSettings.generated.h"
 
 class UYSCombatProfile;
-
-/**
- * 창(저스트 회피 · 스위치)처럼 GE 로 잠깐 얹히는 입력 상태의 입력 규칙.
- * 창마다 다른 것은 이 값뿐이라 상태 클래스를 늘리지 않고 설정 한 줄로 둔다.
- */
-USTRUCT()
-struct FYSInputWindowRule
-{
-	GENERATED_BODY()
-
-	// 누르면 창을 닫는 입력 (상태 접두 없는 원본). 어빌리티 라우팅이 끝난 뒤 닫는다.
-	UPROPERTY(EditAnywhere, Category = "YS | Input", meta = (DisplayName = "창을 닫는 입력", Categories = "Input"))
-	TArray<FGameplayTag> CloseInputs;
-
-	// 조준(Input.Aim)을 누르고 있는 동안 창이 아니라 조준 상태로 해석할 입력.
-	UPROPERTY(EditAnywhere, Category = "YS | Input", meta = (DisplayName = "조준 중엔 조준 상태로 넘길 입력", Categories = "Input"))
-	TArray<FGameplayTag> AimHeldPassThroughInputs;
-
-	// 창 상태에서 아무 어빌리티도 받지 않았을 때 창 아래 상태로 다시 해석할 입력. 창은 그 뒤에 닫는다.
-	UPROPERTY(EditAnywhere, Category = "YS | Input", meta = (DisplayName = "못 받으면 아래 상태로 넘길 입력", Categories = "Input"))
-	TArray<FGameplayTag> UnhandledFallThroughInputs;
-
-	// 창이 겹치면 값이 큰 창이 위에 남는다. 낮은 창은 그 아래에 있다가 높은 창이 닫히면 드러난다. 같으면 나중에 열린 창이 위.
-	UPROPERTY(EditAnywhere, Category = "YS | Input", meta = (DisplayName = "겹칠 때 우선순위"))
-	int32 Priority = 0;
-};
 
 /**
  *
@@ -52,6 +26,8 @@ class MNYS_API UYSDeveloperSettings : public UDeveloperSettings
 public :
 	UYSDeveloperSettings();
 
+	virtual void PostInitProperties() override;
+
 	static const FYSCommandSequence* GetCommandSequence(const FName& RowName);
 	static const FYSDamageInfo* GetDamageInfo(const FName& RowName);
 
@@ -60,6 +36,18 @@ public :
 	// 에디터 전용 : 데미지 레지스트리에 등록된 모든 Row 이름을 반환합니다. (FName 프로퍼티의 meta=GetOptions 드롭다운 소스)
 	UFUNCTION()
 	static TArray<FName> GetDamageRowOptions();
+
+	// 입력 상태 정의 표의 행 이름 (FName 프로퍼티의 meta=GetOptions 드롭다운 소스).
+	UFUNCTION()
+	static TArray<FName> GetInputStateOptions();
+
+	/** 행 구조가 FYSInputStateDefinition 이 아니면 nullptr. */
+	const UDataTable* GetInputStateTable() const;
+	const FYSInputStateDefinition* FindInputStateDefinition(FName State) const;
+	const FYSInputWindowRule* FindInputWindowRule(FName State) const;
+
+	UPROPERTY(EditAnywhere, Config, Category = "YS | Input", meta = (DisplayName = "입력 상태 정의 표", RequiredAssetDataTags = "RowStructure=/Script/MNYS.YSInputStateDefinition"))
+	TSoftObjectPtr<UDataTable> InputStateTable;
 	
 public : 
 	UPROPERTY(EditAnywhere, Config, Category = "JustAvoidGameplayEffect")
@@ -71,12 +59,35 @@ public :
 	UPROPERTY(EditAnywhere, Config, Category = "YS | StatDeriveEffect")
 	TSubclassOf<class UGameplayEffect> StatDeriveEffect;
 
+	float GetLevelHpScale(const UWorld* World) const;
+
+	// 표에 없는 레벨은 1 — 체력을 바꾸지 않는다.
+	UPROPERTY(EditAnywhere, Config, Category = "YS | Level", meta = (DisplayName = "레벨별 체력 배율"))
+	TMap<TSoftObjectPtr<UWorld>, float> LevelHpScales;
+
+	/** 행 구조가 FYSStageDefinition 이 아니면 nullptr. */
+	const UDataTable* GetStageTable() const;
+
+	UPROPERTY(EditAnywhere, Config, Category = "YS | Stage", meta = (DisplayName = "스테이지 정의 표", RequiredAssetDataTags = "RowStructure=/Script/MNYS.YSStageDefinition"))
+	TSoftObjectPtr<UDataTable> StageTable;
+
+	// 표의 행이 이보다 적으면 있는 행만 쓴다.
+	UPROPERTY(EditAnywhere, Config, Category = "YS | Stage", meta = (DisplayName = "런당 스테이지 수", ClampMin = "1"))
+	int32 RunStageCount = 3;
+
+	// 플레이어와 구역 자리 상자 사이 거리(cm).
+	UPROPERTY(EditAnywhere, Config, Category = "YS | Stage", meta = (DisplayName = "구역 띄우는 거리", ClampMin = "0"))
+	float ZoneLoadDistance = 3000.f;
+
+	// 띄우는 거리보다 커야 경계에서 띄우고 내리기를 반복하지 않는다(cm).
+	UPROPERTY(EditAnywhere, Config, Category = "YS | Stage", meta = (DisplayName = "구역 내리는 거리", ClampMin = "0"))
+	float ZoneUnloadDistance = 4500.f;
+
 #pragma region Combat
 	bool ShouldOpenSwitchWindow(EYSSwitchTrigger Trigger) const;
 
 	/** 상태별 덮어쓰기 중 ASC 가 처음 맞는 행의 정책, 없으면 기본 정책. nullptr 이면 제어하지 않는다. */
 	const FYSSwitchAbusePolicy* ResolveSwitchAbusePolicy(const class UAbilitySystemComponent* ASC) const;
-	const FYSInputWindowRule* FindInputWindowRule(EYSInputStatesType State) const { return InputWindowRules.Find(State); }
 
 	const struct FYSSwitchEntryForm* FindSwitchEntryForm(FName RowName) const;
 
@@ -115,14 +126,9 @@ public :
 	UPROPERTY(EditAnywhere, Config, Category = "YS | Combat", meta = (DisplayName = "스위치 남용 기록 범위"))
 	EYSSwitchAbuseScope SwitchAbuseScope = EYSSwitchAbuseScope::PerTrigger;
 
-	UPROPERTY(EditAnywhere, Config, Category = "YS | Combat", meta = (DisplayName = "창 상태 입력 규칙"))
-	TMap<EYSInputStatesType, FYSInputWindowRule> InputWindowRules;
-
 	// 행 = 진입기 형 (FYSSwitchEntryForm). 세 형이 진입기 모션 1개를 같이 쓰고 이 표만 다르다.
 	UPROPERTY(EditAnywhere, Config, Category = "YS | Combat", meta = (DisplayName = "스위치 어택 진입기 형 표", RequiredAssetDataTags = "RowStructure=/Script/MNYS.YSSwitchEntryForm"))
 	TSoftObjectPtr<UDataTable> SwitchEntryFormTable;
-
-	const struct FYSContextSwitchVariant* FindContextSwitchVariant(FName RowName) const;
 
 	// 등급의 임팩트 행. 없거나 None 이면 nullptr — 임팩트 없음.
 	const FYSImpactProfile* GetImpactProfile(EYSImpactGrade Grade) const;
@@ -130,20 +136,24 @@ public :
 	// 스위치 창이 열린 순간(타겟 바꿈)의 임팩트 등급. 트리거가 표에 없으면 None.
 	EYSImpactGrade GetSwitchWindowImpact(EYSSwitchTrigger Trigger) const;
 
-	// 행 = Q/E 수동 전환 창 안 입력의 변형 (FYSContextSwitchVariant). 진입기 형 표와 따로 둔다.
-	UPROPERTY(EditAnywhere, Config, Category = "YS | Combat", meta = (DisplayName = "컨텍스트 스위치 변형 표", RequiredAssetDataTags = "RowStructure=/Script/MNYS.YSContextSwitchVariant"))
-	TSoftObjectPtr<UDataTable> ContextSwitchVariantTable;
+	UPROPERTY(EditAnywhere, Config, Category = "YS | Combat", meta = (DisplayName = "타겟 높이 · 방향 구간 경계"))
+	FYSTargetBandRules TargetBandRules;
 
-	UPROPERTY(EditAnywhere, Config, Category = "YS | Combat", meta = (DisplayName = "컨텍스트 스위치 상황 판정 경계"))
-	FYSContextSwitchJudgeRules ContextSwitchJudgeRules;
-
-	// 임팩트 행 = 등급. 시간(히트스톱 · 슬로우) · 셰이크 · 줌의 강도. COMBAT_TONE_GUIDE §3. 피해 행의 임팩트 칸이 등급을 고른다.
+	// 피해 행의 임팩트 칸이 여기의 등급을 고른다.
 	UPROPERTY(EditAnywhere, Config, Category = "YS | Combat", meta = (DisplayName = "[용어 제안] 임팩트 행 (등급별)"))
 	TMap<EYSImpactGrade, FYSImpactProfile> ImpactProfiles;
 
 	// 스위치 창이 열린 순간(Q/E 타겟 전환 · 태그 교대) 걸 임팩트 등급. 표에 없는 트리거는 임팩트 없음.
 	UPROPERTY(EditAnywhere, Config, Category = "YS | Combat", meta = (DisplayName = "[용어 제안] 타겟 바꿈 임팩트 (트리거별)"))
 	TMap<EYSSwitchTrigger, EYSImpactGrade> SwitchWindowImpact;
+
+	// 패시브 상대평가를 가진 공격자가 자기보다 HP 비율이 높은 대상을 칠 때 곱한다.
+	UPROPERTY(EditAnywhere, Config, Category = "YS | Combat", meta = (DisplayName = "상대평가 피해 배율", ClampMin = "0"))
+	float RelativeEvaluationBonus = 1.15f;
+
+	// 입력 창이 닫히는 신호가 오지 않아도 이 시간이 지나면 무입력 형으로 나간다. 스위치 창 GE 길이와 맞춘다.
+	UPROPERTY(EditAnywhere, Config, Category = "YS | Combat", meta = (DisplayName = "진입기 입력 창 상한 (초)", ClampMin = "0"))
+	float SwitchEntryInputWindowLimit = 0.5f;
 #pragma endregion
 
 #pragma region Squad
@@ -155,6 +165,43 @@ public :
 
 	UPROPERTY(EditAnywhere, Config, Category = "YS | Squad", meta = (DisplayName = "스위치 어택 게이지 소모", ClampMin = "0"))
 	float SwitchAttackCost = 1.f;
+
+	UPROPERTY(EditAnywhere, Config, Category = "YS | Squad", meta = (DisplayName = "교대 카메라 블렌드 (초)", ClampMin = "0"))
+	float TagSwapCameraBlendTime = 0.15f;
+#pragma endregion
+
+#pragma region Echo
+	UPROPERTY(EditAnywhere, Config, Category = "YS | Echo", meta = (DisplayName = "분신 캡슐 콜리전 프로필"))
+	FName EchoCollisionProfile = TEXT("EchoBody");
+#pragma endregion
+
+#pragma region Navigation
+	// 위치를 NavMesh 에 붙일 때 위아래로 찾는 거리.
+	UPROPERTY(EditAnywhere, Config, Category = "YS | Navigation", meta = (DisplayName = "내비 투영 높이 (cm)", ClampMin = "0"))
+	float NavProjectionMaxHeight = 10000.f;
+#pragma endregion
+
+#pragma region Animation
+	// 이동 방향 각(절댓값)이 이 이하면 정면, 후면 하한 이상이면 후면, 사이는 좌우.
+	UPROPERTY(EditAnywhere, Config, Category = "YS | Animation", meta = (DisplayName = "정면 판정 상한 (도)", ClampMin = "0", ClampMax = "180"))
+	float FrontwardMaxAngle = 65.f;
+
+	UPROPERTY(EditAnywhere, Config, Category = "YS | Animation", meta = (DisplayName = "후면 판정 하한 (도)", ClampMin = "0", ClampMax = "180"))
+	float BackwardMinAngle = 115.f;
+#pragma endregion
+
+#pragma region Input
+	UPROPERTY(EditAnywhere, Config, Category = "YS | Input", meta = (DisplayName = "입력 저장 슬롯 이름"))
+	FString InputSaveSlotName = TEXT("InputSaveSlot");
+#pragma endregion
+
+#pragma region Sequence
+	UPROPERTY(EditAnywhere, Config, Category = "YS | Sequence", meta = (DisplayName = "시전자 바인딩 태그"))
+	FName SequenceInstigatorBindingTag = TEXT("Player");
+
+	// 시퀀스에 이 태그의 바인딩이 있을 때만 대상을 붙인다.
+	UPROPERTY(EditAnywhere, Config, Category = "YS | Sequence", meta = (DisplayName = "대상 바인딩 태그"))
+	FName SequenceTargetBindingTag = TEXT("Enemy");
 #pragma endregion
 
 #pragma region Groggy

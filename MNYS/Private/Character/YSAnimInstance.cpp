@@ -5,6 +5,7 @@
 
 
 #include "AnimCharacterMovementLibrary.h"
+#include "YSDeveloperSettings.h"
 #include "KismetAnimationLibrary.h"
 #include "Character/YSCharacterBase.h"
 #include "Character/Components/YSTargetingComponent.h"
@@ -76,12 +77,13 @@ void UYSAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		FRotator Rotation = Capsule->GetComponentRotation();
 		LocalVelocityDirectionAngle = UKismetAnimationLibrary::CalculateDirection(Velocity2D, Rotation);
 		float AbsLocalVelocityDirection = FMath::Abs(LocalVelocityDirectionAngle);
+		const UYSDeveloperSettings* Settings = GetDefault<UYSDeveloperSettings>();
 
-		if (AbsLocalVelocityDirection <= 65.f )
+		if (AbsLocalVelocityDirection <= Settings->FrontwardMaxAngle )
 		{
 			VelocityDirection = EVelocityDirection::Frontward;
 		}
-		else if ( AbsLocalVelocityDirection >= 115.f )
+		else if ( AbsLocalVelocityDirection >= Settings->BackwardMinAngle )
 		{
 			VelocityDirection = EVelocityDirection::Backward;
 		}

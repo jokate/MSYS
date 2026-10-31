@@ -5,9 +5,8 @@
 
 #include "AbilitySystemComponent.h"
 #include "Ability/YSGameplayAbility.h"
-#include "Ability/AbilityComponent/YSAbilityPlayback.h"
 #include "AttackableActor/YSTraceObject.h"
-#include "Interface/YSDamageProxy.h"
+#include "Library/YSBlueprintFunctionLibrary.h"
 
 UYSAT_Trace::UYSAT_Trace()
 {
@@ -39,36 +38,24 @@ void UYSAT_Trace::Activate()
 		return;
 	}
 	
-	// ASC 자체에서 가져오되 만약 분신이 실행한 어빌이라면 Master껄 가지고 오자..
-	AActor* DamageInstigator = AvatarActor;
-	if ( const IYSDamageProxy* Proxy = Cast<IYSDamageProxy>(AvatarActor) )
-	{
-		DamageInstigator = Proxy->GetDamageInstigator();
-	}
+	// 분신이 실행한 어빌리티면 Master 의 것을 쓴다.
+	AActor* DamageInstigator = UYSBlueprintFunctionLibrary::ResolveDamageInstigator(AvatarActor);
 
-	TraceObject = UYSTraceObject::Create(this, AvatarActor, DamageInstigator, TraceConfig);
-	TraceObject->OnTraceHit.AddDynamic(this, &UYSAT_Trace::_OnTraceObjectHit);
-	TraceObject->OnHitCountDepleted.AddDynamic(this, &UYSAT_Trace::_OnHitCountDepleted);
+	const UYSGameplayAbility* OwningAbility = Cast<UYSGameplayAbility>(Ability);
+	const float EffectScale = IsValid(OwningAbility) ? OwningAbility->GetEffectScale() : 1.f;
+	const TSharedPtr<FYSAbilityHitContext> HitContext = IsValid(OwningAbility) ? OwningAbility->GetHitContext() : TSharedPtr<FYSAbilityHitContext>();
 
-	if (TraceConfig.bTraceOnce)
-	{
-		TraceObject->ExecuteOnce();
-		EndTask();
-	}
+	TraceObject = UYSTraceObject::Create(this, AvatarActor, DamageInstigator, TraceConfig, EffectScale, HitContext);
+	TraceObject->OnTraceEnded.AddDynamic(this, &UYSAT_Trace::_OnTraceEnded);
+	TraceObject->Start();
 }
 
 void UYSAT_Trace::OnDestroy(bool bInOwnerFinished)
 {
-	UYSGameplayAbility* OwningAbility = Cast<UYSGameplayAbility>(Ability);
-	
-	if ( IsValid(OwningAbility))
+	if ( IsValid(TraceObject) )
 	{
-		FYSAbilityHitContext* HitContext = OwningAbility->GetHitContext().Get();
-		if ( HitContext != nullptr )
-		{
-			HitContext->RemoveTraceEntry(TraceObject);
-		}
-	} 
+		TraceObject->Stop();
+	}
 	
 	TraceObject = nullptr;
 	Super::OnDestroy(bInOwnerFinished);
@@ -84,35 +71,7 @@ void UYSAT_Trace::TickTask(float DeltaTime)
 	}
 }
 
-void UYSAT_Trace::_OnTraceObjectHit(const TArray<FHitResult>& HitResults, const FName& DamageRow)
-{
-	UYSGameplayAbility* OwningAbility = Cast<UYSGameplayAbility>(Ability);
-	
-	if ( IsValid(OwningAbility) == false )
-	{
-		return;
-	}
-	
-	FYSAbilityHitContext* HitContext = OwningAbility->GetHitContext().Get();
-	
-	if ( HitContext != nullptr )
-	{
-		for ( const FHitResult& HitResult : HitResults)
-		{
-			HitContext->AddHitActor(HitResult.GetActor());
-			HitContext->UpdateHitResult(TraceObject, HitResult);
-		}
-	}
-	
-	UYSAbilityPlaybackBase* AbilityPlaybackBase = OwningAbility->GetCurrentPlayback();
-		
-	if ( IsValid(AbilityPlaybackBase) )
-	{
-		AbilityPlaybackBase->OnHit(HitResults);
-	}
-}
-
-void UYSAT_Trace::_OnHitCountDepleted()
+void UYSAT_Trace::_OnTraceEnded()
 {
 	EndTask();
 }

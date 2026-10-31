@@ -6,6 +6,7 @@
 #include "GameplayEffect.h"
 #include "StructUtils/InstancedStruct.h"
 
+#if WITH_EDITOR
 void FYSGameplayEffectHandler::CollectSetByCallerTags(const UGameplayEffect* Effect, TArray<FGameplayTag>& OutTags) const
 {
 	if (Effect == nullptr)
@@ -107,3 +108,4 @@ void FYSGameplayEffectHandler::AddIfSetByCaller(const FGameplayEffectModifierMag
 		OutTag.Add(Tag);
 	}
 }
+#endif

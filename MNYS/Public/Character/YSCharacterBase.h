@@ -23,22 +23,18 @@ class MNYS_API AYSCharacterBase : public ACharacter, public IAbilitySystemInterf
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	AYSCharacterBase(const FObjectInitializer& ObjectInitializer);
 	virtual float GetHpRatio() const override;
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void PostInitializeComponents() override;
 	virtual bool IsDead() const override;
 public:
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	virtual UYSCharacterMovementComponent* GetYSCharacterMovement();
 
-	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 

@@ -7,8 +7,6 @@
 #include "YSAbilitySystemComponent.h"
 #include "Ability/AIAbility/YSAIAbilityScoreFunction.h"
 #include "Ability/AIAbility/YSGameplayAbility_AIBase.h"
-#include "AI/Component/YSAIPerceptionComponent.h"
-#include "Data/YSAbilityDataAsset.h"
 
 
 FGameplayDebuggerCategory_IAUS::FGameplayDebuggerCategory_IAUS()
@@ -20,107 +18,40 @@ FGameplayDebuggerCategory_IAUS::FGameplayDebuggerCategory_IAUS()
 void FGameplayDebuggerCategory_IAUS::CollectData(APlayerController* OwnerPC, AActor* DebugActor)
 {
 	DataPack = FRepData();
-    if (IsValid(DebugActor) == false)
-    {
-        return;
-    }
 
     UYSAbilitySystemComponent* YSASC = Cast<UYSAbilitySystemComponent>(UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(DebugActor));
-    if (IsValid(YSASC) == false)
+    const FYSAIAbilitySelection Selection = UYSGameplayAbility_AIBase::SelectAbility(YSASC);
+
+    for (const FYSAIAbilityScore& Score : Selection.Scores)
     {
-        return;
-    }
-
-    UYSAbilityDataAsset* AbilityDataAsset = UYSAbilityDataAsset::GetDataAssetFromAbilitySystemComponent(YSASC);
-    const FGameplayAbilityActorInfo* ActorInfo = YSASC->AbilityActorInfo.Get();
-    if (IsValid(AbilityDataAsset) == false || ActorInfo == nullptr)
-    {
-        return;
-    }
-
-    AActor* OwnerActor = ActorInfo->OwnerActor.Get();
-    if (IsValid(OwnerActor) == false)
-    {
-        return;
-    }
-
-    const TSharedPtr<FYSTargetingActorCollections> TargetingCollections = UYSAIPerceptionComponent::GetTargetingCollection(OwnerActor);
-
-    float BestScoreFactor = 0.f;
-    float BestUtilityScore = 0.f;
-
-    for (const FYSGrantedAbilityData& GrantedAbilityData : AbilityDataAsset->GetAllAbilities())
-    {
-        const FGameplayAbilitySpec* AbilitySpec = YSASC->FindAbilitySpecFromClass(GrantedAbilityData.AbilityClass);
-        if (AbilitySpec == nullptr)
-        {
-            continue;
-        }
-
-        // NonInstanced 어빌리티는 인스턴스가 없으므로 CDO로 폴백 (Evaluator와 동일한 규칙)
-        const UGameplayAbility* AbilityObject = AbilitySpec->GetPrimaryInstance();
-        if (IsValid(AbilityObject) == false)
-        {
-            AbilityObject = AbilitySpec->Ability;
-        }
-
-        const UYSGameplayAbility_AIBase* AIAbility = Cast<UYSGameplayAbility_AIBase>(AbilityObject);
-        if (IsValid(AIAbility) == false)
-        {
-            continue;
-        }
-
         FRepData::FAbilityScoreDebug& Entry = DataPack.Abilities.AddDefaulted_GetRef();
-        Entry.AbilityName = GetNameSafe(AIAbility->GetClass());
-        Entry.Threshold = AIAbility->UtilityScoreThreshold;
-        Entry.bIsActive = AbilitySpec->IsActive();
-        Entry.ScoreFactor = AIAbility->GetUtilityScoreFactor(ActorInfo, TargetingCollections.Get());
-        Entry.UtilityScore = AIAbility->BaseUtilityScore * Entry.ScoreFactor;
-        Entry.bCanActivate = AIAbility->CanActivateAbility(AbilitySpec->Handle, ActorInfo);
+        Entry.AbilityName = GetNameSafe(Score.Ability->GetClass());
+        Entry.Threshold = Score.Ability->UtilityScoreThreshold;
+        Entry.bIsActive = Score.bIsActive;
+        Entry.ScoreFactor = Score.Factor;
+        Entry.UtilityScore = Score.Score;
+        Entry.bCanActivate = Score.bCanActivate;
 
-        for (const UYSAIAbilityScoreFunctionBase* Function : AIAbility->UtilityScore)
+        for (const TPair<const UYSAIAbilityScoreFunctionBase*, float>& Factor : Score.Factors)
         {
-            if (IsValid(Function) == false)
-            {
-                continue;
-            }
-
             FRepData::FScoreFactorDebug& FactorEntry = Entry.Factors.AddDefaulted_GetRef();
 #if WITH_EDITOR
-            FactorEntry.FunctionName = Function->GetClass()->GetDisplayNameText().ToString();
+            FactorEntry.FunctionName = Factor.Key->GetClass()->GetDisplayNameText().ToString();
 #else
-            FactorEntry.FunctionName = Function->GetClass()->GetName();
+            FactorEntry.FunctionName = Factor.Key->GetClass()->GetName();
 #endif
-            FactorEntry.Factor = Function->GetScoreFactor(ActorInfo, TargetingCollections.Get());
-        }
-
-        // Evaluator는 활성 중인 어빌리티를 후보에서 제외한다 (표시는 하되 베스트 판정에서만 뺀다)
-        if (Entry.bIsActive)
-        {
-            continue;
-        }
-
-        // Evaluator와 동일한 선택 규칙: 팩터 우선, 동률이면 가중 점수로 판정
-        const int32 EntryIndex = DataPack.Abilities.Num() - 1;
-        if (Entry.ScoreFactor > BestScoreFactor)
-        {
-            BestScoreFactor = Entry.ScoreFactor;
-            BestUtilityScore = Entry.ScoreFactor;
-            DataPack.BestAbilityIndex = EntryIndex;
-        }
-        else if (Entry.ScoreFactor == BestScoreFactor && Entry.UtilityScore > BestUtilityScore)
-        {
-            BestUtilityScore = Entry.UtilityScore;
-            DataPack.BestAbilityIndex = EntryIndex;
+            FactorEntry.Factor = Factor.Value;
         }
     }
+
+    DataPack.BestAbilityIndex = Selection.BestIndex;
 }
 
 void FGameplayDebuggerCategory_IAUS::DrawData(APlayerController* OwnerPC, FGameplayDebuggerCanvasContext& CanvasContext)
 {
     if (DataPack.Abilities.Num() == 0)
     {
-        CanvasContext.Printf(TEXT("{grey}No IAUS data (check ASC / AbilityDataAsset on debug target)"));
+        CanvasContext.Printf(TEXT("{grey}No IAUS data (check ASC / AbilityDataAsset / perception targets on debug target)"));
         return;
     }
 

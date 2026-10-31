@@ -12,9 +12,7 @@
 #include "YSSaveEcho.generated.h"
 
 
-/*
- * 혼의 세이브를 발현할 객체.
- */
+/* 혼의 세이브를 발현할 객체. */
 
 struct FAbilityEndedData;
 struct FYSSavedTechnique;
@@ -33,12 +31,6 @@ public :
 	/** 피해·팀 판정의 주체는 언제나 혼이다. */
 	virtual AActor* GetDamageInstigator() const override;
 
-	/**
-	 * 소환 직후 1회. 주인의 겉모습을 베끼고 저장된 동작을 재생한다.
-	 * 재생이 끝나면 스스로 사라진다.
-	 */
-	void Initialize(ACharacter* InMaster, const FYSSavedTechnique& InTechnique);
-
 	virtual void SetPoolActive(bool bActive) override;
 
 protected :
@@ -50,7 +42,8 @@ protected :
 	void MirrorAppearance(const ACharacter* InMaster);
 	virtual bool OnSpawnInitialize(AActor* InOwnerActor, AActor* InInstigator, const TSharedPtr<FYSAbilityHitContext>& HitContext) override;
 
-	void ReturnToPoolActor();
+	/** 소환 직후 1회. 주인의 겉모습을 베끼고 저장된 동작을 재생한 뒤 풀로 돌아간다. */
+	bool Initialize(ACharacter* InMaster, const FYSSavedTechnique& InTechnique);
 protected :
 	UPROPERTY(VisibleAnywhere, Category = "YS | Echo", meta = (DisplayName = "어빌리티 시스템"))
 	TObjectPtr<UYSAbilitySystemComponent> AbilitySystemComponent;

@@ -7,9 +7,6 @@
 #include "UObject/Object.h"
 #include "YSTransformPolicy.generated.h"
 
-/**
- * 
- */
 
 struct MNYS_API FYSTransformPolicyContext
 {

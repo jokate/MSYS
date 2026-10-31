@@ -7,11 +7,7 @@
 #include "Components/SkinnedMeshComponent.h"
 #include "YSAnimNotifyState_Blink.generated.h"
 
-/**
- * 블링크(순간이동) 구간 동안 메시를 숨긴다.
- * 숨기는 동안 VisibilityBasedAnimTickOption을 AlwaysTickPoseAndRefreshBones로 강제해서
- * 렌더링이 끊겨도 애님 틱/본 갱신이 유지되도록 한다 (다른 노티파이 타이밍 보호).
- */
+/** 블링크(순간이동) 구간 동안 메시를 숨긴다. 숨겨 렌더링이 끊겨도 애님 틱 · 본 갱신이 유지되게 VisibilityBasedAnimTickOption 을 AlwaysTickPoseAndRefreshBones 로 강제한다. */
 UCLASS(meta = (DisplayName = "YS 블링크 (메시 숨김)"))
 class MNYS_API UYSAnimNotifyState_Blink : public UAnimNotifyState
 {

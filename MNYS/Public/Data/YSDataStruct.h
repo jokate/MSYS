@@ -8,9 +8,7 @@
 #include "StructUtils/InstancedStruct.h"
 #include "YSDataStruct.generated.h"
 
-/**
- * 프로젝트 규칙 : 해당 프로젝트는 DataRegistry를 기반으로 합니다.
- */
+/** 프로젝트 규칙: 이 프로젝트는 DataRegistry 를 기반으로 한다. */
 
 class UNiagaraSystem;
 class UGameplayEffect;
@@ -61,6 +59,10 @@ public :
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "대상 상태 태그별 피해 배율"))
 	TMap<FGameplayTag, float> TargetStateMultipliers;
 
+	// 등급 0 · 1 은 그로기 게이지가 없어 다른 반응(경직 종류)을 줄 때 쓴다. 비우면 이 행 그대로.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "등급 0·1 대체 피해 행", GetOptions = "MNYS.YSDeveloperSettings.GetDamageRowOptions"))
+	FName LightGradeDamageRow = NAME_None;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TObjectPtr<UNiagaraSystem> HitEffect;
 	
@@ -68,7 +70,7 @@ public :
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "임팩트"))
 	EYSImpactGrade Impact = EYSImpactGrade::None;
 
-	// 폐기 예정 — 셰이크는 임팩트 행으로 옮겼다. 값만 남겨 두고 재생하지 않는다.
+	// 폐기 예정. 값만 남겨 두고 재생하지 않는다 (셰이크는 임팩트 행이 맡는다).
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (DisplayName = "(폐기) 피격 카메라 셰이크"))
 	TSubclassOf<UCameraShakeBase> HitCameraShake;
 	
@@ -150,4 +152,27 @@ public :
 	// 비우면 YS Developer Settings 의 기본 전투 프로필을 쓴다.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | Combat", meta = (DisplayName = "전투 프로필"))
 	TObjectPtr<UYSCombatProfile> CombatProfile;
+};
+
+USTRUCT()
+struct FYSZoneSlotCandidates
+{
+	GENERATED_BODY()
+
+	// 비우면 이 자리는 런마다 비어 있다.
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Stage", meta = (DisplayName = "후보 구역 레벨"))
+	TArray<TSoftObjectPtr<UWorld>> ZoneLevels;
+};
+
+/** 스테이지 정의 표의 행. 자리 배열의 순번이 스테이지 맵에 놓인 구역 자리 액터의 자리 번호다. */
+USTRUCT()
+struct FYSStageDefinition : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Stage", meta = (DisplayName = "스테이지 맵"))
+	TSoftObjectPtr<UWorld> StageMap;
+
+	UPROPERTY(EditDefaultsOnly, Category = "YS | Stage", meta = (DisplayName = "자리별 후보 구역"))
+	TArray<FYSZoneSlotCandidates> Slots;
 };

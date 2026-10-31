@@ -6,9 +6,7 @@
 #include "EnvironmentQuery/EnvQueryContext.h"
 #include "YSEQC_Target.generated.h"
 
-/**
- * 현재 BestTarget 기준으로 Context를 잡을 것임.
- */
+/** 현재 BestTarget 기준 Context. */
 UCLASS()
 class MNYS_API UYSEQC_Target : public UEnvQueryContext
 {

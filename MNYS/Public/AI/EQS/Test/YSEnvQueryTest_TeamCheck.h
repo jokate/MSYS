@@ -7,9 +7,6 @@
 #include "General/YSEnum.h"
 #include "YSEnvQueryTest_TeamCheck.generated.h"
 
-/**
- * 
- */
 UCLASS(DisplayName = "팀 체크 테스트")
 class MNYS_API UYSEnvQueryTest_TeamCheck : public UEnvQueryTest
 {
@@ -19,7 +16,6 @@ public :
 	UYSEnvQueryTest_TeamCheck();
 	virtual void RunTest(FEnvQueryInstance& QueryInstance) const override;
 
-	// EQS 에디터 노드에 표시될 제목/상세
 	virtual FText GetDescriptionTitle() const override;
 	virtual FText GetDescriptionDetails() const override;
 

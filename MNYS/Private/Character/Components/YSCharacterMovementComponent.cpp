@@ -16,14 +16,10 @@
 #include "MotionWarp/UYSMotionWarpingComponent.h"
 
 
-// Sets default values for this component's properties
 UYSCharacterMovementComponent::UYSCharacterMovementComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
-	// ...
 }
 
 UYSCharacterMovementComponent* UYSCharacterMovementComponent::Get(AActor* InActor)
@@ -37,12 +33,10 @@ UYSCharacterMovementComponent* UYSCharacterMovementComponent::Get(AActor* InActo
 }
 
 
-// Called when the game starts
 void UYSCharacterMovementComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
 	
 }
 
@@ -51,7 +45,6 @@ void UYSCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Ti
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ...
 	const FTransform& OwnerTransform = UpdatedComponent->GetComponentTransform();
 
 	LocalSpaceVelocity = Velocity.IsNearlyZero()
@@ -92,6 +85,35 @@ void UYSCharacterMovementComponent::PhysicsRotation(float DeltaTime)
 	Super::PhysicsRotation(DeltaTime);
 }
 
+void UYSCharacterMovementComponent::SuspendGravity(const UObject* Requester)
+{
+	if ( GravitySuspenders.Contains(TWeakObjectPtr<const UObject>(Requester)) )
+	{
+		return;
+	}
+
+	if ( GravitySuspenders.Num() == 0 )
+	{
+		SuspendedGravityScale = GravityScale;
+		GravityScale = 0.f;
+	}
+
+	GravitySuspenders.Add(TWeakObjectPtr<const UObject>(Requester));
+}
+
+void UYSCharacterMovementComponent::ResumeGravity(const UObject* Requester)
+{
+	if ( GravitySuspenders.Remove(TWeakObjectPtr<const UObject>(Requester)) == 0 )
+	{
+		return;
+	}
+
+	if ( GravitySuspenders.Num() == 0 )
+	{
+		GravityScale = SuspendedGravityScale;
+	}
+}
+
 void UYSCharacterMovementComponent::RequestFaceYaw(float TargetYaw, EYSFaceYawSource Source)
 {
 	if ( HasValidData() == false )
@@ -122,7 +144,7 @@ void UYSCharacterMovementComponent::RequestFaceYaw(float TargetYaw, EYSFaceYawSo
 
 const UYSCombatProfile* UYSCharacterMovementComponent::ResolveTurnProfile() const
 {
-	// 플레이어만 프로필을 갖는다. 몬스터는 nullptr 로 즉시 회전(이전 동작)을 유지한다.
+	// 플레이어만 프로필을 갖는다. 몬스터는 nullptr 로 즉시 회전한다.
 	const AYSPlayerController* PC = CharacterOwner ? Cast<AYSPlayerController>(CharacterOwner->GetController()) : nullptr;
 
 	if ( PC == nullptr || IsValid(PC->CombatTargetComponent) == false )
@@ -153,7 +175,7 @@ bool UYSCharacterMovementComponent::IsTurnBlocked(const UYSCombatProfile& Profil
 		return false;
 	}
 
-	return Profile.TurnBlockedInputStates.ContainsByPredicate([InputStateMachine](EYSInputStatesType State)
+	return Profile.TurnBlockedInputStates.ContainsByPredicate([InputStateMachine](FName State)
 	{
 		return InputStateMachine->IsStateRequested(State);
 	});
@@ -381,33 +403,32 @@ void UYSCharacterMovementComponent::OnMovementModeChanged(EMovementMode Previous
 {
 	Super::OnMovementModeChanged(PreviousMovementMode, PreviousCustomMode);
 	
-	if ( MovementMode == MOVE_Falling )
+	if ( MovementMode == MOVE_Falling && FallingStateHandle.IsValid() == false )
 	{
 		UYSInputStateMachineComponent* InputStateMachine = UYSInputStateMachineComponent::Get(GetOwner());
 		if ( IsValid(InputStateMachine) )
 		{
-			InputStateMachine->AddStateStack(EYSInputStatesType::Falling);
+			FallingStateHandle = InputStateMachine->ApplyStateEffect(FallingInputState);
 		}
 	}
 	
 	if ( PreviousMovementMode == MOVE_Falling )
 	{
-		UYSInputStateMachineComponent* InputStateMachine = UYSInputStateMachineComponent::Get(GetOwner());
-		if ( IsValid(InputStateMachine) )
-		{
-			InputStateMachine->RemoveStateStack(EYSInputStatesType::Falling);
-		}
-		
 		UYSAbilitySystemComponent* ASC = UYSAbilitySystemComponent::Get(GetOwner());
 		
 		if ( IsValid(ASC) )
 		{
+			if ( FallingStateHandle.IsValid() )
+			{
+				ASC->RemoveActiveGameplayEffect(FallingStateHandle);
+				FallingStateHandle.Invalidate();
+			}
+
 			ASC->ClearAirUsage();
+
+			FGameplayEventData EventData;
+			ASC->HandleGameplayEvent(YSTags::Event_OnLand, &EventData);
 		}
-		
-		FGameplayEventData EventData;
-		// 이벤트 발생.
-		ASC->HandleGameplayEvent(YSTags::Event_OnLand, &EventData);
 	}
 }
 

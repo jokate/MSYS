@@ -6,6 +6,8 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "YSAbilitySystemComponent.h"
 #include "YSDeveloperSettings.h"
+#include "GameplayEffect.h"
+#include "Ability/GameplayEffectComponents/YSInputStateGEComponent.h"
 #include "General/YSGameplayTag.h"
 #include "General/YSDefine.h"
 #include "Input/Combo/YSComboData.h"
@@ -26,7 +28,6 @@ UYSInputStateMachineComponent::UYSInputStateMachineComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 
-	// ...
 }
 
 
@@ -34,18 +35,35 @@ void UYSInputStateMachineComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	TArray<UClass*> DerivedClasses;
-	GetDerivedClasses(UYSInputStates::StaticClass(), DerivedClasses, true);
-	for (UClass* StateClass : DerivedClasses)
+	const UDataTable* StateTable = GetDefault<UYSDeveloperSettings>()->GetInputStateTable();
+
+	if ( IsValid(StateTable) == false )
 	{
-		UYSInputStates* State = NewObject<UYSInputStates>(this, StateClass);
-		if (!IsValid(State))
-			continue;
-		State->InitState(GetOwner());
-		InputStates.Emplace(State->GetStateType(), State);
+		UE_LOG(LogTemp, Warning, TEXT("[InputState] 입력 상태 정의 표가 비었거나 행 구조가 다르다. YS Developer Settings 에서 채워야 한다."));
+	}
+	else
+	{
+		for ( const TPair<FName, uint8*>& Pair : StateTable->GetRowMap() )
+		{
+			const FYSInputStateDefinition& Definition = *reinterpret_cast<const FYSInputStateDefinition*>(Pair.Value);
+
+			// 표가 고른 GE 가 다른 상태를 걸면 어빌리티는 맞게 골라도 엉뚱한 상태가 된다.
+			const UGameplayEffect* StateEffect = Definition.StateEffect ? Definition.StateEffect->GetDefaultObject<UGameplayEffect>() : nullptr;
+			const UYSInputStateGEComponent* StateComponent = StateEffect ? StateEffect->FindComponent<UYSInputStateGEComponent>() : nullptr;
+
+			if ( StateEffect != nullptr && (StateComponent == nullptr || StateComponent->TargetToChange != Pair.Key) )
+			{
+				UE_LOG(LogTemp, Warning, TEXT("[InputState] 행 %s 의 GE %s 가 이 상태를 걸지 않는다 (GE 의 상태: %s)."),
+					*Pair.Key.ToString(), *GetNameSafe(Definition.StateEffect), StateComponent ? *StateComponent->TargetToChange.ToString() : TEXT("컴포넌트 없음"));
+			}
+
+			UYSInputStates* State = NewObject<UYSInputStates>(this);
+			State->InitState(GetOwner(), Pair.Key, Definition);
+			InputStates.Emplace(Pair.Key, State);
+		}
 	}
 
-	AddStateStack(EYSInputStatesType::Idle);
+	AddStateStack(BaseInputState);
 	GetWorld()->GetTimerManager().SetTimer(InputTrimTimerHandle, this, &UYSInputStateMachineComponent::TrimInputHistory, InputExpirationTime, true);
 	
 	AbilitySystemComponent = UYSAbilitySystemComponent::Get(GetOwner());
@@ -87,7 +105,6 @@ void UYSInputStateMachineComponent::RecordInputHistory(const FGameplayTag& Tag, 
 	}
 	else
 	{
-		// 인풋 자체에 대해서 스태형 인풋으로 처리되는 개념 보다는 그냥 단순 입력에 대한 여부를 따질 것임.
 		InputHistory->InputTime = GetWorld()->GetTimeSeconds();
 	}
 	
@@ -144,15 +161,12 @@ void UYSInputStateMachineComponent::ConsumeInputHistory(const FGameplayTag& Tag,
 	}
 }
 
-// 콤보의 경우에는 State에 의존하지 않는 순수 인풋이기 때문에 사실상 의미가 없음.
 FGameplayTag UYSInputStateMachineComponent::FindBestCombo(const FGameplayTag& Tag)
 {
 	FYSTagHistory ComboInputTag = FYSTagHistory(Tag, GetWorld()->GetTimeSeconds());
 	ComboInputTags.Add(ComboInputTag);
 
-	// 첫 일치가 아니라 가장 긴 일치를 고른다.
-	// 접미 매칭에서는 짧은 커맨드가 긴 커맨드의 꼬리에 항상 포함되므로,
-	// 행 순서에 우선순위를 맡기면 긴 커맨드가 영영 나오지 않는다.
+	// 첫 일치가 아니라 가장 긴 일치를 고른다. 접미 매칭에서는 짧은 커맨드가 긴 커맨드의 꼬리에 항상 포함되므로 행 순서에 맡기면 긴 커맨드가 나오지 않는다.
 	const FYSCommandSequence* BestSequence = nullptr;
 
 	for ( const FYSCommandSequence* ComboSequence : AllCommandSequence )
@@ -188,9 +202,7 @@ void UYSInputStateMachineComponent::OnTagUpdated(const FGameplayTag& Tag, bool b
 
 void UYSInputStateMachineComponent::TrimCommandInput()
 {
-	// 커맨드는 입력이 들어온 경우에만 처리.
-	// 타이머로 했을 시, 조작감이 매우 이상한 부분이 목격되어서 수정 조치.
-	// 일정 시간 간격으로 체크했을 시, 커맨드 인식이 더딘부분이 확인되었음.
+	// 커맨드는 입력이 들어온 경우에만 처리한다. 타이머 주기 검사는 인식이 더뎌 조작감이 나빴다.
 	if ( ComboInputTags.Num() == 0 )
 	{
 		return;
@@ -208,9 +220,7 @@ void UYSInputStateMachineComponent::TrimCommandInput()
 
 void UYSInputStateMachineComponent::AcceptInput(const FGameplayTag& Tag, EYSInputPhase InputPhase)
 {
-	// 홀드 상태는 입력 차단 여부와 무관하게 항상 최신이어야 한다.
-	// 차단 중에 뗀 것을 놓치면 그 입력은 영영 눌린 것으로 남는다.
-	// 커맨드 승격 이전의 원본 태그를 쓴다 — 뗌도 같은 원본 태그로 들어오기 때문이다.
+	// 홀드 상태는 입력 차단 여부와 무관하게 항상 최신이어야 한다 (차단 중 뗌을 놓치면 영영 눌린 것으로 남는다). 뗌도 원본 태그로 들어오므로 커맨드 승격 이전의 원본 태그를 쓴다.
 	switch ( InputPhase )
 	{
 	case EYSInputPhase::Pressed :
@@ -245,7 +255,7 @@ bool UYSInputStateMachineComponent::HoldInputIfRequested(const FGameplayTag& Tag
 
 	if ( InputPhase == EYSInputPhase::Pressed )
 	{
-		// 첫 누름 하나만 남긴다 (S3 — 처음 입력 하나로 파생이 갈린다).
+		// 첫 누름 하나만 남긴다 (처음 입력 하나로 파생이 갈린다).
 		if ( HeldPress.IsValid() == false )
 		{
 			HeldPress = Tag;
@@ -341,8 +351,7 @@ void UYSInputStateMachineComponent::DispatchInput(const FGameplayTag& Tag, EYSIn
 	if ( IsRawInputClaimed(Tag) )
 		return;
 
-	// 커맨드 버퍼에는 "누름"만 먹인다.
-	// 뗌까지 InputTags에 쌓이면 FYSCommandSequence::IsSatisfiedCommand의 순서 판정이 깨진다.
+	// 커맨드 버퍼에는 "누름"만 먹인다. 뗌까지 InputTags 에 쌓이면 FYSCommandSequence::IsSatisfiedCommand 의 순서 판정이 깨진다.
 	const FGameplayTag RetTag = (InputPhase == EYSInputPhase::Pressed) ? FindBestCombo(Tag) : Tag;
 
 	if ( IsValid(CurrentInputState))
@@ -351,27 +360,62 @@ void UYSInputStateMachineComponent::DispatchInput(const FGameplayTag& Tag, EYSIn
     }
 }
 
-void UYSInputStateMachineComponent::TransitionState(EYSInputStatesType NewInputState)
+UYSInputStates* UYSInputStateMachineComponent::FindState(FName State) const
 {
-	UYSInputStates** NextState = InputStates.Find(NewInputState);
+	const TObjectPtr<UYSInputStates>* Found = InputStates.Find(State);
+	return Found != nullptr ? Found->Get() : nullptr;
+}
+
+FActiveGameplayEffectHandle UYSInputStateMachineComponent::ApplyStateEffect(FName State, const UObject* SourceObject) const
+{
+	if ( State.IsNone() )
+	{
+		return FActiveGameplayEffectHandle();
+	}
+
+	const FYSInputStateDefinition* Definition = GetDefault<UYSDeveloperSettings>()->FindInputStateDefinition(State);
+
+	if ( Definition == nullptr || Definition->StateEffect == nullptr )
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[InputState] 상태 %s 의 GE 가 정의 표에 없다."), *State.ToString());
+		return FActiveGameplayEffectHandle();
+	}
+
+	// BeginPlay 전에도 불린다(스폰 직후 낙하). 캐시가 아니라 주인에게서 찾는다.
+	UYSAbilitySystemComponent* ASC = UYSAbilitySystemComponent::Get(GetOwner());
+
+	if ( IsValid(ASC) == false )
+	{
+		return FActiveGameplayEffectHandle();
+	}
+
+	FGameplayEffectContextHandle Context = ASC->MakeEffectContext();
+	Context.AddSourceObject(SourceObject);
+
+	const FGameplayEffectSpecHandle Spec = ASC->MakeOutgoingSpec(Definition->StateEffect, 1.f, Context);
+	return Spec.IsValid() ? ASC->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get()) : FActiveGameplayEffectHandle();
+}
+
+void UYSInputStateMachineComponent::TransitionState(FName NewInputState)
+{
+	UYSInputStates* NextState = FindState(NewInputState);
 
 	if ( NextState == nullptr )
 	{
 		return;
 	}
 
-	CurrentInputState = *NextState;
+	CurrentInputState = NextState;
 }
 
-void UYSInputStateMachineComponent::AddStateStack(EYSInputStatesType State)
+void UYSInputStateMachineComponent::AddStateStack(FName State)
 {
 	// None 은 "바꾸지 않음" 이다. 맨 위에 쌓이면 전이에 실패해 이전 상태 객체가 그대로 남는다.
-	if ( State == EYSInputStatesType::None )
+	if ( State.IsNone() )
 	{
 		return;
 	}
 
-	// 만약 State Stack에 있는 경우 최상단으로 올려준다.
 	if ( InputStateRequests.Contains(State))
 	{
 		InputStateRequests.Remove(State);
@@ -398,14 +442,13 @@ void UYSInputStateMachineComponent::AddStateStack(EYSInputStatesType State)
 
 	InputStateRequests.Insert(State, InsertIndex);
 
-	// 근데 이렇게 State 전환이 정상적이지 않다면 어쩌지?
 	TransitionState(InputStateRequests.Last());
 }
 
-void UYSInputStateMachineComponent::RemoveStateStack(EYSInputStatesType State)
+void UYSInputStateMachineComponent::RemoveStateStack(FName State)
 {
-	// 유일성을 보장한다. (Idle이 아닌 경우에는 제거 가능)
-	if (State != EYSInputStatesType::Idle)
+	// 바닥 상태는 빠지지 않는다.
+	if ( State != BaseInputState )
 	{
 		InputStateRequests.Remove(State);
 	}
@@ -415,23 +458,3 @@ void UYSInputStateMachineComponent::RemoveStateStack(EYSInputStatesType State)
 	
 	TransitionState(InputStateRequests.Last());
 }
-
-
-template <typename T>
-void UYSInputStateMachineComponent::AddState()
-{
-	T* NewState = NewObject<T>(this);
-
-	if ( IsValid(NewState) == false )
-	{
-		return;
-	}
-
-	UYSInputStates* CreatedState = Cast<UYSInputStates>(NewState);
-	if ( IsValid(CreatedState) == false )
-		return;
-
-	CreatedState->InitState(GetOwner());
-	InputStates.Emplace(CreatedState->GetStateType(), CreatedState);
-}
-

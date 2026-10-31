@@ -24,10 +24,7 @@ struct MNYS_API FYSSwitchWindowCloseContext
 	float OpenedFor = 0.f;
 };
 
-/**
- * 스위치 창 조기 닫기 조건. 상한은 창 GE 지속이고, 이 조건은 그보다 먼저 닫을 때만 쓴다.
- * 트리거마다 YS Developer Settings 에서 고른다. 새 조건이 오면 파생 구조체 하나를 더한다.
- */
+/** 스위치 창 조기 닫기 조건. 상한은 창 GE 지속이고 이 조건은 그보다 먼저 닫을 때만 쓴다. 트리거마다 YS Developer Settings 에서 고른다. */
 USTRUCT()
 struct MNYS_API FYSSwitchWindowCloseCondition
 {

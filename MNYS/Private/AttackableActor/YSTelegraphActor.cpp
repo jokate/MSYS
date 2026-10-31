@@ -6,7 +6,6 @@
 #include "Components/DecalComponent.h"
 
 
-// Sets default values
 AYSTelegraphActor::AYSTelegraphActor()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -43,7 +42,6 @@ AYSTelegraphActor* AYSTelegraphActor::CreateTelegraph(const UObject* WorldContex
 	return TelegraphActor;
 }
 
-// Called when the game starts or when spawned
 void AYSTelegraphActor::BeginPlay()
 {
 	Super::BeginPlay();
@@ -70,7 +68,6 @@ void AYSTelegraphActor::BeginPlay()
 	SetLifeSpan(Duration);
 }
 
-// Called every frame
 void AYSTelegraphActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);

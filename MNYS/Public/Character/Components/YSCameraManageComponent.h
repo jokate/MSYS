@@ -11,14 +11,7 @@
 class AYSCharacterPlayer;
 class AYSPlayerController;
 
-/**
- * 카메라 모드 우선순위 대역입니다.
- * 같은 값이면 나중에 들어온 요청이 이깁니다.
- *
- * 값 사이를 비워둔 이유는 나중에 대역을 끼워 넣기 위해서입니다.
- * 새 대역이 필요하면 임의의 숫자를 쓰지 말고 여기에 항목을 추가하십시오 —
- * 에디터에서 고를 수 있어야 어떤 요청이 어떤 요청을 덮는지 한눈에 보입니다.
- */
+/** 카메라 모드 우선순위 대역. 같은 값이면 나중에 들어온 요청이 이긴다. 새 대역은 임의 숫자 대신 여기에 항목을 추가한다 (에디터에서 고를 수 있어야 덮는 관계가 한눈에 보인다). */
 UENUM(BlueprintType)
 enum class EYSCameraModePriority : uint8
 {
@@ -31,11 +24,7 @@ enum class EYSCameraModePriority : uint8
 	Cinematic	= 100	UMETA(DisplayName = "시네마틱 (연계기)"),
 };
 
-/**
- * 카메라 배치 요청 1건입니다.
- * Requester는 약참조라 요청자가 사라지면 자동으로 정리됩니다 —
- * 어빌리티가 EndAbility를 거치지 못하고 파괴돼도 카메라가 물리지 않습니다.
- */
+/** 카메라 배치 요청 1건. Requester 는 약참조라 요청자가 사라지면 자동 정리된다 (EndAbility 를 못 거친 어빌리티 대비). */
 USTRUCT()
 struct FYSCameraModeRequest
 {
@@ -58,32 +47,22 @@ class MNYS_API UYSCameraManageComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this component's properties
 	UYSCameraManageComponent();
 	static UYSCameraManageComponent* Get(const AActor* Character);
 
 protected:
-	// Called when the game starts
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:
-	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
-	virtual void ForceSetLockOn(AActor* TargetToLockOn);
-	virtual void ReleaseLockOn();
 
-	virtual AActor* GetCurrentTarget() { return CurrentLockedTarget.Get(); }
 protected :
-	void ProcessLockOnFunction(float DeltaTime);
-	void ChaseCamera(float DeltaTime);
+	void ChaseCamera(AActor* LockedTarget, float DeltaTime);
 
 public :
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (DisplayName = "현재 잠금된 대상"))
-	TWeakObjectPtr<AActor> CurrentLockedTarget;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "잠금 대상이 될 수 있는 최대 각도"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (DisplayName = "잠금 시 카메라 회전 보간 속도"))
 	float CameraInterpSpeed = 0.3f;
 
 	UPROPERTY()
@@ -93,11 +72,7 @@ public :
 	TWeakObjectPtr<AYSCharacterPlayer> OwnerPlayer;
 
 public:
-	/**
-	 * 카메라 배치를 요청한다. 같은 Requester가 다시 부르면 기존 요청을 갱신한다.
-	 * @param Requester  요청 주체. Pop 할 때 이 포인터로 찾는다.
-	 * @param Priority   EYSCameraModePriority 대역 참조.
-	 */
+	/** 카메라 배치를 요청한다. 같은 Requester 가 다시 부르면 갱신한다. Priority 는 EYSCameraModePriority 대역. */
 	void PushCameraMode(UObject* Requester, const FYSCameraEffectParams& Params, EYSCameraModePriority Priority);
 
 	/** 요청을 회수한다. 남은 요청이 있으면 그쪽으로, 없으면 기본값으로 되돌아간다. */
@@ -109,10 +84,7 @@ public:
 	void StartCameraEffect(UObject* Requester, const FYSCameraEffectParams& Params);
 	void StopCameraEffect(UObject* Requester);
 
-	/**
-	 * 임팩트 줌. 지금 카메라(임팩트 줌을 뺀 활성 모드, 없으면 기본 카메라)에 행의 거리 · 높이 · 화각 증감을 얹어
-	 * 임팩트 우선순위로 올리고 ZoomDuration 초 뒤 뺀다. 증감이 0 이면 카메라는 그대로다. 다시 부르면 갱신하고 시간을 다시 센다.
-	 */
+	/** 임팩트 줌. 활성 모드(임팩트 줌 제외, 없으면 기본 카메라)에 행의 거리 · 높이 · 화각 증감을 얹어 ZoomDuration 초 뒤 뺀다. 다시 부르면 갱신. */
 	void PlayImpactZoom(const FYSImpactProfile& Profile);
 
 private:
@@ -124,12 +96,11 @@ private:
 	UFUNCTION()
 	void HandlePossessedPawnChanged(APawn* OldPawn, APawn* NewPawn);
 
-	/**
-	 * 전투 타겟이 바뀌면 락온이 따라간다. 선택은 하지 않는다.
-	 * 수동 전환 · 교전 시작 자동 타겟이면 락온을 건다. 자동 전환은 이미 락온 중일 때만 옮긴다.
-	 */
+	/** 락온 대상이 바뀌면 몸을 돌리고 락온 카메라 모드를 건다. null 이면 모드를 뺀다. */
 	UFUNCTION()
-	void HandleCombatTargetChanged(AActor* OldTarget, AActor* NewTarget, EYSTargetChangeReason Reason);
+	void HandleLockOnChanged(AActor* LockedTarget);
+
+	AActor* GetLockedTarget() const;
 
 	/** 현재 폰의 카메라 기본값을 복귀 지점으로 캡처한다. */
 	void CaptureCameraDefaults();

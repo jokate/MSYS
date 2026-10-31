@@ -14,7 +14,6 @@ class MNYS_API AYSGameplayCueNotifyBase : public AGameplayCueNotify_Actor
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this actor's properties
 	AYSGameplayCueNotifyBase();
 
 protected:

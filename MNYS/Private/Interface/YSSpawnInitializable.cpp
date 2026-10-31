@@ -4,4 +4,3 @@
 #include "Interface/YSSpawnInitializable.h"
 
 
-// Add default functionality here for any IYSSpawnInitializable functions that are not pure virtual.

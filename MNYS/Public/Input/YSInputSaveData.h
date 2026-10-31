@@ -7,9 +7,6 @@
 #include "General/YSStruct.h"
 #include "YSInputSaveData.generated.h"
 
-/**
- * 
- */
 
 
 UCLASS()

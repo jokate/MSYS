@@ -8,11 +8,7 @@
 #include "General/YSStruct.h"
 #include "YSAT_Trace.generated.h"
 
-/**
- * UYSTraceObject 를 GAS AbilityTask 로 감싸는 얇은 래퍼입니다.
- * 트레이스 핵심 로직은 UYSTraceObject 에 있으며,
- * 이 클래스는 Task 수명 관리와 OnTraceHit 델리게이트 포워딩만 담당합니다.
- */
+/** UYSTraceObject 를 GAS AbilityTask 로 감싸는 얇은 래퍼. 트레이스가 끝나면 태스크도 끝낸다. */
 UCLASS()
 class MNYS_API UYSAT_Trace : public UAbilityTask
 {
@@ -28,10 +24,7 @@ public:
 	virtual void OnDestroy(bool bInOwnerFinished) override;
 private:
 	UFUNCTION()
-	void _OnTraceObjectHit(const TArray<FHitResult>& HitResults, const FName& DamageRow);
-
-	UFUNCTION()
-	void _OnHitCountDepleted();
+	void _OnTraceEnded();
 private:
 	UPROPERTY()
 	TObjectPtr<UYSTraceObject> TraceObject;

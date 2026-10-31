@@ -23,7 +23,6 @@ int32 SResponseCurvePreviewWidget::OnPaint(const FPaintArgs& Args, const FGeomet
 	const FSlateBrush* TimelineAreaBrush = FAppStyle::GetBrush("Profiler.LineGraphArea");
 	const FSlateBrush* WhiteBrush = FAppStyle::GetBrush("WhiteTexture");
 
-	// Draw timeline background
 	FSlateDrawElement::MakeBox(OutDrawElements, LayerId,
 							   AllottedGeometry.ToPaintGeometry(FVector2D(0, 0), FSlateLayoutTransform(FVector2D(AllottedGeometry.Size.X, AllottedGeometry.Size.Y))),
 							   TimelineAreaBrush, DrawEffects, TimelineAreaBrush->GetTint(InWidgetStyle) * InWidgetStyle.GetColorAndOpacityTint());
@@ -35,7 +34,6 @@ int32 SResponseCurvePreviewWidget::OnPaint(const FPaintArgs& Args, const FGeomet
 		return LayerId;
 	}
 
-	// Draw axies
 	TArray<FVector2D> AxisPoints;
 	AxisPoints.Add(GetWidgetPosition(0, 1, AllottedGeometry));
 	AxisPoints.Add(GetWidgetPosition(0, 0, AllottedGeometry));
@@ -46,7 +44,6 @@ int32 SResponseCurvePreviewWidget::OnPaint(const FPaintArgs& Args, const FGeomet
 
 	LayerId++;
 
-	// Draw line graph
 	TArray<FVector2D> LinePoints;
 
 	for (int i = 0; i <= 1000; i++)

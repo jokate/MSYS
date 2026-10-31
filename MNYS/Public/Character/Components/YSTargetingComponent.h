@@ -13,12 +13,7 @@
 class AYSPlayerController;
 class AYSSkillIndicator;
 
-/**
- * 조준점을 어디서 뽑을지 정합니다.
- *
- * 마우스가 잡히지 않는 상황(패드 입력, 커서가 뷰포트 밖)에서는
- * 어느 쪽을 골랐든 화면 중앙으로 폴백합니다. 조준이 멈추는 것보다 낫습니다.
- */
+/** 조준점을 어디서 뽑을지. 마우스가 잡히지 않으면(패드 입력, 커서가 뷰포트 밖) 어느 쪽이든 화면 중앙으로 폴백한다 (조준이 멈추는 것보다 낫다). */
 UENUM(BlueprintType)
 enum class EYSAimSource : uint8
 {
@@ -35,8 +30,7 @@ struct FYSTargetingSpec
 {
 	GENERATED_BODY()
 
-	// 치수(사거리·반경·각도)와 사거리 링 표시 여부는 전부 도형이 들고 간다.
-	// 도형을 고르면 그 도형의 필드만 뜨므로 EditCondition 을 늘어놓을 필요가 없다.
+	// 치수(사거리·반경·각도)와 사거리 링 표시 여부는 전부 도형이 들고 간다. 도형을 고르면 그 도형의 필드만 뜨므로 EditCondition 이 필요 없다.
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Targeting",
 		meta = (DisplayName = "타게팅 도형",	BaseStruct = "/Script/MNYS.YSTargetingShape", ExcludeBaseStruct))
 	FInstancedStruct Shape;

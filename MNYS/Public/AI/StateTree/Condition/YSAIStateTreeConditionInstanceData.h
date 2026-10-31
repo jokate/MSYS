@@ -7,9 +7,6 @@
 #include "UObject/Object.h"
 #include "YSAIStateTreeConditionInstanceData.generated.h"
 
-/**
- * 
- */
 
 class AYSAIController;
 

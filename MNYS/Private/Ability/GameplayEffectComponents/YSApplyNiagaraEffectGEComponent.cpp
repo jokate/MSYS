@@ -5,54 +5,40 @@
 
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
+#include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
-#include "Ability/GameplayEffectComponents/YSGameplayEffect.h"
 #include "GameFramework/Character.h"
 
-
-class UYSGameplayEffect;
-
-void UYSApplyNiagaraEffectGEComponent::OnGameplayEffectApplied(FActiveGameplayEffectsContainer& ActiveGEContainer,
-                                                               FGameplayEffectSpec& GESpec, FPredictionKey& PredictionKey) const
+bool UYSApplyNiagaraEffectGEComponent::OnActiveGameplayEffectAdded(FActiveGameplayEffectsContainer& ActiveGEContainer,
+	FActiveGameplayEffect& ActiveGE) const
 {
+	const bool bActive = Super::OnActiveGameplayEffectAdded(ActiveGEContainer, ActiveGE);
+
 	UAbilitySystemComponent* ASC = ActiveGEContainer.Owner;
-	
+
 	if ( IsValid(ASC) == false || IsValid(TargetToSpawn) == false )
-		return;
+		return bActive;
 
-	AActor* OwnerActor = ASC->GetOwnerActor();
+	ACharacter* Character = Cast<ACharacter>(ASC->GetOwnerActor());
 
-	if ( IsValid(OwnerActor) == false )
-	{
-		return;
-	}
-	
-	ACharacter* Character = Cast<ACharacter>(OwnerActor);
-	
 	if ( IsValid(Character) == false)
 	{
-		return;
-	}	
-	
-	UNiagaraComponent* SpawnedComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(TargetToSpawn, Character->GetMesh(), Socket, 
-		FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, true);
-	
-	UYSGameplayEffect* Effect = Cast<UYSGameplayEffect>(GetOwner());
-	
-	if (IsValid(Effect))
-	{
-		Effect->AddSpawnedNiagara(SpawnedComponent);
+		return bActive;
 	}
-}
 
-void UYSApplyNiagaraEffectGEComponent::OnActiveGameplayEffectRemoved(
-	const FGameplayEffectRemovalInfo& GameplayEffectRemovalInfo,
-	FActiveGameplayEffectsContainer* ActiveGEContainer) const
-{
-	UYSGameplayEffect* Effect = Cast<UYSGameplayEffect>(GetOwner());
-	
-	if (IsValid(Effect))
+	UNiagaraComponent* SpawnedComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(TargetToSpawn, Character->GetMesh(), Socket,
+		FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, true);
+
+	if ( IsValid(SpawnedComponent) == false )
 	{
-		Effect->ResetAllSpawnedNiagara();
+		return bActive;
 	}
+
+	// 이 컴포넌트는 여러 캐릭터가 같이 쓰는 GE 애셋에 있어 상태를 둘 수 없으므로, 이펙트를 이 활성 GE 의 제거에 묶는다.
+	ActiveGE.EventSet.OnEffectRemoved.AddWeakLambda(SpawnedComponent, [SpawnedComponent](const FGameplayEffectRemovalInfo&)
+	{
+		SpawnedComponent->DestroyInstance();
+	});
+
+	return bActive;
 }

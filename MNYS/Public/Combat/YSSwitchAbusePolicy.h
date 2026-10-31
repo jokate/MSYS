@@ -32,20 +32,15 @@ struct MNYS_API FYSSwitchAbuseState
 	bool IsSameAsLastTarget(const AActor* Target) const;
 };
 
-/**
- * 스위치 창 남용 제어. 기획 미결(S4 제어 장치 ① / ② / ③)을 구조체 하나씩으로 두고
- * YS Developer Settings 에서 갈아끼운다. 새 규칙이 오면 파생 구조체 하나를 더한다.
- */
+/** 스위치 창 남용 제어. 규칙마다 구조체 하나씩 두고 YS Developer Settings 에서 갈아끼운다. 새 규칙이 오면 파생 구조체 하나를 더한다. */
 USTRUCT()
 struct MNYS_API FYSSwitchAbusePolicy
 {
 	GENERATED_BODY()
 	virtual ~FYSSwitchAbusePolicy() = default;
 
-	/** 창을 열어도 되는가 */
 	virtual bool CanOpen(const FYSSwitchAbuseState& State, const AActor* Target, float Now) const { return true; }
 
-	/** 이번에 소모할 게이지 */
 	virtual float GetGaugeCost(const FYSSwitchAbuseState& State, const AActor* Target, float BaseCost) const { return BaseCost; }
 
 	/** 스위치 어택의 경직 · 그로기 감소에 곱할 배율. 적중 쪽에서 읽는다. */

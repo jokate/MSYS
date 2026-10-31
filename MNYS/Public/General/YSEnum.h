@@ -5,45 +5,12 @@
 #include "CoreMinimal.h"
 #include "YSEnum.generated.h"
 
-/**
- * 
- */
-UENUM(BlueprintType)
-enum class EYSInputStatesType : uint8
-{
-	None = 0,
-	Idle,
-	Attack,
-	Dodge,
-	JustAvoid,
-	Falling,
-	Skill,
-	Ready,
-	JumpAttack,
-	Damaged,
-	Death,
-	Aim,
-	Switch,
-	End,
-};
-
-/*
- * 입력의 위상(누름/홀드/뗌)입니다.
- * 태그(State.Input.Action)에 접미사로 넣지 않고 별도 축으로 흘리는 이유는,
- * State 11종 × Input 13종에 위상까지 곱하면 조합이 286개를 넘어가는데
- * 실제로 어빌리티가 물리는 조합은 그중 일부뿐이기 때문입니다.
- *
- * ETriggerEvent를 직접 노출하지 않는 것은 None/Ongoing 같은 무의미한 선택지를
- * 데이터 에셋 드롭다운에서 지우고, Enhanced Input과의 결합을 끊기 위함입니다.
- */
+/* 입력의 위상. 태그 접미사로 넣으면 State × Input × 위상 조합이 불어나 별도 축으로 흘린다. ETriggerEvent 를 직접 노출하지 않는 것은 무의미한 선택지를 드롭다운에서 지우고 Enhanced Input 과의 결합을 끊기 위해서다. */
 UENUM(BlueprintType)
 enum class EYSInputPhase : uint8
 {
 	Pressed	= 0	UMETA(DisplayName = "누름"),			// ETriggerEvent::Started
-	// 홀드는 "일어난 사건"이 아니라 "지금 눌려 있는 상태"라 소비 개념이 없다.
-	// 히스토리에 쌓으면 뗀 뒤에도 만료 시간만큼 살아남아 반응이 늦는다.
-	// UYSInputStateMachineComponent::IsInputHeld로 질의하고, 이 값은 더 이상 발행되지 않는다.
-	// 값을 지우지 않고 숨기는 이유 — 뒤 항목들의 정수 값이 밀려 기존 에셋 데이터가 깨진다.
+	// 홀드는 사건이 아니라 지금 눌린 상태라 소비 개념이 없다. IsInputHeld 로 질의하고 이 값은 더 이상 발행되지 않는다. 지우지 않고 숨기는 것은 뒤 항목의 정수 값이 밀려 에셋이 깨지기 때문이다.
 	Held		UMETA(Hidden),
 	Released	UMETA(DisplayName = "뗌"),				// ETriggerEvent::Completed
 	Canceled	UMETA(DisplayName = "취소"),			// ETriggerEvent::Canceled
@@ -80,7 +47,7 @@ enum class EYSTraceShape : uint8
 	Line,
 };
 
-// 스킬 슬롯에 세팅할 수 있게끔 처리할 예정 ( Subclass로 판단 할 수 있도록 ) / 내 생각에는 기준이 되는 애셋 잡고, 이걸 기반으로 설정가능하도록 해야 할 듯.
+// 스킬 슬롯에 세팅할 수 있게끔 처리할 예정 (Subclass 로 판단할 수 있도록).
 UENUM(BlueprintType)
 enum class EYSSkillType : uint8
 {
@@ -102,10 +69,10 @@ enum class EYSAttackActivationType : uint8
 UENUM()
 enum class EYSPerceptionAffiliation : uint8
 {
-	Any,       // 전부
-	Hostile,   // 적만 (적이 낸 소리/움직임만)
-	Friendly,  // 아군만
-	Neutral,   // 중립만
+	Any,
+	Hostile,
+	Friendly,
+	Neutral,
 };
 
 UENUM(BlueprintType)
@@ -138,8 +105,7 @@ enum class EYSOperatorType : uint8
 	AND
 };
 
-// 타겟까지의 거리 구간. 경계값은 UYSCombatProfile 이 캐릭터마다 정한다.
-// 가까운 순서로 둔다 — 이력(떨림 방지) 판정이 이 순서를 비교에 쓴다.
+// 경계값은 UYSCombatProfile 이 정한다. 가까운 순서로 둔다 — 이력(떨림 방지) 판정이 이 순서를 비교에 쓴다.
 UENUM(BlueprintType)
 enum class EYSTargetDistanceBand : uint8
 {
@@ -149,6 +115,31 @@ enum class EYSTargetDistanceBand : uint8
 	OutOfRange	UMETA(DisplayName = "구간 밖 / 타겟 없음"),
 };
 
+// 타겟이 나보다 어디 있는가. 경계는 UYSDeveloperSettings 의 타겟 구간 경계.
+UENUM(BlueprintType)
+enum class EYSTargetHeightBand : uint8
+{
+	Below	UMETA(DisplayName = "아래"),
+	Level	UMETA(DisplayName = "같음"),
+	Above	UMETA(DisplayName = "위"),
+};
+
+// 기준 정면과 타겟 방향의 각. 경계는 UYSDeveloperSettings 의 타겟 구간 경계.
+UENUM(BlueprintType)
+enum class EYSTargetDirectionBand : uint8
+{
+	Front	UMETA(DisplayName = "정면"),
+	Side	UMETA(DisplayName = "측면"),
+	Rear	UMETA(DisplayName = "후면"),
+};
+
+UENUM(BlueprintType)
+enum class EYSForwardReference : uint8
+{
+	Current		UMETA(DisplayName = "지금 정면"),
+	PreSwitch	UMETA(DisplayName = "전환 직전 정면"),
+};
+
 // 타겟이 바뀐 까닭. 락온 카메라가 따라갈지를 이것으로 정한다.
 UENUM(BlueprintType)
 enum class EYSTargetChangeReason : uint8
@@ -156,6 +147,7 @@ enum class EYSTargetChangeReason : uint8
 	Auto	UMETA(DisplayName = "자동 전환"),
 	Manual	UMETA(DisplayName = "수동 전환 (Q/E)"),
 	Engage	UMETA(DisplayName = "교전 시작 자동 타겟"),
+	Forced	UMETA(DisplayName = "강제 락온 (GE)"),
 };
 
 // 몸 회전을 요청한 쪽. 출처마다 따르는 규칙은 전투 프로필의 출처별 규칙 표에 있다.
@@ -166,7 +158,6 @@ enum class EYSFaceYawSource : uint8
 	AbilityMotion	UMETA(DisplayName = "어빌리티 이동 이벤트"),
 };
 
-// 스위치 창을 열려고 한 쪽.
 UENUM(BlueprintType)
 enum class EYSSwitchTrigger : uint8
 {
@@ -174,7 +165,7 @@ enum class EYSSwitchTrigger : uint8
 	TagSwap			UMETA(DisplayName = "태그 교대"),
 };
 
-// 어느 트리거가 스위치 창을 여는가. 기획 미결(컨텍스트 스위치 해석)을 설정 한 값으로 둔다.
+// 어느 트리거가 스위치 창을 여는가. 기획 미결이라 설정 값으로 둔다.
 UENUM(BlueprintType)
 enum class EYSSwitchWindowTriggerRule : uint8
 {
@@ -207,7 +198,6 @@ enum class EYSSwitchEntryMove : uint8
 	WarpToTarget	UMETA(DisplayName = "타겟 앞까지 모션 워프"),
 };
 
-// 적의 경직 등급 (기획 02_COMBAT §5.1).
 UENUM(BlueprintType)
 enum class EYSStaggerGrade : uint8
 {
@@ -216,7 +206,7 @@ enum class EYSStaggerGrade : uint8
 	Immovable	UMETA(DisplayName = "2 — 부동 (엘리트 · 보스)"),
 };
 
-// 타격 임팩트 등급 (COMBAT_TONE_GUIDE §3). 등급 하나의 값(시간 · 셰이크 · 줌)은 YS Developer Settings 의 임팩트 행이 갖는다. None 은 임팩트 없음.
+// 등급 하나의 값(시간 · 셰이크 · 줌)은 YS Developer Settings 의 임팩트 행이 갖는다. None 은 임팩트 없음.
 UENUM(BlueprintType)
 enum class EYSImpactGrade : uint8
 {
@@ -228,7 +218,7 @@ enum class EYSImpactGrade : uint8
 	None	UMETA(DisplayName = "없음"),
 };
 
-// 브레이크 연출 단계 (말레 브레이크 스토리보드). 단계가 겹칠 수 있다 — 무방비는 진입 · 예고를 감싼다.
+// 브레이크 연출 단계. 단계가 겹칠 수 있다 — 무방비는 진입 · 예고를 감싼다.
 UENUM(BlueprintType)
 enum class EYSBreakPhase : uint8
 {
@@ -256,7 +246,6 @@ enum class EYSTimeDilationScope : uint8
 	Participants	UMETA(DisplayName = "때린 쪽 · 맞은 쪽만"),
 };
 
-// 큐 액션이 다룰 액터.
 UENUM(BlueprintType)
 enum class EYSCueActorSelector : uint8
 {

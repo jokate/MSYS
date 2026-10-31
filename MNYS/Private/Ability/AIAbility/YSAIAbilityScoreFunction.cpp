@@ -82,7 +82,6 @@ bool UYSAIAbilityScoreFunction_Hp::GetInputValue(const FGameplayAbilityActorInfo
 		return false;
 	}
 
-	// 내꺼면 내꺼 가져오기
 	if ( Subject == EYSScoreObjectType::Owner )
 	{
 		IYSBattleActor* BattleActor = Cast<IYSBattleActor>(ActorInfo->OwnerActor);

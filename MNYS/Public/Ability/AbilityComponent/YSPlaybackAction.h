@@ -8,9 +8,6 @@
 #include "UObject/Object.h"
 #include "YSPlaybackAction.generated.h"
 
-/**
- * 
- */
 UCLASS(Abstract, EditInlineNew, DefaultToInstanced, CollapseCategories)
 class MNYS_API UYSPlaybackAction : public UObject
 {
@@ -51,7 +48,7 @@ public :
 	virtual void Execute(const TSharedPtr<FYSPlaybackContext>& Context) const override;
 };
 
-// 공격 시점에 전투 타겟을 다시 평가해 컨텍스트 타겟으로 쓴다. 후보가 없으면 비운다 — 회전 · 워프 보정을 하지 않는다(§8).
+// 공격 시점에 전투 타겟을 다시 평가해 컨텍스트 타겟으로 쓴다. 후보가 없으면 비운다 — 회전 · 워프 보정을 하지 않는다.
 UCLASS(DisplayName = "타겟: 현재 전투 타겟")
 class MNYS_API UYSPlaybackAction_CombatTarget : public UYSPlaybackAction
 {

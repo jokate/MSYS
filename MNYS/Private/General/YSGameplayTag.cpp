@@ -31,7 +31,6 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(Event_Record, "Event.Record");
 	UE_DEFINE_GAMEPLAY_TAG(Event_Replay, "Event.Replay");
 	UE_DEFINE_GAMEPLAY_TAG(Event_DeployEcho, "Event.DeployEcho");
-	UE_DEFINE_GAMEPLAY_TAG(Event_TransitionState, "Event.TransitionState");
 	UE_DEFINE_GAMEPLAY_TAG(Event_OnLand, "Event.OnLand");
 	UE_DEFINE_GAMEPLAY_TAG(Event_GroggyBroken, "Event.Groggy.Broken");
 	
@@ -62,6 +61,11 @@ namespace YSTags
 	UE_DEFINE_GAMEPLAY_TAG(Data_Stat_SYN, "Data.Stat.SYN");
 	UE_DEFINE_GAMEPLAY_TAG(Data_Stat_SCL, "Data.Stat.SCL");
 	UE_DEFINE_GAMEPLAY_TAG(Data_Stat_RangeAttackCount, "Data.Stat.RangeAttackCount");
+
+	UE_DEFINE_GAMEPLAY_TAG(Data_Groggy_Damage, "Data.Groggy.Damage");
+	UE_DEFINE_GAMEPLAY_TAG(Data_Groggy_SwitchEntryDamage, "Data.Groggy.SwitchEntryDamage");
+	UE_DEFINE_GAMEPLAY_TAG(Data_Groggy_BreakDuration, "Data.Groggy.BreakDuration");
+	UE_DEFINE_GAMEPLAY_TAG(Data_Groggy_DamageTakenMultiplier, "Data.Groggy.DamageTakenMultiplier");
 	
 	UE_DEFINE_GAMEPLAY_TAG(State_Resource_Empty, "State.Resource.Empty");
 	UE_DEFINE_GAMEPLAY_TAG(State_Resource_NotFull, "State.Resource.NotFull");

@@ -8,53 +8,18 @@ public class MNYS : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", 
-			"GameplayAbilities", "AIModule", "MotionWarping", "GameplayTags", "GameplayTasks", "DataRegistry", "DeveloperSettings", 
-			"UMG", "Kismet", "AnimGraphRuntime", "Niagara", "LevelSequence", "MovieScene", "NavigationSystem", "StateTreeModule"
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput",
+			"GameplayAbilities", "AIModule", "MotionWarping", "GameplayTags", "GameplayTasks", "DataRegistry", "DeveloperSettings",
+			"UMG", "AnimGraphRuntime", "Niagara", "LevelSequence", "MovieScene", "NavigationSystem", "StateTreeModule", "PhysicsCore"
 		});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "AnimationLocomotionLibraryRuntime", "GameplayStateTreeModule" });
-		
-		PublicDependencyModuleNames.AddRange(
-			new string[]
-			{
-				"Core",
-				"CoreUObject",
-				"Engine",
-				"InputCore",
-				"Networking",
-				"Sockets",
-				"HTTP",
-				"Json",
-				"JsonUtilities",
-				"DeveloperSettings",
-				"PhysicsCore",
-				"UnrealEd",           // For Blueprint editing
-				"BlueprintGraph",     // For K2Node classes (F15-F22)
-				"KismetCompiler"      // For Blueprint compilation (F15-F22),
-			}
-		);
-		
-		PrivateDependencyModuleNames.AddRange(
-			new string[]
-			{
-				"EditorScriptingUtilities",
-				"EditorSubsystem",
-				"Slate",
-				"SlateCore",
-				"Kismet",
-				"Projects",
-				"AssetRegistry"
-			}
-		);
+		PrivateDependencyModuleNames.AddRange(new string[] { "AnimationLocomotionLibraryRuntime", "GameplayStateTreeModule", "Slate", "SlateCore" });
 
 		PublicIncludePaths.AddRange(new string[] {"MNYS"});
 
 		// GameplayDebugger (Shipping/Test 제외 자동 처리 + WITH_GAMEPLAY_DEBUGGER* define 세팅)
 		SetupGameplayDebuggerSupport(Target);
-		// Uncomment if you are using Slate UI
-		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
-		
+
 		// Uncomment if you are using online features
 		// PrivateDependencyModuleNames.Add("OnlineSubsystem");
 

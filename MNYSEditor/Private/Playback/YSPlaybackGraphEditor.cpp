@@ -26,7 +26,7 @@ const FName FYSPlaybackGraphEditor::DetailsTabId(TEXT("YSPlaybackGraphEditor_Det
 
 FYSPlaybackGraphEditor::~FYSPlaybackGraphEditor()
 {
-	// 그래프는 툴킷보다 오래 산다. 핸들을 놓고 가면 열고 닫을 때마다 리스너가 쌓인다.
+	// 그래프가 툴킷보다 오래 살아서, 핸들을 안 놓으면 열고 닫을 때마다 리스너가 쌓인다.
 	if (GraphChangedHandle.IsValid() && IsValid(EditedAsset) && EditedAsset->EdGraph != nullptr)
 	{
 		EditedAsset->EdGraph->RemoveOnGraphChangedHandler(GraphChangedHandle);
@@ -45,9 +45,7 @@ void FYSPlaybackGraphEditor::InitEditor(const EToolkitMode::Type Mode, const TSh
 	DetailsViewArgs.bHideSelectionTip = true;
 	DetailsViewArgs.NameAreaSettings = FDetailsViewArgs::HideNameArea;
 
-	// 플레이백·전환 프로퍼티가 전부 EditDefaultsOnly 다.
-	// 기본값(Automatic)이면 CDO 를 볼 때만 뜨므로 에셋 안에서는 통째로 사라진다.
-	// (Editor/PropertyEditor/Private/SDetailsView.cpp — DefaultsOnlyVisibility 분기)
+	// 프로퍼티가 전부 EditDefaultsOnly 라서, 기본값(Automatic)이면 에셋 안에서는 통째로 사라진다.
 	DetailsViewArgs.DefaultsOnlyVisibility = EEditDefaultsOnlyNodeVisibility::Show;
 
 	DetailsView = PropertyModule.CreateDetailView(DetailsViewArgs);
@@ -57,11 +55,10 @@ void FYSPlaybackGraphEditor::InitEditor(const EToolkitMode::Type Mode, const TSh
 
 	GraphEditorWidget = CreateGraphEditorWidget();
 
-	// 구조가 바뀌면 즉시 다시 굽는다. 저장을 기다리면 PIE 가 옛 데이터로 돈다.
+	// 저장을 기다리면 PIE 가 옛 데이터로 돌아서 구조가 바뀌면 즉시 다시 굽는다.
 	GraphChangedHandle = EditedAsset->EdGraph->AddOnGraphChangedHandler(
 		FOnGraphChanged::FDelegate::CreateSP(this, &FYSPlaybackGraphEditor::OnGraphChanged));
 
-	// 처음 열 때 한 번 굽는다. 이전 세션에서 저장만 하고 닫았을 수 있다.
 	FYSPlaybackGraphCompiler::Compile(EditedAsset);
 
 	ExtendToolbar();
@@ -113,11 +110,9 @@ void FYSPlaybackGraphEditor::EnsureGraphExists()
 		UYSPlaybackGraph::StaticClass(),
 		UYSPlaybackGraphSchema::StaticClass());
 
-	// 이 그래프는 에셋과 수명이 같다. 사용자가 지울 수 있으면 안 된다.
 	EditedAsset->EdGraph->bAllowDeletion = false;
 
-	// CreateNewGraph 는 기본 노드를 만들어주지 않는다(BlueprintEditorUtils.cpp:2141~2188).
-	// 시작 노드는 여기서 직접 찍어야 한다.
+	// CreateNewGraph 는 기본 노드를 만들어주지 않아 시작 노드를 직접 찍어야 한다.
 	EditedAsset->EdGraph->GetSchema()->CreateDefaultNodesForGraph(*EditedAsset->EdGraph);
 }
 
@@ -240,8 +235,7 @@ void FYSPlaybackGraphEditor::DeleteSelectedNodes()
 
 		NodesToRemove.Add(Node);
 
-		// 상태를 지우면 거기 붙어 있던 전환은 아무 데도 닿지 않는 유령이 된다.
-		// 남겨두면 그래프에 떠다니고 컴파일에서도 조용히 무시된다. 같이 지운다.
+		// 상태에 붙어 있던 전환은 남기면 그래프에 떠다니고 컴파일에서 조용히 무시되므로 같이 지운다.
 		const UYSPlaybackGraphNode_State* StateNode = Cast<UYSPlaybackGraphNode_State>(Node);
 
 		if (StateNode == nullptr)
@@ -284,7 +278,7 @@ void FYSPlaybackGraphEditor::DeleteSelectedNodes()
 		Node->DestroyNode();
 	}
 
-	// 선택이 사라졌으니 디테일도 에셋으로 되돌린다. 파괴된 노드를 계속 보고 있으면 안 된다.
+	// 파괴된 노드를 계속 보고 있으면 안 되므로 디테일을 에셋으로 되돌린다.
 	if (DetailsView.IsValid())
 	{
 		DetailsView->SetObject(EditedAsset);
@@ -335,7 +329,6 @@ void FYSPlaybackGraphEditor::ImportFromSourceAbility()
 		return;
 	}
 
-	// 그래프 내용이 통째로 바뀌었다. 선택은 날아갔으니 디테일을 에셋으로 되돌린다.
 	if (DetailsView.IsValid())
 	{
 		DetailsView->SetObject(EditedAsset);
@@ -355,7 +348,6 @@ void FYSPlaybackGraphEditor::OnGraphChanged(const FEdGraphEditAction& Action)
 
 void FYSPlaybackGraphEditor::OnFinishedChangingProperties(const FPropertyChangedEvent& PropertyChangedEvent)
 {
-	// 전환 조건이나 플레이백 프로퍼티가 바뀌면 구조는 그대로여도 산출물이 달라진다.
 	FYSPlaybackGraphCompiler::Compile(EditedAsset);
 }
 
@@ -407,7 +399,6 @@ void FYSPlaybackGraphEditor::OnSelectedNodesChanged(const FGraphPanelSelectionSe
 		return;
 	}
 
-	// 선택이 비면 에셋 자체를 보여준다. 그래야 디테일 탭이 빈 채로 남지 않는다.
 	if (NewSelection.Num() == 0)
 	{
 		DetailsView->SetObject(EditedAsset);

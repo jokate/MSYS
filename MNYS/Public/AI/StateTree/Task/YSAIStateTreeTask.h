@@ -8,9 +8,6 @@
 #include "UObject/Object.h"
 #include "YSAIStateTreeTask.generated.h"
 
-/**
- * 
- */
 
 USTRUCT()
 struct MNYS_API FYSStateTreeTaskBase : public FStateTreeTaskCommonBase

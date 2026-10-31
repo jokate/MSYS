@@ -21,11 +21,7 @@ class UAudioComponent;
 class USoundBase;
 class UCameraShakeBase;
 class APlayerCameraManager;
-/**
- * 큐 하나에 얹히는 연출 트랙 1개.
- * 큐가 켜진 뒤 "시작" 에 Begin, "길이" 가 지나거나 큐가 꺼지면 End 가 불린다.
- * 구간이 다른 연출(히트스톱 → 왜곡 → 창 표시)을 큐 하나의 트랙 목록으로 놓기 위한 것이다.
- */
+/** 큐 하나에 얹히는 연출 트랙. 큐가 켜진 뒤 "시작" 에 Begin, "길이" 가 지나거나 큐가 꺼지면 End 가 불린다. */
 UCLASS(Abstract, EditInlineNew, DefaultToInstanced, BlueprintType, Blueprintable)
 class MNYS_API UYSGameplayCueActionBase : public UObject
 {
@@ -94,7 +90,6 @@ protected :
 	virtual void Begin(AActor* MyTarget, const FGameplayCueParameters& Parameters) override;
 	virtual void End(AActor* MyTarget, const FGameplayCueParameters& Parameters) override;
 
-	// 에셋은 Soft로 잡아서 로딩 부담 분리
 	UPROPERTY(EditDefaultsOnly, Category = "YS | FX", meta = (DisplayName = "나이아가라 이펙트"))
 	TSoftObjectPtr<UNiagaraSystem> NiagaraEffect;
 
@@ -114,10 +109,7 @@ private :
 	TWeakObjectPtr<UNiagaraComponent> SpawnedNiagaraComponent;
 };
 
-/**
- * 비율 0 · 전원 · 입력 보관이면 히트스톱이다.
- * 적만 느리게 하려면 범위를 "큐 대상의 적만" 으로 둔다 — 큐 대상(플레이어)은 평속.
- */
+/** 비율 0 · 전원 · 입력 보관이면 히트스톱. 적만 느리게 하려면 범위를 "큐 대상의 적만" 으로 둔다 (큐 대상은 평속). */
 UCLASS(DisplayName = "타임 딜레이션 적용")
 class MNYS_API UYSGameplayCueAction_TimeDilation : public UYSGameplayCueActionBase
 {
@@ -190,10 +182,7 @@ private:
 	TWeakObjectPtr<APlayerCameraManager> ActiveCameraManager;
 };
 
-/**
- * 채도 · 비네트 같은 화면 후처리. 큐 대상에 경계 없는 후처리 컴포넌트를 붙였다 뗀다.
- * 쓸 항목만 후처리 값에서 체크한다. 윤곽선을 그리는 머티리얼도 여기 Blendables 에 넣는다.
- */
+/** 채도 · 비네트 같은 화면 후처리. 쓸 항목만 후처리 값에서 체크하고, 윤곽선 머티리얼도 Blendables 에 넣는다. */
 UCLASS(DisplayName = "화면 효과 (후처리)")
 class MNYS_API UYSGameplayCueAction_PostProcess : public UYSGameplayCueActionBase
 {
@@ -227,10 +216,7 @@ private:
 	float FadeLength = 0.f;
 };
 
-/**
- * 대상 액터의 메시에 커스텀 뎁스 스텐실을 켠다. 실제 선은 스텐실을 읽는 후처리 머티리얼이 그린다.
- * 끝나면 켜기 전 값으로 되돌린다.
- */
+/** 대상 메시에 커스텀 뎁스 스텐실을 켜고 끝나면 되돌린다. 실제 선은 스텐실을 읽는 후처리 머티리얼이 그린다. */
 UCLASS(DisplayName = "윤곽선 (커스텀 뎁스 스텐실)")
 class MNYS_API UYSGameplayCueAction_Outline : public UYSGameplayCueActionBase
 {

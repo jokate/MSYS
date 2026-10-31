@@ -35,7 +35,9 @@ void UYSSwitchAttackToastWidget::ShowReport(const FYSSwitchAttackReport& Report)
 
 	if ( IsValid(GradeText) )
 	{
-		GradeText->SetText(StaticEnum<EYSImpactGrade>()->GetDisplayNameTextByValue(static_cast<int64>(Report.Impact)));
+		GradeText->SetText(( Report.Impact == EYSImpactGrade::None )
+			? FText::GetEmpty()
+			: StaticEnum<EYSImpactGrade>()->GetDisplayNameTextByValue(static_cast<int64>(Report.Impact)));
 	}
 
 	if ( IsValid(ScaleText) )

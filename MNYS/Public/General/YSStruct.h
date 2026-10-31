@@ -8,11 +8,9 @@
 #include "Data/YSTransformPolicy.h"
 #include "YSStruct.generated.h"
 
-/**
- * 
- */
 
 class AYSTelegraphActor;
+struct FGameplayEventData;
 class UCameraShakeBase;
 class ULevelSequence;
 class UYSAbilityTriggerPayload;
@@ -30,7 +28,7 @@ public :
 	TSubclassOf<UYSGameplayAbility> AbilityClass;
 	
 	UPROPERTY(EditDefaultsOnly)
-	FGameplayTagContainer InputTag;        // 인풋 바인딩
+	FGameplayTagContainer InputTag;
 	
 	UPROPERTY(EditDefaultsOnly)
 	EYSSkillType SkillType = EYSSkillType::Basic;
@@ -53,22 +51,24 @@ public :
 	bool IsValid() const
 	{
 		return TargetToTrigger.IsValid();
-	}	
+	}
+
+	FGameplayEventData MakeEventData(AActor* Instigator, AActor* Target = nullptr) const;
+
+	/** 액터 자신이 보낸 이벤트로 그 액터의 ASC 에 보낸다 (애님 노티파이용). */
+	void SendToActor(AActor* Actor) const;
+
 public :
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FGameplayTag TargetToTrigger;
 
-	// 다음과 같이 선언된 사유는 간단, 다양한 페이로드 정보를 보낼 수 있다는 가정임.
-	// (단 현재 어빌리티 내부에서 거의 처리되나, 만약 필요하면 선언해서 갈기자)
+	// 다양한 페이로드를 보낼 수 있게 열어 둔 칸 (현재는 어빌리티 내부에서 거의 처리).
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Instanced)
 	TArray<UYSAbilityTriggerPayload*> TriggerPayloads;
 	
 };
 
-// 현재 해당 구조는 1 : 1 구조임.. (사실상 모든 걸 반영하기는 어려운 구조라면 구조가 맞음 )
-// 일례로 기둥이 한번에 5개가 일렬로 파바바박 나가는 경우, 트레이스 형태는 Box가 맞지만, Extent는 30,30,30이 아닐 수 있음. (5개가 일렬로 나간다면 150,30,30이 될 수도..)
-// 아니면 히트 데이터를 공유하는 방법 또한 존재하기는 함.
-// 사실상 생각해보면, 각각의 GUID를 기준으로 데이터를 공유해도 될 거 같기는 한데.. 
+// 트레이스 설정은 1 : 1 구조라, 여러 개가 한 번에 나가는 공격(기둥 5개 일렬 등)의 Extent 를 다 담지 못한다.
 USTRUCT(BlueprintType)
 struct FYSTraceConfig
 {
@@ -202,7 +202,6 @@ public :
 	EYSInputPhase InputPhase = EYSInputPhase::Pressed;
 };
 
-// 그래프를 흐르는 컨텍스트
 USTRUCT(BlueprintType)
 struct FYSPlaybackContext
 {
@@ -217,9 +216,29 @@ struct FYSPlaybackContext
 	UPROPERTY()
 	TObjectPtr<AActor> Target;
 
-	// 들어온 태그들에 대한 설정.
 	UPROPERTY()
 	FGameplayTagContainer ContextTags;
+};
+
+/** 타겟 높이 · 방향 구간의 경계. 재생 조건이 같이 쓴다. */
+USTRUCT()
+struct MNYS_API FYSTargetBandRules
+{
+	GENERATED_BODY()
+
+	// 타겟 Z − 내 Z 가 +이 값을 넘으면 위, −이 값보다 낮으면 아래.
+	UPROPERTY(EditAnywhere, Category = "YS | Target", meta = (DisplayName = "높이 경계 (cm)", ClampMin = "0"))
+	float HeightThreshold = 100.f;
+
+	UPROPERTY(EditAnywhere, Category = "YS | Target", meta = (DisplayName = "정면 각 상한 (도)", ClampMin = "0", ClampMax = "180"))
+	float FrontAngle = 60.f;
+
+	// 이 각을 넘으면 후면.
+	UPROPERTY(EditAnywhere, Category = "YS | Target", meta = (DisplayName = "측면 각 상한 (도)", ClampMin = "0", ClampMax = "180"))
+	float SideAngle = 120.f;
+
+	EYSTargetHeightBand ResolveHeight(float DeltaZ) const;
+	EYSTargetDirectionBand ResolveDirection(const FVector& Forward, const FVector& ToTarget) const;
 };
 
 USTRUCT(BlueprintType)
@@ -237,10 +256,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn", meta = (DisplayName = "어태치 여부"))
 	bool bAttachToActor = false;
 	
-	// 해당 기능은 사실상 스포너가 위임할 예정.
+	// 초. 기다리는 동안 요청한 자리에 예고 표시가 뜬다.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn", meta = (DisplayName = "스폰 딜레이 시간"))
 	float SpawnDelay = 0.0f;
-	
+
+	// 끄면 낸 어빌리티가 끝나도 지연 스폰은 나온다.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn", meta = (DisplayName = "어빌리티가 끝나면 지연 스폰 취소"))
+	bool bCancelOnAbilityEnd = false;
+
 	// 프로젝타일의 경우에는 공중에 스폰되어도 무관하나, 만약 땅에 부조건 붙어야 하는 경우에는 무조건 필요.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Spawn", meta = (DisplayName = "땅에 붙어서 스폰해야 하는 경우"))
 	bool bStickGround = false;
@@ -306,10 +329,7 @@ struct FYSCameraEffectParams
 	float CursorLeanInterpSpeed = 7.f;
 };
 
-/**
- * 임팩트 행. 등급 하나가 갖는 시간 · 셰이크 · 줌의 강도다.
- * 어느 공격이 어느 행을 쓰는지는 피해 행의 임팩트 칸(타겟 바꿈은 스위치 창 트리거별 칸)이 정한다.
- */
+/** 임팩트 등급 하나의 시간 · 셰이크 · 줌 강도. 어느 행을 쓰는지는 피해 행의 임팩트 칸이 정한다. */
 USTRUCT(BlueprintType)
 struct FYSImpactProfile
 {
@@ -333,8 +353,7 @@ struct FYSImpactProfile
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Impact | Shake", meta = (DisplayName = "셰이크 배율", ClampMin = "0"))
 	float ShakeScale = 1.f;
 
-	// 0 이면 줌 없음. 줌은 카메라 모드 스택에 임팩트 우선순위로 얹혔다가 이 시간 뒤 빠진다.
-	// 아래 거리 · 높이 · 화각은 줌이 걸리는 순간 카메라(활성 모드, 없으면 기본 카메라)에 대한 증감이다. 0 이면 지금 카메라 그대로다.
+	// 0 이면 줌 없음. 줌은 임팩트 우선순위로 카메라 모드 스택에 얹혔다가 이 시간 뒤 빠진다. 아래 거리 · 높이 · 화각은 줌 순간 카메라에 대한 증감이다.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Impact | Zoom", meta = (DisplayName = "줌 유지 (초)", ClampMin = "0"))
 	float ZoomDuration = 0.f;
 
@@ -395,10 +414,8 @@ public :
 	}
 	
 private :
-	// 해당 데이터를 누가 소유할 것인가?
 	TWeakObjectPtr<AActor> OwnerActor;
 	
-	// 타겟 추적시 사용 (최고의 타겟팅 액터)
 	TWeakObjectPtr<AActor> BestTargetActor;
 	
 	// 스킬에 대한 타겟팅 지정이 완료되었다면 해당 부분에 대해서 활용.
@@ -408,10 +425,7 @@ private :
 class UAnimMontage;
 class UCurveFloat;
 
-/**
- * 몸 회전 각도 구간 1행. 회전할 각도가 MaxAngle 이하인 첫 행을 쓴다.
- * 몽타주가 있으면 루트 모션 턴 + 워프 타깃으로 목표 yaw 까지 늘리고, 없으면 Duration / PlayRate 동안 보간한다.
- */
+/** 몸 회전 각도 구간 1행. 회전각이 MaxAngle 이하인 첫 행을 쓴다. 몽타주가 없으면 Duration / PlayRate 동안 보간한다. */
 USTRUCT(BlueprintType)
 struct FYSTurnBand
 {
@@ -437,7 +451,6 @@ struct FYSTurnBand
 	TObjectPtr<UAnimMontage> MontageRight;
 };
 
-/** 회전 요청 출처 하나가 따르는 규칙. */
 USTRUCT(BlueprintType)
 struct FYSTurnSourceRule
 {

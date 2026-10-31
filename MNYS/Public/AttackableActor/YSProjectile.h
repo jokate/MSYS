@@ -8,9 +8,6 @@
 
 class UProjectileMovementComponent;
 struct FYSTraceConfig;
-/**
- * 
- */
 UCLASS()
 class MNYS_API AYSProjectile : public AYSDamagableActor
 {

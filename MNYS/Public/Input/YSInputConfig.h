@@ -8,9 +8,6 @@
 #include "YSInputConfig.generated.h"
 
 class UInputAction;
-/**
- * 
- */
 USTRUCT(BlueprintType)
 struct FTaggedInputAction
 {
@@ -29,7 +26,6 @@ class MNYS_API UYSInputConfig : public UDataAsset
 {
 	GENERATED_BODY()
 public:
-	// Returns the first Input Action associated with a given tag.
 	const UInputAction* FindInputActionForTag(const FGameplayTag& InputTag) const;
  
 public:

@@ -8,9 +8,6 @@
 #include "YSPhaseChangeCondition.generated.h"
 
 class AYSCharacterBase;
-/**
- * 
- */
 USTRUCT(BlueprintType)
 struct MNYS_API FYSPhaseChangeConditions
 {

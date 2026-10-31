@@ -20,7 +20,6 @@
 #include "YSDeveloperSettings.h"
 
 
-// Sets default values for this component's properties
 UYSCameraManageComponent::UYSCameraManageComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -40,7 +39,6 @@ UYSCameraManageComponent* UYSCameraManageComponent::Get(const AActor* Character)
 }
 
 
-// Called when the game starts
 void UYSCameraManageComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -52,13 +50,12 @@ void UYSCameraManageComponent::BeginPlay()
 		OwnerPlayer = Cast<AYSCharacterPlayer>(PlayerController->GetPawn());
 		OwnerPlayerController = PlayerController;
 
-		// 스쿼드 태그 교대는 UnPossess -> Possess 로 폰을 갈아끼운다.
-		// 여기서 다시 잡아주지 않으면 벤치로 내려간 이전 폰의 카메라를 계속 만지게 된다.
+		// 스쿼드 태그 교대로 폰이 바뀐다. 여기서 다시 잡지 않으면 벤치로 내려간 이전 폰의 카메라를 만지게 된다.
 		PlayerController->OnPossessedPawnChanged.AddDynamic(this, &UYSCameraManageComponent::HandlePossessedPawnChanged);
 
 		if ( UYSCombatTargetComponent* CombatTarget = PlayerController->CombatTargetComponent )
 		{
-			CombatTarget->OnTargetChanged.AddDynamic(this, &UYSCameraManageComponent::HandleCombatTargetChanged);
+			CombatTarget->OnLockOnChanged.AddDynamic(this, &UYSCameraManageComponent::HandleLockOnChanged);
 		}
 	}
 
@@ -112,31 +109,50 @@ void UYSCameraManageComponent::HandleSwitchWindowOpened(EYSSwitchTrigger Trigger
 	UYSBlueprintFunctionLibrary::PlayImpact(Instigator, Targets, Grade);
 }
 
-void UYSCameraManageComponent::HandleCombatTargetChanged(AActor* OldTarget, AActor* NewTarget, EYSTargetChangeReason Reason)
+void UYSCameraManageComponent::HandleLockOnChanged(AActor* LockedTarget)
 {
-	if ( IsValid(NewTarget) == false )
+	UE_LOG(LogYSMeasure, Verbose, TEXT("[LockOn] t=%.3f Target=%s"), GetWorld()->GetTimeSeconds(), *GetNameSafe(LockedTarget));
+
+	if ( IsValid(LockedTarget) == false )
 	{
-		// 끊긴 약참조(파괴)도 같은 타겟을 잃은 것이다.
-		if ( CurrentLockedTarget.Get() == OldTarget || CurrentLockedTarget.IsValid() == false )
-		{
-			ReleaseLockOn();
-		}
+		PopCameraMode(this);
 		return;
 	}
 
-	// 락온 대상이 파괴돼 약참조만 끊긴 채 차선이 오면, 사망 때처럼 차선으로 락온을 옮긴다.
-	if ( Reason != EYSTargetChangeReason::Auto || CurrentLockedTarget.IsExplicitlyNull() == false )
+	if ( OwnerPlayer.IsValid() == false )
 	{
-		ForceSetLockOn(NewTarget);
+		return;
 	}
+
+	const FRotator CharacterRotation = FYSRotationPolicy_LockOnTarget().GetRotation(FYSTransformPolicyContext(OwnerPlayer.Get()));
+
+	if ( UYSCharacterMovementComponent* Movement = UYSCharacterMovementComponent::Get(OwnerPlayer.Get()) )
+	{
+		Movement->RequestFaceYaw(CharacterRotation.Yaw, EYSFaceYawSource::TargetSwitch);
+	}
+	else
+	{
+		OwnerPlayer->SetActorRotation(CharacterRotation);
+	}
+
+	// 락온도 카메라 요청자 중 하나다. 조준·연계기가 위에 얹히면 그쪽이 이기고, 빠지면 락온 프로파일로 돌아온다.
+	if ( bUseLockOnCameraMode )
+	{
+		PushCameraMode(this, LockOnCameraParams, EYSCameraModePriority::LockOn);
+	}
+}
+
+AActor* UYSCameraManageComponent::GetLockedTarget() const
+{
+	const UYSCombatTargetComponent* CombatTarget = OwnerPlayerController.IsValid() ? OwnerPlayerController->CombatTargetComponent.Get() : nullptr;
+	return IsValid(CombatTarget) ? CombatTarget->GetLockedTarget() : nullptr;
 }
 
 void UYSCameraManageComponent::HandlePossessedPawnChanged(APawn* OldPawn, APawn* NewPawn)
 {
 	OwnerPlayer = Cast<AYSCharacterPlayer>(NewPawn);
 
-	// 새 캐릭터의 기본값을 복귀 지점으로 다시 잡는다.
-	// 캐릭터마다 암 길이·FOV가 다르므로 이전 값으로 복귀하면 엉뚱한 화각이 된다.
+	// 새 캐릭터의 기본값을 복귀 지점으로 다시 잡는다. 암 길이·FOV가 캐릭터마다 달라 이전 값으로 복귀하면 엉뚱한 화각이 된다.
 	CaptureCameraDefaults();
 
 	// 교대 시점에 요청이 남아 있으면 새 폰이 그 프로파일로 다시 블렌드해 들어가야 한다.
@@ -170,72 +186,21 @@ void UYSCameraManageComponent::CaptureCameraDefaults()
 }
 
 
-// Called every frame
 void UYSCameraManageComponent::TickComponent(float DeltaTime, ELevelTick TickType,
                                        FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	ProcessLockOnFunction(DeltaTime);
+	ChaseCamera(GetLockedTarget(), DeltaTime);
 	TickCameraEffect(DeltaTime);
 }
 
-void UYSCameraManageComponent::ForceSetLockOn(AActor* TargetToLockOn)
+void UYSCameraManageComponent::ChaseCamera(AActor* LockedTarget, float DeltaTime)
 {
-	UE_LOG(LogYSMeasure, Verbose, TEXT("[LockOn] t=%.3f Set Prev=%s New=%s"),
-		GetWorld()->GetTimeSeconds(), *GetNameSafe(CurrentLockedTarget.Get()), *GetNameSafe(TargetToLockOn));
-	CurrentLockedTarget = TargetToLockOn;
-
-	if ( OwnerPlayer.IsValid() == false )
-	{
-		return;
-	}
-
-	const FRotator CharacterRotation = FYSRotationPolicy_LockOnTarget().GetRotation(FYSTransformPolicyContext(OwnerPlayer.Get()));
-
-	if ( UYSCharacterMovementComponent* Movement = UYSCharacterMovementComponent::Get(OwnerPlayer.Get()) )
-	{
-		Movement->RequestFaceYaw(CharacterRotation.Yaw, EYSFaceYawSource::TargetSwitch);
-	}
-	else
-	{
-		OwnerPlayer->SetActorRotation(CharacterRotation);
-	}
-
-	// 락온도 카메라 모드의 요청자 중 하나다. 조준·연계기가 위에 얹히면 그쪽이 이기고,
-	// 그것들이 빠지면 다시 락온 프로파일로 돌아온다.
-	if ( bUseLockOnCameraMode )
-	{
-		PushCameraMode(this, LockOnCameraParams, EYSCameraModePriority::LockOn);
-	}
-}
-
-void UYSCameraManageComponent::ReleaseLockOn()
-{
-	UE_LOG(LogYSMeasure, Verbose, TEXT("[LockOn] t=%.3f Release Prev=%s"), GetWorld()->GetTimeSeconds(), *GetNameSafe(CurrentLockedTarget.Get()));
-	CurrentLockedTarget = nullptr;
-
-	PopCameraMode(this);
-}
-
-void UYSCameraManageComponent::ProcessLockOnFunction(float DeltaTime)
-{
-	if ( OwnerPlayer.IsValid() == false )
+	if ( OwnerPlayerController.IsValid() == false || OwnerPlayer.IsValid() == false || IsValid(LockedTarget) == false )
 		return;
 
-	if ( CurrentLockedTarget.IsValid() )
-	{
-		ChaseCamera(DeltaTime);
-		return;
-	}
-}
-
-void UYSCameraManageComponent::ChaseCamera(float DeltaTime)
-{
-	if ( OwnerPlayerController.IsValid() == false || CurrentLockedTarget.IsValid() == false )
-		return;
-
-	FVector ToTarget = (CurrentLockedTarget->GetActorLocation() - OwnerPlayer->GetActorLocation()).GetSafeNormal();
+	FVector ToTarget = (LockedTarget->GetActorLocation() - OwnerPlayer->GetActorLocation()).GetSafeNormal();
 	FRotator TargetRot  = ToTarget.Rotation();
 	FRotator CurrentRot = OwnerPlayerController->GetControlRotation();
 
@@ -285,8 +250,7 @@ void UYSCameraManageComponent::PopCameraMode(UObject* Requester)
 		return;
 	}
 
-	// 복귀 속도는 빠지는 요청의 값을 쓴다.
-	// 남은 요청이 있으면 그쪽으로 블렌드하므로 아래에서 다시 덮인다.
+	// 복귀 속도는 빠지는 요청의 값을 쓴다. 남은 요청이 있으면 아래에서 그쪽으로 다시 덮인다.
 	RestoreInterpSpeed = CameraModeStack[Index].Params.InterpOutSpeed;
 
 	CameraModeStack.RemoveAt(Index);
@@ -376,9 +340,7 @@ void UYSCameraManageComponent::PlayImpactZoom(const FYSImpactProfile& Profile)
 
 const FYSCameraModeRequest* UYSCameraManageComponent::ResolveActiveMode()
 {
-	// 요청자가 사라졌으면 요청도 무효다.
-	// EndAbility를 못 거치고 파괴된 어빌리티가 카메라를 물고 늘어지는 것을 막는다.
-	// 고르기 전에 먼저 걷어야 Best 포인터가 RemoveAt에 밀리지 않는다.
+	// 요청자가 사라졌으면 요청도 무효다 (EndAbility 없이 파괴된 어빌리티가 카메라를 물고 늘어지는 것을 막는다). 고르기 전에 걷어야 Best 포인터가 RemoveAt 에 밀리지 않는다.
 	const int32 NumRemoved = CameraModeStack.RemoveAll(
 		[](const FYSCameraModeRequest& Request)
 		{
@@ -421,8 +383,7 @@ void UYSCameraManageComponent::TickControlPitch(const FYSCameraEffectParams* Par
 	// 목표 각도에 닿은 뒤에는 플레이어에게 돌려준다. 어깨너머 조준처럼 진입 각도만 맞추면 되는 경우다.
 	const bool bDriving = bWantsOverride && ( Params->bFreeControlPitchAfterReach == false || bControlPitchReached == false );
 
-	// 복귀 보간 중에도 입력을 막는다. 열어두면 입력과 보간이 같은 값을 밀고 당겨
-	// 1도 이내 도달 판정이 나지 않고, 손을 뗄 때까지 복귀가 끝나지 않는다.
+	// 복귀 보간 중에도 입력을 막는다. 열어두면 입력과 보간이 같은 값을 밀고 당겨 1도 이내 도달 판정이 나지 않는다.
 	const bool bReturning = ( bWantsOverride == false && bIsControlPitchOverridden );
 	bControlPitchLockRequested = bDriving || bReturning;
 
@@ -448,8 +409,7 @@ void UYSCameraManageComponent::TickControlPitch(const FYSCameraEffectParams* Par
 
 	FRotator ControlRotation = OwnerPlayerController->GetControlRotation();
 
-	// NormalizeAxis 로 -180~180 으로 펴서 보간한다.
-	// GetControlRotation 은 0~360 이라 그대로 -55 를 향해 보간하면 305도를 한 바퀴 돈다.
+	// NormalizeAxis 로 -180~180 으로 펴서 보간한다. GetControlRotation 은 0~360 이라 그대로 -55 를 향하면 305도를 한 바퀴 돈다.
 	const float CurrentPitch = FRotator::NormalizeAxis(ControlRotation.Pitch);
 
 	// Yaw 는 건드리지 않는다 — 부감에서도 배치 방향은 플레이어가 정해야 한다.
@@ -466,8 +426,7 @@ void UYSCameraManageComponent::TickControlPitch(const FYSCameraEffectParams* Par
 	{
 		bIsControlPitchOverridden = false;
 
-		// 같은 틱에 카메라가 정착 판정을 받으면 다음 틱부터 이 함수가 불리지 않는다.
-		// 여기서 풀지 않으면 입력이 잠긴 채로 굳는다.
+		// 같은 틱에 카메라가 정착 판정을 받으면 이 함수가 더는 불리지 않으니, 여기서 풀지 않으면 입력이 잠긴 채 굳는다.
 		bControlPitchLockRequested = false;
 	}
 }
@@ -574,8 +533,7 @@ void UYSCameraManageComponent::TickCameraEffect(float DeltaTime)
 	Cam->FieldOfView = FMath::FInterpTo(Cam->FieldOfView, TargetFOV, DeltaTime, Speed);
 	bControlYawLockRequested = bHasMode && ActiveMode->Params.bLockControlYaw;
 
-	// 요가 잠기면 컨트롤 회전은 상수가 된다. 그걸 캐릭터에 물려두면 캐릭터까지 굳어
-	// 조준 방향을 향하려는 회전과 매 틱 충돌한다.
+	// 요가 잠기면 컨트롤 회전은 상수가 된다. 캐릭터에 물려두면 조준 방향을 향하려는 회전과 매 틱 충돌한다.
 	const bool bWantsControllerYaw = bHasMode ? ActiveMode->Params.bUseControllerRotationYaw : bControlYaw;
 
 	OwnerPlayer->bUseControllerRotationYaw = bControlYawLockRequested ? false : bWantsControllerYaw;
@@ -590,8 +548,7 @@ void UYSCameraManageComponent::TickCameraEffect(float DeltaTime)
 		const bool bFOVDone = FMath::IsNearlyEqual(Cam->FieldOfView, DefaultFOV, 0.5f);
 		const bool bLeanDone = Boom->TargetOffset.IsNearlyZero(1.f);
 
-		// 피치 복귀가 남아 있으면 아직 정착이 아니다.
-		// 여기서 참으로 만들면 다음 틱부터 조기 반환에 걸려 부감으로 굳어버린다.
+		// 피치 복귀가 남아 있으면 아직 정착이 아니다. 여기서 참이 되면 다음 틱부터 조기 반환에 걸려 부감으로 굳는다.
 		if ( bArmDone && bFOVDone && bLeanDone && bIsControlPitchOverridden == false )
 		{
 			Boom->TargetArmLength = DefaultArmLength;

@@ -6,9 +6,6 @@
 #include "Subsystems/WorldSubsystem.h"
 #include "YSObjectPoolingSubsystem.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class MNYS_API UYSObjectPoolingSubsystem : public UTickableWorldSubsystem
 {
@@ -16,7 +13,6 @@ class MNYS_API UYSObjectPoolingSubsystem : public UTickableWorldSubsystem
 	
 	
 public :
-	// Sets default values for this component's properties
 	static UYSObjectPoolingSubsystem* Get(UWorld* World);
 	
 	virtual void Deinitialize() override;
@@ -26,13 +22,18 @@ public :
 	virtual TStatId GetStatId() const override { RETURN_QUICK_DECLARE_CYCLE_STAT(UYSObjectPoolingSubsystem, STATGROUP_Tickables); }
 
 	AActor* GetPooledActor(TSubclassOf<AActor> ActorClass);
-	
-	void ReturnPooledActor(AActor* Actor);
+
+	/** 공격 액터 · 분신을 끝내는 길은 이것 하나다. 풀에서 나온 액터는 숨겨 돌려두고, 풀 밖 액터는 지운다. */
+	static void ReturnToPool(AActor* Actor);
+
 	void AddPooledActor(AActor* Actor);
 	
 	void RemoveInActivePoolActors();
 
 protected : 
+	bool IsPooled(const AActor* Actor) const;
+	void ReturnPooledActor(AActor* Actor);
+
 private : 
 	// TMap 값으로 TArray 는 UHT 가 거부한다. 약참조라 UPROPERTY 로 얻을 GC 보호도 없다.
 	TMap<TSubclassOf<AActor>, TArray<TWeakObjectPtr<AActor>>> PooledActors;

@@ -20,10 +20,8 @@ AYSAIController* AYSAIController::Get(AActor* InActor)
 	return Cast<AYSAIController>(Controller);
 }
 
-// Sets default values
 AYSAIController::AYSAIController()
 {
-	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	
 	MainPerceptionComponent = CreateDefaultSubobject<UYSAIPerceptionComponent>("PerceptionComponent");
@@ -31,13 +29,11 @@ AYSAIController::AYSAIController()
 	
 }
 
-// Called when the game starts or when spawned
 void AYSAIController::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
-// Called every frame
 void AYSAIController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);

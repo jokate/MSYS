@@ -12,10 +12,7 @@ class UYSGroggyGaugeWidget;
 class UYSSwitchAttackToastWidget;
 class UYSNearbyRadarWidget;
 
-/**
- * 전투 HUD 루트 (기획 11_UIUX_V4_DRAFT §1). 요소 위젯을 묶기만 한다.
- * 무엇을 언제 보일지는 UYSCombatHUDComponent 가 이벤트를 받아 각 요소에 내린다.
- */
+/** 전투 HUD 루트. 요소 위젯을 묶기만 한다. 무엇을 언제 보일지는 UYSCombatHUDComponent 가 이벤트를 받아 각 요소에 내린다. */
 UCLASS(Abstract)
 class MNYS_API UYSCombatHUDWidget : public UUserWidget
 {

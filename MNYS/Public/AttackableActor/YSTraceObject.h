@@ -7,35 +7,25 @@
 #include "UObject/Object.h"
 #include "YSTraceObject.generated.h"
 
-/**
- * 순수 트레이스 로직 컨테이너.
- * UAbilityTask / AActor / UObject 등 어떤 컨텍스트에서도 사용할 수 있도록
- * GAS·Ability 의존성을 완전히 제거한 UObject 레이어입니다.
- *
- * 소유자가 직접 Tick(DeltaTime)을 호출하거나,
- * bTraceOnce 용도라면 ExecuteOnce()를 한 번 호출하면 됩니다.
- */
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnTraceHit, const TArray<FHitResult>&, HitResults, const FName&, DamageRow);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHitCountDepleted);
+struct FYSAbilityHitContext;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTraceEnded);
+
+/** 트레이스 수명(시작 · 매 프레임 · 끝)을 맡는다. 어빌리티 태스크와 공격 액터가 같이 쓴다. 맞히면 히트 기록으로 낸 어빌리티에 알린다. */
 UCLASS()
 class MNYS_API UYSTraceObject : public UObject
 {
 	GENERATED_BODY()
 
 public:
-	/**
-	 * 팩토리 메서드.
-	 * @param InOuter      GC 수명 관리용 Outer (소유 Actor 혹은 AbilityTask 권장)
-	 * @param InOwnerActor 트레이스 기준이 되는 Actor (소켓·위치 조회에 사용)
-	 * @param InInstigator 트레이스를 발생한 객체
-	 * @param InConfig     트레이스 설정
-	 */
-	static UYSTraceObject* Create(UObject* InOuter, AActor* InOwnerActor, AActor* InInstigator, const FYSTraceConfig& InConfig);
+	/** InOuter 는 GC 수명용(소유 액터 · 태스크), InOwnerActor 는 소켓 · 위치 기준. 소유자가 OnTraceEnded 를 묶은 뒤 Start 를 부른다. */
+	static UYSTraceObject* Create(UObject* InOuter, AActor* InOwnerActor, AActor* InInstigator, const FYSTraceConfig& InConfig,
+		float InEffectScale, const TSharedPtr<FYSAbilityHitContext>& InHitContext);
 
-	/** 매 프레임 소유자 Tick에서 호출 */
-	void ExecuteOnce();
+	/** bTraceOnce 면 한 번 판정하고 바로 끝난다. */
+	void Start();
 	void Tick(float DeltaTime);
+	void Stop();
 
 	/** 히트 상태 초기화 (TracedActors / HitTimeMap 리셋) */
 	void ResetHitState();
@@ -45,14 +35,13 @@ public:
 	
 	bool DecreaseHitProcessCount();
 
+	/** 한 번 판정을 마쳤거나 히트 수를 다 썼을 때. */
 	UPROPERTY(BlueprintAssignable)
-	FOnTraceHit OnTraceHit;
-	
-	UPROPERTY(BlueprintAssignable)
-	FOnHitCountDepleted OnHitCountDepleted;
+	FOnTraceEnded OnTraceEnded;
 	
 protected : 
 	bool IsHitCountDepleted() const;
+	void _End();
 
 private:
 	void _TraceByConfig();
@@ -65,6 +54,13 @@ private:
 	TObjectPtr<AActor> Instigator;
 	
  	FYSTraceConfig TraceConfig;
+
+	// 피해 · 그로기 피해에 곱한다. 어빌리티가 아니면 1.
+	float EffectScale = 1.f;
+
+	TWeakPtr<FYSAbilityHitContext> HitContext;
+
+	bool bEnded = false;
 
 	UPROPERTY()
 	TArray<TObjectPtr<AActor>> TracedActors;

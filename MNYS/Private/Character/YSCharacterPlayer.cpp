@@ -20,7 +20,6 @@
 
 
 class UEnhancedInputLocalPlayerSubsystem;
-// Sets default values
 AYSCharacterPlayer::AYSCharacterPlayer(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UYSCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
@@ -28,13 +27,12 @@ AYSCharacterPlayer::AYSCharacterPlayer(const FObjectInitializer& ObjectInitializ
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
 	
-	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 600.0f; // The camera follows at this distance behind the character	
-	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
+	CameraBoom->TargetArmLength = 600.0f;
+	CameraBoom->bUsePawnControlRotation = true;
 
 	
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
@@ -48,27 +46,10 @@ AYSCharacterPlayer::AYSCharacterPlayer(const FObjectInitializer& ObjectInitializ
 	
 }
 
-void AYSCharacterPlayer::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)
-{
-	Super::OnMovementModeChanged(PrevMovementMode, PreviousCustomMode);
-	
-	if (GetCharacterMovement()->IsFalling())
-	{
-		AddStateToStateMachine(EYSInputStatesType::Falling);
-	}
-	else
-	{
-		RemoveStateToStateMachine(EYSInputStatesType::Falling);
-	}
-}
-
-
-// Called when the game starts or when spawned
 void AYSCharacterPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// 팀설정.
 	SetGenericTeamId(YS_PLAYER);
 }
 
@@ -77,13 +58,11 @@ void AYSCharacterPlayer::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
-// Called every frame
 void AYSCharacterPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
 
-// Called to bind functionality to input
 void AYSCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -125,9 +104,7 @@ void AYSCharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 				EnhancedInputComponent->BindActionByTag(InputConfig, InputAction.InputTag, ETriggerEvent::Canceled, this,
 					&AYSCharacterPlayer::ProcessInput, InputAction.InputTag, EYSInputPhase::Canceled);
 
-				// 홀드 바인딩은 없다. ETriggerEvent::Ongoing은 ETriggerState(Ongoing -> Ongoing) 전이에서만
-				// 나오는데, 시간 기반 트리거가 없는 Boolean IA는 None -> Triggered로 직행해 그 상태를 거치지 않는다.
-				// "지금 눌려 있는가"는 위의 Pressed/Released로부터 UYSInputStateMachineComponent가 유도한다.
+				// 홀드 바인딩은 없다. 시간 기반 트리거가 없는 Boolean IA 는 Ongoing 을 거치지 않으므로, "지금 눌려 있는가"는 Pressed/Released 로부터 UYSInputStateMachineComponent 가 유도한다.
 			}
 		}
 	}
@@ -141,22 +118,6 @@ void AYSCharacterPlayer::ProcessInput(FGameplayTag InputTag, EYSInputPhase Input
 	}
 }
 
-void AYSCharacterPlayer::AddStateToStateMachine(EYSInputStatesType InputStateType) const
-{
-	if ( IsValid(InputStateMachineComponent) )
-	{
-		InputStateMachineComponent->AddStateStack(InputStateType);
-	}
-}
-
-void AYSCharacterPlayer::RemoveStateToStateMachine(EYSInputStatesType InputStateType) const
-{
-	if ( IsValid(InputStateMachineComponent) )	
-	{
-		InputStateMachineComponent->RemoveStateStack(InputStateType);
-	}
-}
-
 void AYSCharacterPlayer::Look(const FInputActionValue& Value)
 {
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
@@ -167,9 +128,7 @@ void AYSCharacterPlayer::Look(const FInputActionValue& Value)
 	}
 	const UYSCameraManageComponent* CameraManager = UYSCameraManageComponent::Get(this);
 
-	// 요가 잠기면 마우스 X 는 카메라가 아니라 커서 몫이다.
-	// 여기서 흘려보내면 캐릭터와 스프링암이 같이 돌아, 커서 밑의 월드 지점이
-	// 화면과 함께 딸려오면서 조준이 미끄러진다.
+	// 요가 잠기면 마우스 X 는 커서 몫이다. 여기서 흘려보내면 캐릭터와 스프링암이 같이 돌아 조준이 미끄러진다.
 	if ( IsValid(CameraManager) == false || CameraManager->IsControlYawLocked() == false )
 	{
 		AddControllerYawInput(LookAxisVector.X);
@@ -183,13 +142,11 @@ void AYSCharacterPlayer::Look(const FInputActionValue& Value)
 
 void AYSCharacterPlayer::Move(const FInputActionValue& Value)
 {
-	// input is a Vector2D
 	if ( IsValid( GetYSCharacterMovement() ) == false )
 	{
 		return;
 	}
 
-	// 입력에 의한 움직임은 제어
 	if ( GetYSCharacterMovement()->IsMovementBlocked() )
 		return;
 	
@@ -199,17 +156,13 @@ void AYSCharacterPlayer::Move(const FInputActionValue& Value)
 	
 	if (Controller != nullptr)
 	{
-		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-		// get forward vector
 		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 	
-		// get right vector 
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 			
-		// add movement 
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
 	}
@@ -239,8 +192,7 @@ void AYSCharacterPlayer::PossessedBy(AController* NewController)
 
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
 
-	// 어빌리티 부여보다 스탯 초기화가 먼저다.
-	// 어빌리티 쿨다운/배율이 어트리뷰트를 참조하므로, 기본값 상태에서 부여되면 첫 산출이 어긋난다.
+	// 어빌리티 부여보다 스탯 초기화가 먼저다. 쿨다운/배율이 어트리뷰트를 참조하므로 기본값 상태에서 부여되면 첫 산출이 어긋난다.
 	AbilitySystemComponent->ApplyStatInitialization();
 	AbilitySystemComponent->GiveInitAbility();
 }
@@ -254,7 +206,6 @@ void AYSCharacterPlayer::ProcessMovementInput(const FVector2D& InputDir)
 	if (InputDir.X > 0.f)  NewTags.Add(YSInputTags::InputRight);
 	if (InputDir.X < 0.f)  NewTags.Add(YSInputTags::InputLeft);
 	
-	// 새로 들어온 태그만 AcceptInput 호출
 	// 방향 태그는 축 입력에서 합성한 것이라 "뗌"이 없다. 진입 순간을 누름으로 취급한다.
 	for (const FGameplayTag& Tag : NewTags)
 	{

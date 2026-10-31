@@ -8,9 +8,6 @@
 
 class UYSGameplayAbility;
 class UEnvQuery;
-/**
- * 
- */
 
 DECLARE_DELEGATE_TwoParams(FYSEnvQueryResultDelegate, UYSGameplayAbility*, FVector);
 

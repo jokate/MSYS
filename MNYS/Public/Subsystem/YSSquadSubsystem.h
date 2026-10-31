@@ -10,14 +10,10 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "YSSquadSubsystem.generated.h"
 
-/**
- * 
- */
 
 class UAbilitySystemComponent;
 class UYSAbilitySystemComponent;
 struct FYSCharacterInfo;
-/** 스쿼드 1인분의 런타임 상태 */
 USTRUCT()
 struct FYSSquadSlot
 {
@@ -42,10 +38,7 @@ struct FYSTrackedSwitchWindow
 	float OpenTime = 0.f;
 };
 
-/**
- * 스위치 창 안에서 나간 공격 하나. 공격 쪽이 발동 때 채워 ReportSwitchAttack 으로 낸다.
- * 지금은 컨텍스트 스위치 변형만 낸다. 다른 스위치 공격(교대 진입기 등)도 같은 보고를 채운다.
- */
+/** 스위치 창 안에서 나간 공격 하나. 공격 쪽이 발동 때 채워 ReportSwitchAttack 으로 낸다. 지금은 컨텍스트 스위치 변형만 낸다. */
 USTRUCT(BlueprintType)
 struct FYSSwitchAttackReport
 {
@@ -54,7 +47,7 @@ struct FYSSwitchAttackReport
 	UPROPERTY(BlueprintReadOnly, Category = "YS | Squad")
 	EYSSwitchTrigger Trigger = EYSSwitchTrigger::TargetSwitch;
 
-	// 표의 행 이름 (변형 표 · 진입기 형 표).
+	// 진입기 형 표의 행 이름. 컨텍스트 스위치는 재생한 몽타주 이름.
 	UPROPERTY(BlueprintReadOnly, Category = "YS | Squad")
 	FName Row = NAME_None;
 
@@ -91,17 +84,10 @@ public :
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
-	/** 처음에 스쿼드 구성한다.
-	 * 런 시작 시 3인 스쿼드를 구성한다.
-	 * @param Definitions  선택된 캐릭터 3인. 0번이 시작 캐릭터.
-	 * @param SpawnTransform  최초 스폰 위치
-	 */
+	/** 런 시작 시 3인 스쿼드를 구성한다. Definitions 의 0번이 시작 캐릭터. */
 	UFUNCTION(BlueprintCallable, Category = "YS | Squad")
 	void InitializeSquad(const TArray<FYSCharacterInfo>& Definitions, const FTransform& SpawnTransform);
 	
-	/**
-	 * 태그에 대한 요청을 처리 
-	 */
 	UFUNCTION(BlueprintCallable, Category = "YS | Squad")
 	bool RequestTag(int32 SlotIndex, bool bSwitchAttack);
 
@@ -121,10 +107,7 @@ public :
 	UFUNCTION(BlueprintPure, Category = "YS | Squad")
 	int32 GetSlotCount() const { return Slots.Num(); }
 
-	/**
-	 * 슬롯의 정의와 ASC를 함께 꺼낸다. 해금 시스템이 캐릭터를 찾을 때 쓴다.
-	 * @return 슬롯이 유효하면 true
-	 */
+	/** 슬롯의 정의와 ASC를 함께 꺼낸다. 해금 시스템이 캐릭터를 찾을 때 쓴다. 슬롯이 유효하면 true. */
 	bool GetSlotInfo(int32 SlotIndex, FYSCharacterInfo& OutDefinition, UYSAbilitySystemComponent*& OutASC) const;
 
 	/** 현재 필드 캐릭터의 ASC. 스쿼드가 비었으면 조종 중인 폰의 ASC 다. */
@@ -141,11 +124,7 @@ public :
 	UFUNCTION(BlueprintPure, Category = "YS | Squad")
 	float GetTagGauge() const { return TagGauge; }
 
-	/**
-	 * 스위치 창을 연다. 어느 트리거가 여는지 · 남용 제어는 YS Developer Settings 를 따른다.
-	 * @param BaseCost  정책을 거치기 전 게이지 소모량
-	 * @return 창이 열렸으면 true
-	 */
+	/** 스위치 창을 연다. 어느 트리거가 여는지 · 남용 제어는 YS Developer Settings 를 따른다. 열렸으면 true. */
 	UFUNCTION(BlueprintCallable, Category = "YS | Squad")
 	bool TryOpenSwitchWindow(EYSSwitchTrigger Trigger, AActor* Target, float BaseCost);
 
@@ -200,6 +179,8 @@ protected:
 
 	void HandleWorldCleanup(UWorld* World, bool bSessionEnded, bool bCleanupResources);
 
+	void HandleManualTargetSwitched(AActor* NewTarget);
+
 	AActor* GetCurrentCombatTarget() const;
 	
 	void RefreshBackupPassives();
@@ -230,4 +211,5 @@ private:
 	FTimerHandle SwitchWindowPollTimer;
 
 	FDelegateHandle WorldCleanupHandle;
+	FDelegateHandle ManualTargetSwitchedHandle;
 };

@@ -4,6 +4,7 @@
 #include "AI/EQS/YSEQG_PerceivedLocations.h"
 
 #include "EnvironmentQuery/Items/EnvQueryItemType_Point.h"
+#include "AI/Component/YSAIPerceptionComponent.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AIPerceptionListenerInterface.h"
 #include "Perception/AISense_Hearing.h"
@@ -88,14 +89,11 @@ void UYSEQG_PerceivedLocations::GenerateItems(FEnvQueryInstance& QueryInstance) 
 				continue;
 			}
 			
-			switch (AffiliationFilter)
+			if (UYSAIPerceptionComponent::MatchesAffiliation(*Info, AffiliationFilter) == false)
 			{
-				case EYSPerceptionAffiliation::Hostile:  if (Info->bIsHostile == false)  { continue; } break;
-				case EYSPerceptionAffiliation::Friendly: if (Info->bIsFriendly == false)  { continue; } break;
-				case EYSPerceptionAffiliation::Neutral:  if (Info->bIsHostile || Info->bIsFriendly) { continue; } break;
-				default: break; 
+				continue;
 			}
-			
+
 			if (AllowedActorClass && PerceivedActor->IsA(AllowedActorClass.Get()) == false)
 			{
 				continue;

@@ -14,8 +14,10 @@
 #include "Ability/YSGameplayAbility.h"
 #include "Ability/AbilityComponent/YSAbilityPlayback.h"
 #include "AttackableActor/YSAttackableBase.h"
+#include "AttackableActor/YSTelegraphActor.h"
 #include "AttackableActor/DamageEffect/YSDamageEffect.h"
 #include "Character/YSCharacterBase.h"
+#include "Character/YSMonster.h"
 #include "Character/AttributeSet/YSGroggyAttributeSet.h"
 #include "Character/AttributeSet/YSCharacterAttributeSetBase.h"
 #include "Camera/PlayerCameraManager.h"
@@ -30,8 +32,6 @@
 
 namespace
 {
-	constexpr float RelativeEvaluationBonus = 1.15f;
-
 	float GetRelativeEvaluationMultiplier(const UYSCharacterAttributeSetBase* Owner, const UYSCharacterAttributeSetBase* Target)
 	{
 		const UAbilitySystemComponent* OwnerASC = Owner->GetOwningAbilitySystemComponent();
@@ -40,7 +40,7 @@ namespace
 
 		// HP 비율 비교를 교차곱으로 해서 MaxHp 0 나눗셈을 피한다
 		const bool bTargetHealthier = Owner->GetHp() * Target->GetMaxHp() < Target->GetHp() * Owner->GetMaxHp();
-		return bTargetHealthier ? RelativeEvaluationBonus : 1.f;
+		return bTargetHealthier ? GetDefault<UYSDeveloperSettings>()->RelativeEvaluationBonus : 1.f;
 	}
 }
 
@@ -52,7 +52,6 @@ float UYSBlueprintFunctionLibrary::GetFinalDamage(const UYSCharacterAttributeSet
 	if (IsValid(Owner) == false || IsValid(Target) == false )
 		return 0.f;
 
-	// 데미지 정보가 없으면 의미 X
 	if ( DamageInfo == nullptr )
 		return 0.f;
 
@@ -135,7 +134,6 @@ void UYSBlueprintFunctionLibrary::SendHitEventToTarget(AActor* Instigator, AActo
 {
 	const FYSDamageInfo* DamageInfo = UYSDeveloperSettings::GetDamageInfo(SkillID);
 
-	// 데미지 정보가 없으면 의미 X
 	if ( DamageInfo == nullptr )
 		return;
 
@@ -163,7 +161,6 @@ void UYSBlueprintFunctionLibrary::SendHitEventToTarget(AActor* Instigator, AActo
 		ASC->HandleGameplayEvent(YSTags::Event_OnKill, &EventData);
 	}
 
-	// HP 피해 뒤에도 살아 있을 때만.
 	const bool bStillAlive = TargetSet != nullptr && TargetSet->GetHp() > 0.f;
 
 	if ( DamageInfo->GroggyDamage > 0.f && bStillAlive )
@@ -177,6 +174,19 @@ void UYSBlueprintFunctionLibrary::SendHitEventToTarget(AActor* Instigator, AActo
 	EventData.EventMagnitude = FinalDamage;
 
 	TargetASC->HandleGameplayEvent(DamageInfo->HitTag, &EventData);
+}
+
+FName UYSBlueprintFunctionLibrary::ResolveDamageRow(const AActor* Target, const FName& DamageRow)
+{
+	const FYSDamageInfo* DamageInfo = UYSDeveloperSettings::GetDamageInfo(DamageRow);
+	const AYSMonster* Monster = Cast<AYSMonster>(Target);
+
+	if ( DamageInfo == nullptr || DamageInfo->LightGradeDamageRow.IsNone() || IsValid(Monster) == false || Monster->StaggerGrade == EYSStaggerGrade::Immovable )
+	{
+		return DamageRow;
+	}
+
+	return DamageInfo->LightGradeDamageRow;
 }
 
 void UYSBlueprintFunctionLibrary::SpawnEffects(UObject* WorldContextObject, const FName& DamageRow,
@@ -273,6 +283,43 @@ AActor* UYSBlueprintFunctionLibrary::AcquirePooledActor(UWorld* World, TSubclass
 	return IsValid(SpawnedActor) ? SpawnedActor : nullptr;
 }
 
+namespace
+{
+	AActor* SpawnAtTransform(UWorld* World, TSubclassOf<AActor> ActorClass, bool bAttachToActor, const FTransform& SpawnTransform,
+		AActor* OwnerActor, AActor* AttachParent, const TSharedPtr<FYSAbilityHitContext>& HitContext)
+	{
+		AActor* PooledActor = UYSBlueprintFunctionLibrary::AcquirePooledActor(World, ActorClass, SpawnTransform);
+		if (IsValid(PooledActor) == false)
+			return nullptr;
+
+		AActor* Instigator = UYSBlueprintFunctionLibrary::ResolveDamageInstigator(OwnerActor);
+
+		if (bAttachToActor && IsValid(AttachParent))
+		{
+			PooledActor->AttachToActor(AttachParent, FAttachmentTransformRules::KeepWorldTransform);
+		}
+		
+		if ( IYSSpawnInitializable* Initializable = Cast<IYSSpawnInitializable>(PooledActor) )
+		{
+			if ( Initializable->OnSpawnInitialize(OwnerActor, Instigator, HitContext) == false )
+			{
+				UYSObjectPoolingSubsystem::ReturnToPool(PooledActor);
+				return nullptr;
+			}
+
+			// 활성화가 곧장 반환·파괴로 이어질 수 있어(bTraceOnce 등) SetPoolActive 전에 등록한다.
+			if ( HitContext.IsValid() && PooledActor->Implements<UYSLinkedActor>() )
+			{
+				HitContext->RegisterLinkedActor(PooledActor);
+			}
+
+			Initializable->SetPoolActive(true);
+		}
+		
+		return PooledActor;
+	}
+}
+
 AActor* UYSBlueprintFunctionLibrary::SpawnByConfig(UObject* WorldContext, const FYSSpawnActorConfig& Config,
 	const FYSTransformPolicyContext& PolicyContext, AActor* AttachParent, const TSharedPtr<FYSAbilityHitContext>& HitContext)
 {
@@ -283,45 +330,56 @@ AActor* UYSBlueprintFunctionLibrary::SpawnByConfig(UObject* WorldContext, const 
 	if (IsValid(World) == false || Config.ActorClass == nullptr )
 		return nullptr;
 
+	// 자리는 요청한 때 정한다. 예고 표시와 같은 자리에 나와야 한다.
 	const FTransform SpawnTransform = CalculateSpawnTransform(WorldContext, Config, PolicyContext);
 
-	AActor* PooledActor = AcquirePooledActor(World, Config.ActorClass, SpawnTransform);
-	if (IsValid(PooledActor) == false)
+	if ( Config.SpawnDelay <= 0.f )
+	{
+		return SpawnAtTransform(World, Config.ActorClass, Config.bAttachToActor, SpawnTransform, PolicyContext.OwnerActor, AttachParent, HitContext);
+	}
+
+	const bool bCancelOnEnd = Config.bCancelOnAbilityEnd && HitContext.IsValid();
+	if ( bCancelOnEnd && HitContext->IsOwnerActive() == false )
 		return nullptr;
 
-	AActor* OwnerActor = PolicyContext.OwnerActor;
-	AActor* Instigator = OwnerActor;
-	if ( const IYSDamageProxy* Proxy = Cast<IYSDamageProxy>(OwnerActor) )
-	{
-		Instigator = Proxy->GetDamageInstigator();
-	}
-	
-	if (Config.bAttachToActor && IsValid(AttachParent))
-	{
-		PooledActor->AttachToActor(AttachParent, FAttachmentTransformRules::KeepWorldTransform);
-	}
-	
-	if ( IYSSpawnInitializable* Initializable = Cast<IYSSpawnInitializable>(PooledActor) )
-	{
-		if ( Initializable->OnSpawnInitialize(OwnerActor, Instigator, HitContext) == false )
+	const AYSAttackableBase* AttackableCDO = Cast<AYSAttackableBase>(Config.ActorClass->GetDefaultObject());
+	const TWeakObjectPtr<AYSTelegraphActor> WeakTelegraph = IsValid(AttackableCDO) ? AttackableCDO->SpawnTelegraph(World, SpawnTransform, Config.SpawnDelay) : nullptr;
+
+	const TWeakObjectPtr<AActor> WeakOwner = PolicyContext.OwnerActor;
+	const TWeakObjectPtr<AActor> WeakAttachParent = AttachParent;
+	const TSubclassOf<AActor> ActorClass = Config.ActorClass;
+	const bool bAttachToActor = Config.bAttachToActor;
+
+	// 히트 기록은 강하게 쥔다. 어빌리티가 끝난 뒤에 나와도 배율을 이어받는다.
+	FTimerHandle DelayHandle;
+	World->GetTimerManager().SetTimer(DelayHandle, FTimerDelegate::CreateWeakLambda(World,
+		[World, HitContext, WeakOwner, WeakAttachParent, ActorClass, bAttachToActor, SpawnTransform, WeakTelegraph]()
 		{
-			if ( UYSObjectPoolingSubsystem* ObjectPooling = UYSObjectPoolingSubsystem::Get(World) )
+			if ( AYSTelegraphActor* Telegraph = WeakTelegraph.Get() )
 			{
-				ObjectPooling->ReturnPooledActor(PooledActor);
+				Telegraph->Destroy();
 			}
-			return nullptr;
-		}
 
-		// 활성화가 곧장 반환·파괴로 이어질 수 있어(bTraceOnce 등) SetPoolActive 전에 등록한다.
-		if ( HitContext.IsValid() && PooledActor->Implements<UYSLinkedActor>() )
+			if ( WeakOwner.IsValid() == false )
+				return;
+
+			SpawnAtTransform(World, ActorClass, bAttachToActor, SpawnTransform, WeakOwner.Get(), WeakAttachParent.Get(), HitContext);
+		}), Config.SpawnDelay, false);
+
+	if ( bCancelOnEnd )
+	{
+		HitContext->OnOwnerEndedEvent.AddWeakLambda(World, [World, DelayHandle, WeakTelegraph]() mutable
 		{
-			HitContext->RegisterLinkedActor(PooledActor);
-		}
+			World->GetTimerManager().ClearTimer(DelayHandle);
 
-		Initializable->SetPoolActive(true);
+			if ( AYSTelegraphActor* Telegraph = WeakTelegraph.Get() )
+			{
+				Telegraph->Destroy();
+			}
+		});
 	}
-	
-	return PooledActor;
+
+	return nullptr;
 }
 
 FTransform UYSBlueprintFunctionLibrary::CalculateSpawnTransform(UObject* WorldContext,
@@ -337,7 +395,7 @@ FTransform UYSBlueprintFunctionLibrary::CalculateSpawnTransform(UObject* WorldCo
 		if (UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(WorldContext))
 		{
 			FNavLocation NavLocation;
-			if (NavSystem->ProjectPointToNavigation(Position, NavLocation, FVector(0.f, 0.f, YS_PROJECTION_MAX_DISTANCE)))
+			if (NavSystem->ProjectPointToNavigation(Position, NavLocation, FVector(0.f, 0.f, GetDefault<UYSDeveloperSettings>()->NavProjectionMaxHeight)))
 			{
 				Position = NavLocation.Location;
 			}
@@ -352,7 +410,6 @@ void UYSBlueprintFunctionLibrary::ApplyHitEffects(AActor* Source, AActor* Instig
 {
 	const FYSDamageInfo* DamageInfo = UYSDeveloperSettings::GetDamageInfo(SkillID);
 
-	// 데미지 정보가 없으면 의미 X
 	if ( DamageInfo == nullptr || DamageInfo->DamageEffects.Num() == 0 )
 		return;
 	
@@ -372,5 +429,31 @@ void UYSBlueprintFunctionLibrary::ApplyHitEffects(AActor* Source, AActor* Instig
 			Effect->Apply(Context);
 		}
 	}
+}
+
+AActor* UYSBlueprintFunctionLibrary::ResolveDamageInstigator(AActor* Actor)
+{
+	if ( const IYSDamageProxy* Proxy = Cast<IYSDamageProxy>(Actor) )
+	{
+		return Proxy->GetDamageInstigator();
+	}
+
+	return Actor;
+}
+
+bool UYSBlueprintFunctionLibrary::ApplyHitToTarget(AActor* Source, AActor* DamageInstigator, AActor* Target,
+	const FName& DamageRow, float EffectScale, const FHitResult& HitResult, const FRotator& EffectRotation,
+	TSet<TWeakObjectPtr<AActor>>* JustAvoidGranted)
+{
+	if ( AdmitHit(DamageInstigator, Target, JustAvoidGranted) == false )
+		return false;
+
+	const FName ResolvedRow = ResolveDamageRow(Target, DamageRow);
+
+	SendHitEventToTarget(DamageInstigator, Target, ResolvedRow, EffectScale);
+	SpawnEffects(DamageInstigator, ResolvedRow, HitResult.ImpactPoint, EffectRotation);
+	ApplyHitEffects(Source, DamageInstigator, Target, ResolvedRow, HitResult);
+
+	return true;
 }
 

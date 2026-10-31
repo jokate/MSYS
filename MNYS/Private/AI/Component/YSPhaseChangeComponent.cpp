@@ -8,6 +8,7 @@
 #include "AI/Component/YSPhaseChangeCondition.h"
 #include "Character/YSCharacterBase.h"
 #include "General/YSGameplayTag.h"
+#include "Subsystem/YSCombatEventSubsystem.h"
 
 UYSPhaseChangeComponent::UYSPhaseChangeComponent()
 {
@@ -54,10 +55,13 @@ void UYSPhaseChangeComponent::CheckPhaseChange()
 			return;
 		}
 
-		// StateTree 쪽에다가 이벤트 송신.
 
 		++CurrentPhase;
-		OnPhaseChanged.Broadcast(CurrentPhase);
+
+		if ( UYSCombatEventSubsystem* CombatEvents = UYSCombatEventSubsystem::Get(this) )
+		{
+			CombatEvents->OnPhaseChanged.Broadcast(CharacterBase, CurrentPhase);
+		}
 	}
 }
 

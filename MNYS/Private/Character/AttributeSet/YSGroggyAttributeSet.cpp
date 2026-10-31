@@ -49,7 +49,7 @@ bool UYSGroggyAttributeSet::ApplyGroggyDamage(AActor* Instigator, AActor* Target
 	Context.AddInstigator(Instigator, Instigator);
 
 	FGameplayEffectSpec Spec(GetDefault<UYSGE_GroggyDamage>(), Context);
-	Spec.SetSetByCallerMagnitude(UYSGE_GroggyDamage::GroggyDamageName, Amount * Multiplier);
+	Spec.SetSetByCallerMagnitude(YSTags::Data_Groggy_Damage, Amount * Multiplier);
 
 	SourceASC->ApplyGameplayEffectSpecToTarget(Spec, TargetASC);
 	return true;

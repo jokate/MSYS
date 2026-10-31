@@ -10,10 +10,7 @@
 
 class UAnimMontage;
 
-/**
- * 그로기 게이지 → 브레이크 규칙의 수치 (기획 02_COMBAT §5.2 · §5.4, 브레이크 A안).
- * 규칙은 UYSGroggyComponent 가 갖고 적마다 다른 값은 여기에만 둔다. 모든 기본값은 임시값이다 — 확정은 12_BALANCE.
- */
+/** 그로기 게이지 → 브레이크 규칙의 수치. 규칙은 UYSGroggyComponent 가 갖고 적마다 다른 값은 여기에만 둔다. 모든 기본값은 임시값이다. */
 USTRUCT(BlueprintType)
 struct MNYS_API FYSGroggyRules
 {
@@ -49,8 +46,7 @@ struct MNYS_API FYSGroggyRules
 #pragma endregion
 
 #pragma region Presentation
-	// 진입 Cue 가 켜져 있는 시간. 브레이크 시간은 이 정지가 끝난 뒤부터 센다 (GE 시간 = 정지 + 브레이크 시간).
-	// 진입 Cue 의 시간 왜곡 트랙은 길이 0(큐가 꺼질 때까지)으로 두면 이 값 하나로 맞는다.
+	// 진입 Cue 가 켜져 있는 시간. 브레이크 시간은 이 정지가 끝난 뒤부터 센다. 진입 Cue 의 시간 왜곡 트랙을 길이 0(큐가 꺼질 때까지)으로 두면 이 값 하나로 맞는다.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Presentation", meta = (DisplayName = "진입 정지 (초)", ClampMin = "0"))
 	float EntryHoldTime = 0.25f;
 
@@ -77,15 +73,13 @@ struct MNYS_API FYSGroggyRules
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Recover", meta = (DisplayName = "회복 시작 지연 (초)", ClampMin = "0"))
 	float RegenDelay = 3.f;
 
-	// 평타의 균형 DPS 보다 낮아야 평타로도 깨진다 (§5.2 계약).
+	// 평타의 균형 DPS 보다 낮아야 평타로도 깨진다.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "YS | Recover", meta = (DisplayName = "초당 회복 (최대치 비율)", ClampMin = "0"))
 	float RegenRatePerSecond = 0.08f;
 #pragma endregion
 };
 
-/**
- * 보스 · 엘리트별 그로기 규칙. 몬스터에 지정하지 않으면 YS Developer Settings 의 기본 규칙을 쓴다.
- */
+/** 보스 · 엘리트별 그로기 규칙. 몬스터에 지정하지 않으면 YS Developer Settings 의 기본 규칙을 쓴다. */
 UCLASS(BlueprintType)
 class MNYS_API UYSGroggyProfile : public UPrimaryDataAsset
 {

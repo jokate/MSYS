@@ -22,7 +22,6 @@ class MNYS_API AYSAttackableBase : public AActor, public IYSSpawnInitializable, 
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this actor's properties
 	AYSAttackableBase();
 	virtual void AllocateInstigator(AActor* InInstigator);
 
@@ -37,6 +36,9 @@ public:
 	
 	virtual void SetPoolActive(bool bActive) override;
 
+	/** 지연 스폰은 액터가 나오기 전이라 클래스 기본 객체로 부른다. */
+	virtual AYSTelegraphActor* SpawnTelegraph(UWorld* World, const FTransform& Transform, float Duration) const { return nullptr; }
+
 protected :
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	void _NotifyLinkedActorEnded();
@@ -50,10 +52,13 @@ protected :
 	void DeprocessActivationType();
 	
 	void OnActivateTagCallback(const FGameplayEventData* GameplayEventData);
-	virtual void ProcessTelegraph() {}
-	void DestroyActor();
+	void ProcessTelegraph();
+	void ClearTelegraph();
+
+	/** 0 이하면 바로 풀로 돌아간다. */
+	void ReturnToPoolAfter(float Delay);
 protected : 
-	//2026.06.15 다시 돌리는 이유는 스포너에서 처리하는 것보다 차라리 여기서 처리하는게 맞다고 생각이 드는 중.. (범위나 다양한 정보를 얻을 수 있기 때문임)
+	// 스포너보다 여기서 처리하는 편이 범위 등 더 많은 정보를 얻을 수 있어 다시 돌린다.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "ActivationType")
 	EYSAttackActivationType ActivationType = EYSAttackActivationType::Instant;
 	
@@ -89,6 +94,9 @@ protected :
 	
 protected : 
 	TSharedPtr<FYSAbilityHitContext> HitContext;
+
+	// 낸 어빌리티의 배율. 스폰할 때 받아 둔다.
+	float EffectScale = 1.f;
 private :
 	FTimerHandle ActivateTimerHandle;
 	FTimerHandle DestroyTimerHandle;

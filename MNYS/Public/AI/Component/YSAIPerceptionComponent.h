@@ -3,17 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "General/YSEnum.h"
 #include "General/YSStruct.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "YSAIPerceptionComponent.generated.h"
 
 
-/*
- * 퍼셉션에 감지된 액터를 간단하게 찾을 수 있도록 해야 한다.
- * 사유는 각 퍼셉션 별로 의도하는 위치 및 의도하는 방식이 존재하기 때문임 
- * 잡몹의 경우에는 사용 가능하되, 보스의 경우 ( 필드에 깔린 경우 예외 ) 강제적으로 선제 타겟팅을 걸도록 해야 한다.
- * 사실상 솔로플레이기 때문에, 만약에 소환수를 까는 경우 대비
- */
+// 퍼셉션마다 의도하는 위치 · 방식이 달라, 감지된 액터를 여기서 한 목록으로 묶어 찾게 한다.
 
 struct FYSTargetingActorCollections;
 
@@ -23,16 +19,17 @@ class MNYS_API UYSAIPerceptionComponent : public UAIPerceptionComponent
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this component's properties
 	UYSAIPerceptionComponent();
-	static TSharedPtr<FYSTargetingActorCollections> GetTargetingCollection(AActor* Actor);
+
+	// AI 의 폰 · 컨트롤러 어느 쪽을 받아도 된다. 퍼셉션이나 목록이 없으면 nullptr.
+	static TSharedPtr<FYSTargetingActorCollections> GetTargetingCollection(const AActor* Actor);
+	static AActor* GetBestTarget(const AActor* Actor);
+	static bool MatchesAffiliation(const FActorPerceptionInfo& Info, EYSPerceptionAffiliation Affiliation);
 
 public:
-	// Called when the game starts
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	
-	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
 
@@ -55,12 +52,7 @@ public :
 	{
 		TargetingActorCollections = InTargetingActorCollections;
 	}
-	
-	AActor* GetBestTargetActor() const
-	{
-		return TargetingActorCollections->GetBestTargetActor();
-	}
 
-private : 
+private :
 	TSharedPtr<FYSTargetingActorCollections> TargetingActorCollections;
 };

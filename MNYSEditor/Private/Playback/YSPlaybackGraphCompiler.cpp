@@ -10,7 +10,6 @@
 
 namespace YSPlaybackCompile
 {
-	/** 시작 노드가 가리키는 상태. 없으면 nullptr. */
 	static UYSPlaybackGraphNode_State* FindEntryState(const UEdGraph& Graph)
 	{
 		for (UEdGraphNode* Node : Graph.Nodes)
@@ -58,11 +57,10 @@ void FYSPlaybackGraphCompiler::GatherOutgoingTransitions(const UYSPlaybackGraphN
 		}
 	}
 
-	// StableSort 를 쓴다. 우선순위가 같은 전환끼리 순서가 매번 뒤집히면
-	// 컴파일할 때마다 에셋이 더러워져 소스 컨트롤이 시끄러워진다.
+	// 우선순위가 같은 전환끼리 순서가 뒤집히면 컴파일마다 에셋이 더러워지므로 StableSort 를 쓴다.
 	OutTransitions.StableSort([](const UYSPlaybackGraphNode_Transition& A, const UYSPlaybackGraphNode_Transition& B)
 	{
-		return A.PriorityOrder < B.PriorityOrder;
+		return A.PriorityOrder > B.PriorityOrder;
 	});
 }
 
@@ -89,7 +87,7 @@ void FYSPlaybackGraphCompiler::Compile(UYSPlaybackGraphAsset* Asset)
 		}
 	}
 
-	// 시작 노드가 가리키는 상태를 맨 앞으로 끌어온다. 어빌리티는 0번부터 시작한다.
+	// 어빌리티는 0번부터 시작하므로 시작 상태를 맨 앞으로 끌어온다.
 	if (UYSPlaybackGraphNode_State* EntryState = YSPlaybackCompile::FindEntryState(Graph))
 	{
 		const int32 EntryIndex = StateNodes.IndexOfByKey(EntryState);
@@ -110,7 +108,6 @@ void FYSPlaybackGraphCompiler::Compile(UYSPlaybackGraphAsset* Asset)
 	}
 
 	// ── 3단계 : 플레이백을 에셋으로 복제한다 ─────────────────────────────
-	// 이전 산출물은 버린다. GC 가 수거한다.
 	Asset->Modify();
 	Asset->Playbacks.Reset(StateNodes.Num());
 
@@ -125,7 +122,7 @@ void FYSPlaybackGraphCompiler::Compile(UYSPlaybackGraphAsset* Asset)
 	{
 		UYSAbilityPlaybackBase* Compiled = Asset->Playbacks[Index];
 
-		// 노드에 남아 있던 경로는 버린다. 그래프의 화살표만이 경로의 출처다.
+		// 그래프의 화살표만이 경로의 출처다.
 		for (UYSPlaybackTask* Task : Compiled->Tasks)
 		{
 			if (IsValid(Task))
@@ -139,7 +136,6 @@ void FYSPlaybackGraphCompiler::Compile(UYSPlaybackGraphAsset* Asset)
 
 		for (const UYSPlaybackGraphNode_Transition* Transition : Transitions)
 		{
-			// 인덱스가 어긋난 화살표. 그래프에서 붉게 뜬다.
 			if (Transition->HasValidOutput() == false || Compiled->Tasks.IsValidIndex(Transition->TaskIndex) == false)
 			{
 				continue;
@@ -151,8 +147,7 @@ void FYSPlaybackGraphCompiler::Compile(UYSPlaybackGraphAsset* Asset)
 			FYSPlaybackRoute Route;
 			Route.Conditions = Transition->TransitionConditions;
 
-			// 종료 노드로 갔거나, 아무 데도 안 닿았다.
-			// 둘 다 런타임 결과는 같지만 후자는 그래프에서 붉게 표시돼 실수임이 드러난다.
+			// 종료 노드로 갔거나 아무 데도 안 닿은 경우. 런타임 결과는 같다.
 			Route.Target = EYSRouteTarget::End;
 
 			if (const UYSPlaybackGraphNode_State* NextState = Cast<UYSPlaybackGraphNode_State>(Target))
@@ -174,7 +169,7 @@ void FYSPlaybackGraphCompiler::Compile(UYSPlaybackGraphAsset* Asset)
 				}
 			}
 
-			// 행동은 편집용 전환 노드가 소유한다. 그 노드는 쿠킹 때 사라지므로 산출물 쪽에 복제한다.
+			// 전환 노드는 쿠킹 때 사라지므로 행동을 산출물 쪽에 복제한다.
 			for (const UYSPlaybackAction* Action : Transition->Actions)
 			{
 				if (Action != nullptr)
@@ -187,7 +182,7 @@ void FYSPlaybackGraphCompiler::Compile(UYSPlaybackGraphAsset* Asset)
 		}
 	}
 
-	// 산출물이 바뀌었음을 알린다. 이미 사본을 뜬 어빌리티가 이 번호를 보고 다시 뜬다.
+	// 이미 사본을 뜬 어빌리티가 이 번호를 보고 다시 뜬다.
 	++Asset->CompileSerial;
 
 	Asset->MarkPackageDirty();

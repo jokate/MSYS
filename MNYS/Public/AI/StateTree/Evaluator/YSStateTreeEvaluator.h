@@ -9,15 +9,7 @@
 #include "UObject/Object.h"
 #include "YSStateTreeEvaluator.generated.h"
 
-class UYSAbilitySystemComponent;
-class UAbilitySystemComponent;
-class AYSMonster;
 class UEnvQuery;
-struct FYSTargetingActorCollections;
-class AYSAIController;
-/**
- * 
- */
 USTRUCT(BlueprintType)
 struct FYSStateTree_TargetInstancedData
 {
@@ -29,8 +21,6 @@ public :
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Output")
 	TArray<TObjectPtr<AActor>> SkillTargets;
-	
-	TSharedPtr<FYSTargetingActorCollections> TargetingActorCollections;
 };
 
 USTRUCT(DisplayName = "타겟팅 정보 가져오기")
@@ -43,13 +33,8 @@ public :
 
 	virtual const UStruct* GetInstanceDataType() const override { return FInstanceDataType::StaticStruct(); }
 
-	virtual bool Link(FStateTreeLinker& Linker) override;
-	virtual void TreeStart(FStateTreeExecutionContext& Context) const override;
 	virtual void Tick(FStateTreeExecutionContext& Context, float DeltaTime) const override;
 	virtual void TreeStop(FStateTreeExecutionContext& Context) const override;
-
-protected:
-	TStateTreeExternalDataHandle<AYSAIController> AIControllerHandle;
 };
 
 
@@ -59,11 +44,9 @@ struct FYSStateTree_AbilityActivation
 	GENERATED_BODY()
 	
 public : 
-	// 사용 가능한 최고의 어빌리티..
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Output")
 	FGameplayAbilitySpecHandle BestAbilitySpecHandle; 
 	
-	// 어빌리티 사용 가능 여부
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Output")
 	bool bIsEnableActivateAbility = false;
 	
@@ -81,14 +64,5 @@ public :
 	using FInstanceDataType = FYSStateTree_AbilityActivation;
 	
 	virtual const UStruct* GetInstanceDataType() const override { return FInstanceDataType::StaticStruct(); }
-	virtual void TreeStart(FStateTreeExecutionContext& Context) const override;
-	virtual bool Link(FStateTreeLinker& Linker) override;
 	virtual void Tick(FStateTreeExecutionContext& Context, float DeltaTime) const override;
-	
-protected:
-	TStateTreeExternalDataHandle<AYSAIController> AIControllerHandle;
-	
-	
-	mutable TWeakObjectPtr<UYSAbilitySystemComponent> YSASC;
-	mutable TWeakObjectPtr<AActor> OwnerPawn;
 };

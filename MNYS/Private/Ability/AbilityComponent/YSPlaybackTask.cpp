@@ -21,14 +21,9 @@
 #include "MotionWarpingComponent.h"
 #include "TimerManager.h"
 #include "YSBattleActor.h"
-#include "Ability/Ability/YSGameplayAbility_ContextSwitch.h"
-#include "Ability/GameplayEffect/YSGE_ContextSwitchStagger.h"
-#include "Character/YSMonster.h"
-#include "Combat/YSContextSwitchVariant.h"
 #include "Framework/YSGameModeBase.h"
 #include "General/YSGameplayTag.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
-#include "Targeting/YSTargetingShape.h"
 
 #define LOCTEXT_NAMESPACE "YSPlaybackTask"
 
@@ -318,13 +313,25 @@ void UYSPlaybackTask_WaitDelay::OnDelayFinished()
 	Resolve();
 }
 
+FText UYSPlaybackTask_Branch::GetOutputDisplayName(int32 OutputIndex) const
+{
+	return LOCTEXT("OutputBranch", "분기");
+}
+
+void UYSPlaybackTask_Branch::OnStart()
+{
+	// 고르기만 한다. 실제 일은 고른 노드가 한다.
+	MarkWorkNotStarted();
+	Resolve();
+}
+
 void UYSPlaybackTask_SwitchEntry::OnStart()
 {
 	SelectedForm = NAME_None;
 	bSelected = false;
 	bWarpSet = false;
 
-	UAbilityTask_WaitDelay* Task = Track(UAbilityTask_WaitDelay::WaitDelay(GetOwningAbility(), InputWindowLimit));
+	UAbilityTask_WaitDelay* Task = Track(UAbilityTask_WaitDelay::WaitDelay(GetOwningAbility(), GetDefault<UYSDeveloperSettings>()->SwitchEntryInputWindowLimit));
 
 	if ( IsValid(Task) )
 	{
@@ -473,218 +480,6 @@ AActor* UYSPlaybackTask_SwitchEntry::FindCombatTarget(const AActor* Instigator) 
 	const UYSCombatTargetComponent* CombatTarget = UYSCombatTargetComponent::Get(Instigator);
 
 	return IsValid(CombatTarget) ? CombatTarget->GetCurrentTarget() : nullptr;
-}
-
-const FYSContextSwitchVariant* UYSPlaybackTask_ContextSwitchHit::GetVariant() const
-{
-	const UYSGameplayAbility_ContextSwitch* Ability = Cast<UYSGameplayAbility_ContextSwitch>(GetOwningAbility());
-	return IsValid(Ability) ? Ability->GetSelectedVariant() : nullptr;
-}
-
-void UYSPlaybackTask_ContextSwitchHit::OnStart()
-{
-	bWarpSet = false;
-
-	const UYSGameplayAbility_ContextSwitch* Ability = Cast<UYSGameplayAbility_ContextSwitch>(GetOwningAbility());
-	const FYSContextSwitchVariant* Variant = GetVariant();
-	const TSharedPtr<FYSPlaybackContext> Context = GetContext();
-
-	if ( Variant == nullptr || Context.IsValid() == false )
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[ContextSwitch] 변형 행이 없다. 이 태스크는 UYSGameplayAbility_ContextSwitch 플레이백에만 둔다."));
-		return;
-	}
-
-	AActor* Instigator = Context->Instigator;
-	AActor* Target = Ability->GetVariantTarget();
-	Context->Target = Target;
-
-	// 회전은 제자리에서 타겟 쪽으로, 워프는 타겟 앞까지. 돌진은 몽타주 루트모션 그대로다.
-	UMotionWarpingComponent* MotionWarping = IsValid(Instigator) ? Instigator->FindComponentByClass<UMotionWarpingComponent>() : nullptr;
-
-	if ( Variant->Move != EYSContextSwitchMove::Dash && Variant->WarpTargetName.IsNone() == false && IsValid(MotionWarping) && IsValid(Target) )
-	{
-		const FVector From = Instigator->GetActorLocation();
-		FVector ToTarget = Target->GetActorLocation() - From;
-		ToTarget.Z = 0.f;
-
-		const FVector Direction = ToTarget.GetSafeNormal();
-		const float Travel = ( Variant->Move == EYSContextSwitchMove::Warp )
-			? FMath::Clamp(ToTarget.Size() - Variant->WarpStopDistance, 0.f, Variant->WarpMaxDistance)
-			: 0.f;
-
-		MotionWarping->AddOrUpdateWarpTargetFromLocationAndRotation(Variant->WarpTargetName, From + Direction * Travel, Direction.Rotation());
-		bWarpSet = true;
-	}
-
-	float HitDelay = Variant->HitDelay;
-
-	// 블렌드아웃이 체인을 끝내면 이 대기도 정리돼 판정이 사라진다. 그보다 늦은 판정은 블렌드아웃 직전으로 당긴다.
-	const UAnimMontage* Montage = Variant->Montage.LoadSynchronous();
-
-	if ( IsValid(Montage) && Montage->bEnableAutoBlendOut )
-	{
-		constexpr float HitLeadBeforeBlendOut = 0.05f;
-
-		// 엔진은 남은 재생 시간(실초)이 블렌드아웃 시간(실초) 이하가 될 때 블렌드아웃을 시작한다. 배율은 몽타주 길이에만 걸린다.
-		const float FromEnd = ( Montage->BlendOutTriggerTime >= 0.f ) ? Montage->BlendOutTriggerTime : Montage->GetDefaultBlendOutTime();
-		const float BlendOutStart = Montage->GetPlayLength() / FMath::Max(Montage->RateScale, UE_KINDA_SMALL_NUMBER) - FromEnd;
-
-		// 당겨도 0 이 되지 않게 한다. 0 이면 회전 · 워프 전에 판정한다. 하한이 블렌드아웃 시작을 넘으면 판정이 사라지므로 그 안에서만 둔다.
-		const float MinHit = FMath::Min(FMath::Min(HitDelay, HitLeadBeforeBlendOut), FMath::Max(BlendOutStart, 0.f));
-		const float LatestHit = FMath::Max(MinHit, BlendOutStart - HitLeadBeforeBlendOut);
-
-		if ( HitDelay > LatestHit )
-		{
-			UE_LOG(LogTemp, Warning, TEXT("[ContextSwitch] 변형 행 '%s' 의 판정 지연 %.2f초가 몽타주 블렌드아웃 시작(%.2f초)보다 늦어 %.2f초로 당긴다."),
-				*Ability->GetSelectedRow().ToString(), HitDelay, BlendOutStart, LatestHit);
-			HitDelay = LatestHit;
-		}
-	}
-
-	if ( HitDelay <= 0.f )
-	{
-		ExecuteHit();
-		return;
-	}
-
-	UAbilityTask_WaitDelay* Task = Track(UAbilityTask_WaitDelay::WaitDelay(GetOwningAbility(), HitDelay));
-
-	if ( IsValid(Task) )
-	{
-		Task->OnFinish.AddDynamic(this, &ThisClass::OnHitDelayFinished);
-		Task->ReadyForActivation();
-	}
-}
-
-void UYSPlaybackTask_ContextSwitchHit::OnStop()
-{
-	ReleaseMotionWarp();
-}
-
-FText UYSPlaybackTask_ContextSwitchHit::GetOutputDisplayName(int32 OutputIndex) const
-{
-	return LOCTEXT("OutputContextSwitchHit", "판정");
-}
-
-void UYSPlaybackTask_ContextSwitchHit::OnHitDelayFinished()
-{
-	ExecuteHit();
-}
-
-void UYSPlaybackTask_ContextSwitchHit::ExecuteHit()
-{
-	const UYSGameplayAbility_ContextSwitch* Ability = Cast<UYSGameplayAbility_ContextSwitch>(GetOwningAbility());
-	const FYSContextSwitchVariant* Variant = GetVariant();
-	const TSharedPtr<FYSPlaybackContext> Context = GetContext();
-	const FYSTargetingShape* HitShape = Variant ? Variant->Shape.GetPtr<FYSTargetingShape>() : nullptr;
-	AActor* Instigator = Context.IsValid() ? Context->Instigator.Get() : nullptr;
-
-	if ( HitShape == nullptr || IsValid(Instigator) == false )
-	{
-		TryResolve();
-		return;
-	}
-
-	TArray<AActor*> InShape;
-
-	if ( HitShape->CollectActors(Instigator->GetWorld(), Instigator->GetActorLocation(), Instigator->GetActorForwardVector(), Instigator, InShape) == false )
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[ContextSwitch] 판정 도형이 판정을 지원하지 않는다 (시전자 기준 도형만 된다)."));
-	}
-
-	AActor* VariantTarget = Ability->GetVariantTarget();
-
-	// 1체 규칙은 관통 없이 시작 때 고른 타겟만.
-	if ( Variant->TargetRule == EYSSwitchEntryTargetRule::CurrentTarget )
-	{
-		InShape = InShape.Contains(VariantTarget) ? TArray<AActor*>{ VariantTarget } : TArray<AActor*>();
-	}
-
-	UAbilitySystemComponent* SourceASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Instigator);
-	const float Scale = Ability->GetEffectScale();
-	TArray<AActor*> HitTargets;
-
-	// 판정은 한 번이라 이번 판정 안에서만 저스트 회피 GE 를 대상당 한 번 준다.
-	TSet<TWeakObjectPtr<AActor>> JustAvoidGranted;
-
-	for ( AActor* Target : InShape )
-	{
-		// 아군 · 사망 · 저스트 회피 창 · 무적 검사는 트레이스 · DirectHit 과 같은 함수를 거친다.
-		if ( UYSBlueprintFunctionLibrary::AdmitHit(Instigator, Target, &JustAvoidGranted) == false )
-		{
-			continue;
-		}
-
-		UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Target);
-
-		// 등급 0 · 1 은 그로기 게이지가 없다. 그로기 피해 대신 경직 종류(피해 행)와 경직 GE 를 받는다.
-		const AYSMonster* Monster = Cast<AYSMonster>(Target);
-		const bool bLightGrade = IsValid(Monster) && Monster->StaggerGrade != EYSStaggerGrade::Immovable;
-		const FName Row = ( bLightGrade && Variant->StaggerDamageRow.IsNone() == false ) ? Variant->StaggerDamageRow : Variant->DamageRow;
-
-		if ( Row.IsNone() == false )
-		{
-			const FVector HitLocation = Target->GetActorLocation();
-			const FVector HitDirection = ( HitLocation - Instigator->GetActorLocation() ).GetSafeNormal2D();
-			const FHitResult HitResult(Target, Cast<UPrimitiveComponent>(Target->GetRootComponent()), HitLocation, -HitDirection);
-
-			UYSBlueprintFunctionLibrary::SendHitEventToTarget(Instigator, Target, Row, Scale);
-			UYSBlueprintFunctionLibrary::SpawnEffects(Instigator, Row, HitLocation, HitDirection.ToOrientationRotator());
-			UYSBlueprintFunctionLibrary::ApplyHitEffects(Instigator, Instigator, Target, Row, HitResult);
-		}
-
-		if ( bLightGrade && Variant->StaggerDuration > 0.f && IsValid(SourceASC) )
-		{
-			const float Duration = Variant->StaggerDuration * Scale;
-
-			FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
-			EffectContext.AddInstigator(Instigator, Instigator);
-
-			FGameplayEffectSpec Spec(GetDefault<UYSGE_ContextSwitchStagger>(), EffectContext);
-			Spec.SetSetByCallerMagnitude(UYSGE_ContextSwitchStagger::DurationName, Duration);
-			// SetByCaller 로 정한 시간은 스펙 생성 때 계산되지 않아 다시 잡는다.
-			Spec.SetDuration(Duration, true);
-			Spec.DynamicGrantedTags.AddTag(YSTags::AISuppress_HitReact);
-
-			SourceASC->ApplyGameplayEffectSpecToTarget(Spec, TargetASC);
-		}
-
-		HitTargets.Add(Target);
-	}
-
-	// 변형 행의 임팩트 칸이 등급이다 (HUD 보고와 같은 칸). 공격 1회에 한 번.
-	if ( HitTargets.Num() > 0 )
-	{
-		UYSBlueprintFunctionLibrary::PlayImpact(Instigator, HitTargets, Variant->Impact);
-	}
-
-	// 경로가 없으면 전환하지 않는다. 노드는 몽타주가 끝낸다.
-	TryResolve();
-}
-
-void UYSPlaybackTask_ContextSwitchHit::ReleaseMotionWarp()
-{
-	if ( bWarpSet == false )
-	{
-		return;
-	}
-
-	bWarpSet = false;
-
-	const FYSContextSwitchVariant* Variant = GetVariant();
-	const TSharedPtr<FYSPlaybackContext> Context = GetContext();
-	AActor* Instigator = Context.IsValid() ? Context->Instigator.Get() : nullptr;
-
-	if ( Variant == nullptr || IsValid(Instigator) == false )
-	{
-		return;
-	}
-
-	if ( UMotionWarpingComponent* MotionWarping = Instigator->FindComponentByClass<UMotionWarpingComponent>() )
-	{
-		MotionWarping->RemoveWarpTarget(Variant->WarpTargetName);
-	}
 }
 
 #undef LOCTEXT_NAMESPACE

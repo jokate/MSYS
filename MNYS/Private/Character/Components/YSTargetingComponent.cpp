@@ -4,20 +4,17 @@
 #include "Character/Components/YSTargetingComponent.h"
 
 #include "NavigationSystem.h"
+#include "YSDeveloperSettings.h"
 #include "Character/YSPlayerController.h"
 #include "Character/Components/YSCameraManageComponent.h"
 #include "General/YSDefine.h"
 #include "Targeting/YSSkillIndicator.h"
 
 
-// Sets default values for this component's properties
 UYSTargetingComponent::UYSTargetingComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
-	// ...
 }
 
 UYSTargetingComponent* UYSTargetingComponent::Get(const AActor* Actor)
@@ -43,8 +40,7 @@ bool UYSTargetingComponent::BeginTargeting(UObject* Requester, const FYSTargetin
 		return false;
 	}
 
-	// 다른 스킬이 조준 중이었다면 그쪽 카메라 요청부터 회수한다.
-	// 안 그러면 밀려난 요청이 스택에 남아 조준이 끝나도 카메라가 돌아오지 않는다.
+	// 다른 스킬이 조준 중이었다면 그쪽 카메라 요청부터 회수한다. 안 그러면 밀려난 요청이 스택에 남아 조준이 끝나도 카메라가 돌아오지 않는다.
 	if ( CurrentRequester.IsValid() && CurrentRequester.Get() != Requester )
 	{
 		if ( UYSCameraManageComponent* PrevCamera = CurrentPlayerController->LockOnComponent ) 
@@ -71,12 +67,10 @@ bool UYSTargetingComponent::BeginTargeting(UObject* Requester, const FYSTargetin
 		Camera->PushCameraMode(Requester, Spec.CameraParams, EYSCameraModePriority::Targeting);
 	}
 	
-	// 조준점을 산출하기 전에 커서를 먼저 드러낸다.
-	// 캡처 상태에서는 마우스 위치가 갱신되지 않아 첫 프레임이 화면 중앙으로 잡힌다.
+	// 조준점을 산출하기 전에 커서를 먼저 드러낸다. 캡처 상태에서는 마우스 위치가 갱신되지 않아 첫 프레임이 화면 중앙으로 잡힌다.
 	ApplyCursorMode(true);
 
-	// 첫 프레임부터 올바른 도형이 뜨도록 한 번 즉시 산출해 반영한다.
-	// 틱을 기다리면 이전 조준의 잔상이 한 프레임 보인다.
+	// 첫 프레임부터 올바른 도형이 뜨도록 한 번 즉시 산출한다. 틱을 기다리면 이전 조준의 잔상이 한 프레임 보인다.
 	CurrentResult = EvaluateTarget();
 	RefreshIndicator();
 
@@ -86,19 +80,16 @@ bool UYSTargetingComponent::BeginTargeting(UObject* Requester, const FYSTargetin
 
 void UYSTargetingComponent::EndTargeting(UObject* Requester)
 {
-	// 현재 요청한 애가 이놈이 아니면 가라..
 	if ( CurrentRequester.Get() != Requester )
 	{
 		return;
 	}
 	
-	// 카메라를 빼준다. 
 	if ( UYSCameraManageComponent* Camera = CurrentPlayerController->LockOnComponent )
 	{
 		Camera->PopCameraMode(Requester);
 	}
 
-	// 인디케이터 비활.
 	if ( IsValid(Indicator) )
 	{
 		Indicator->Deactivate();
@@ -108,7 +99,6 @@ void UYSTargetingComponent::EndTargeting(UObject* Requester)
 }
 
 
-// Called every frame
 void UYSTargetingComponent::TickComponent(float DeltaTime, ELevelTick TickType,
                                           FActorComponentTickFunction* ThisTickFunction)
 {
@@ -139,8 +129,7 @@ void UYSTargetingComponent::RefreshIndicator()
 		return;
 	}
 
-	// 도형 종류에 따라 그리는 방식과 사거리 링 표시 여부가 갈린다.
-	// 원형·사각형은 조준점이 중심이고, 직선·부채꼴·자기중심원은 시전자가 기준이다.
+	// 도형 종류에 따라 그리는 방식과 사거리 링 표시 여부가 갈린다. 원형·사각형은 조준점이, 직선·부채꼴·자기중심원은 시전자가 기준이다.
 	if ( const FYSTargetingShape* Shape = CurrentSpec.Shape.GetPtr<FYSTargetingShape>() )
 	{
 		Shape->Draw(Indicator, CurrentResult, GetCasterLocation());
@@ -200,8 +189,7 @@ FYSTargetingResult UYSTargetingComponent::EvaluateTarget() const
 		return Result;
 	}
 
-	// 사거리는 수평 거리로만 잰다.
-	// 높이차를 포함시키면 언덕 위 적이 사거리 밖으로 밀려난다.
+	// 사거리는 수평 거리로만 잰다. 높이차를 포함시키면 언덕 위 적이 사거리 밖으로 밀려난다.
 	const float Range = Shape->GetRange();
 	const bool bOutOfRange = ( Range > 0.f ) && ( Offset.SizeSquared() > FMath::Square(Range) );
 
@@ -281,8 +269,7 @@ bool UYSTargetingComponent::ProjectScreenToGround(FVector& OutLocation) const
 
 	const bool bCrosshairAim = CurrentSpec.AimSource == EYSAimSource::ScreenCenter;
 
-	// 어깨너머 카메라는 시전자 뒤에 있다. 카메라와 시전자 사이에 낀 벽·바닥이 먼저 맞으면 조준점이 등 뒤에 생긴다.
-	// 지면 조준에는 쓰면 안 된다. 시전자보다 카메라에 가까운 바닥을 겨눌 수 없게 된다.
+	// 어깨너머 카메라는 시전자 뒤에 있어 사이에 낀 벽·바닥이 먼저 맞으면 조준점이 등 뒤에 생긴다. 지면 조준에는 쓰면 안 된다 (카메라에 가까운 바닥을 겨눌 수 없게 된다).
 	const float SkipDistance = bCrosshairAim
 		? FMath::Max(0.f, FVector::DotProduct(GetCasterLocation() - WorldOrigin, WorldDirection))
 		: 0.f;
@@ -307,15 +294,12 @@ bool UYSTargetingComponent::ProjectScreenToGround(FVector& OutLocation) const
 		return true;
 	}
 
-	// 하늘이나 낭떠러지를 겨눈 경우.
-	// 폴백이 없으면 카메라를 위로 드는 순간 인디케이터가 사라진다.
-	// 시전자 발밑 높이의 수평면과 시선을 교차시켜 지점을 만든다.
+	// 하늘이나 낭떠러지를 겨눈 경우: 폴백이 없으면 카메라를 위로 드는 순간 인디케이터가 사라진다. 시전자 발밑 높이의 수평면과 시선을 교차시켜 지점을 만든다.
 	if ( FMath::IsNearlyZero(WorldDirection.Z) )
 	{
 		return false;
 	}
 
-	// 수평 형태의 바닥 기준으로..
 	OutLocation = FMath::LinePlaneIntersection(WorldOrigin, TraceEnd, GetCasterLocation(), FVector::UpVector);
 	return true;
 }
@@ -329,11 +313,11 @@ FVector UYSTargetingComponent::SnapToGround(const FVector& Location) const
 		return Location;
 	}
 
-	// 지면에 붙이는 정책이 켜져있으면 NavMesh에 붙인다. NavMesh가 없으면 그냥 원래 위치를 반환한다~
+	// 정책이 켜져 있으면 NavMesh 에 붙인다. NavMesh 가 없으면 원래 위치를 반환한다.
 	if (UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(World))
 	{
 		FNavLocation NavLocation;
-		if (NavSystem->ProjectPointToNavigation(Location, NavLocation, FVector(0.f, 0.f, YS_PROJECTION_MAX_DISTANCE)))
+		if (NavSystem->ProjectPointToNavigation(Location, NavLocation, FVector(0.f, 0.f, GetDefault<UYSDeveloperSettings>()->NavProjectionMaxHeight)))
 		{
 			return NavLocation.Location;
 		}

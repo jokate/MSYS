@@ -8,9 +8,6 @@
 #include "General/YSStruct.h"
 #include "YSAnimNotifyState_SendGameplayTagEvent.generated.h"
 
-/**
- * 
- */
 
 class UYSAbilityTriggerPayload;
 
@@ -23,8 +20,6 @@ public:
 	virtual void NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration, const FAnimNotifyEventReference& EventReference) override;
 
 	virtual void NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference) override;
-
-	void SendGameplayEvent(USkeletalMeshComponent* MeshComp, const FGameplayEventSendData& NotifyData);
 
 public :
 	UPROPERTY(EditAnywhere, meta = (DisplayName = "시작 시 전송할 게임 플레이 이벤트"))

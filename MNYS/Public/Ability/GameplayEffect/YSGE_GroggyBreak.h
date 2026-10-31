@@ -6,11 +6,7 @@
 #include "GameplayEffect.h"
 #include "YSGE_GroggyBreak.generated.h"
 
-/**
- * 브레이크 상태. 시간과 받는 피해 배율은 UYSGroggyComponent 가 FYSGroggyRules 에서 SetByCaller 로 넣고,
- * 부여 태그(State.Groggy.Broken 외)도 스펙에 동적으로 붙인다 — 애셋 없이 이 클래스만으로 돈다.
- * Cue · 추가 태그를 애셋 쪽에서 더하려면 이 클래스를 BP 로 파생해 설정에 지정한다.
- */
+/** 브레이크 상태. 시간 · 피해 배율 · 부여 태그는 UYSGroggyComponent 가 FYSGroggyRules 에서 SetByCaller 와 동적 태그로 넣는다 (애셋 불필요). Cue · 추가 태그를 쓰려면 BP 로 파생해 설정에 지정한다. */
 UCLASS()
 class MNYS_API UYSGE_GroggyBreak : public UGameplayEffect
 {
@@ -18,7 +14,4 @@ class MNYS_API UYSGE_GroggyBreak : public UGameplayEffect
 
 public :
 	UYSGE_GroggyBreak();
-
-	static const FName DurationName;
-	static const FName DamageTakenMultiplierName;
 };

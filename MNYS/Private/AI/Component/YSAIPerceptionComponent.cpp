@@ -8,33 +8,50 @@
 #include "Perception/AISense_Sight.h"
 
 
-// Sets default values for this component's properties
 UYSAIPerceptionComponent::UYSAIPerceptionComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
-TSharedPtr<FYSTargetingActorCollections> UYSAIPerceptionComponent::GetTargetingCollection(AActor* Actor)
+TSharedPtr<FYSTargetingActorCollections> UYSAIPerceptionComponent::GetTargetingCollection(const AActor* Actor)
 {
 	if (IsValid(Actor) == false )
 	{
 		return nullptr;
 	}
-	
-	AYSAIController* AIController = Actor->GetInstigatorController<AYSAIController>();
-	
-	if (IsValid(AIController) == false )
+
+	const AYSAIController* AIController = Cast<AYSAIController>(Actor);
+	if ( AIController == nullptr )
+	{
+		AIController = Actor->GetInstigatorController<AYSAIController>();
+	}
+
+	if (IsValid(AIController) == false || IsValid(AIController->MainPerceptionComponent) == false )
 	{
 		return nullptr;
 	}
-	
+
 	return AIController->MainPerceptionComponent->GetTargetingActorCollections();
 }
 
+AActor* UYSAIPerceptionComponent::GetBestTarget(const AActor* Actor)
+{
+	const TSharedPtr<FYSTargetingActorCollections> TargetingCollections = GetTargetingCollection(Actor);
+	return TargetingCollections.IsValid() ? TargetingCollections->GetBestTargetActor() : nullptr;
+}
 
-// Called when the game starts
+bool UYSAIPerceptionComponent::MatchesAffiliation(const FActorPerceptionInfo& Info, EYSPerceptionAffiliation Affiliation)
+{
+	switch (Affiliation)
+	{
+		case EYSPerceptionAffiliation::Hostile:  return Info.bIsHostile;
+		case EYSPerceptionAffiliation::Friendly: return Info.bIsFriendly;
+		case EYSPerceptionAffiliation::Neutral:  return Info.bIsHostile == false && Info.bIsFriendly == false;
+		default: return true;
+	}
+}
+
+
 void UYSAIPerceptionComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -50,7 +67,6 @@ void UYSAIPerceptionComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 }
 
 
-// Called every frame
 void UYSAIPerceptionComponent::TickComponent(float DeltaTime, ELevelTick TickType,
                                              FActorComponentTickFunction* ThisTickFunction)
 {
@@ -60,7 +76,6 @@ void UYSAIPerceptionComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 
 void UYSAIPerceptionComponent::OnPerceptionUpdated_Callback(AActor* Actor, FAIStimulus Stimulus)
 {
-	// 여기서 외적인 연출이나 그런거 해도 될듯?
 
 }
 void UYSAIPerceptionComponent::OnActorForgotten(AActor* Actor)

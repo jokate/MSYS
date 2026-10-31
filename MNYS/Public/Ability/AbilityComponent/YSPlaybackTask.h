@@ -240,6 +240,19 @@ public :
 	UPROPERTY(EditDefaultsOnly, Category = "YS | Delay", meta = (DisplayName = "대기 시간"))
 	float DelayTime = 0.f;
 };
+
+/** 시작하자마자 경로 조건으로 다음 노드를 고른다. 통과한 경로가 없으면 체인을 끝낸다. 첫 노드에 두면 발동 전에 미리 볼 수 있다(CanStartWith). */
+UCLASS(DisplayName = "즉시 분기")
+class MNYS_API UYSPlaybackTask_Branch : public UYSPlaybackTask
+{
+	GENERATED_BODY()
+
+public :
+	virtual FText GetOutputDisplayName(int32 OutputIndex) const override;
+
+protected :
+	virtual void OnStart() override;
+};
 /**
  * 스위치 어택 진입기 형 고르기. 스위치 창 안 입력(없으면 창 닫힘 · 창 상한 시간)으로 진입기 형 표의 행을 고르고,
  * 그 행의 판정 지연 뒤 판정한다. 형마다 다른 것은 표(FYSSwitchEntryForm)에만 있다 — 형이 늘면 표에 행을 더한다.
@@ -272,44 +285,7 @@ private :
 
 	AActor* FindCombatTarget(const AActor* Instigator) const;
 
-public :
-	// 입력 창이 닫히는 신호가 오지 않아도 이 시간이 지나면 무입력 형으로 나간다. 스위치 창 GE 길이와 맞춘다.
-	UPROPERTY(EditDefaultsOnly, Category = "YS | SwitchEntry", meta = (DisplayName = "입력 창 상한 (초)", ClampMin = "0"))
-	float InputWindowLimit = 0.5f;
-
-private :
 	FName SelectedForm = NAME_None;
 	bool bSelected = false;
-	bool bWarpSet = false;
-};
-
-/**
- * 컨텍스트 스위치 변형의 이동과 판정. UYSGameplayAbility_ContextSwitch 가 고른 변형 표 행을 읽는다.
- * 시작할 때 이동(회전 · 워프)을 걸고, 행의 판정 지연 뒤 한 번 친다. 행마다 다른 것은 표에만 있다.
- * 등급 0 · 1 적은 그로기 피해 대신 경직 GE, 피해 · 그로기 피해 · 경직 길이에는 남용 감쇠 배율을 곱한다.
- * 출력은 판정 직후 한 번. 경로가 없으면 전환하지 않고 몽타주가 노드를 끝낸다.
- */
-UCLASS(DisplayName = "컨텍스트 스위치 변형 판정")
-class MNYS_API UYSPlaybackTask_ContextSwitchHit : public UYSPlaybackTask
-{
-	GENERATED_BODY()
-
-public :
-	virtual void ReleaseMotionWarp() override;
-	virtual FText GetOutputDisplayName(int32 OutputIndex) const override;
-
-protected :
-	virtual void OnStart() override;
-	virtual void OnStop() override;
-
-private :
-	UFUNCTION()
-	void OnHitDelayFinished();
-
-	void ExecuteHit();
-
-	const struct FYSContextSwitchVariant* GetVariant() const;
-
-private :
 	bool bWarpSet = false;
 };

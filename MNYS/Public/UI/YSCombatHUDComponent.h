@@ -16,12 +16,7 @@ struct FGameplayEffectSpec;
 struct FGameplayEventData;
 struct FOnAttributeChangeData;
 
-/**
- * 전투 HUD 1차 (기획 11_UIUX_V4_DRAFT §1 ①③④⑤⑥). 이벤트 구독은 전부 여기 한 곳에 둔다.
- *
- * 컨트롤러에 둔다. 타겟(UYSCombatTargetComponent)과 같은 이유로, 폰이 바뀌어도 HUD 가 이어져야 한다.
- * 폰 교대 · 타겟 변경 때 구독할 ASC 를 갈아끼우고, 받은 값을 위젯에 내리기만 한다. 폴링하지 않는다.
- */
+/** 전투 HUD. 이벤트 구독을 전부 여기 한 곳에 둔다. 컨트롤러에 두는 것은 타겟 컴포넌트와 같은 이유로, 폰이 바뀌어도 HUD 가 이어져야 해서다. 폰 교대 · 타겟 변경 때 구독할 ASC 를 갈아끼우고 받은 값을 위젯에 내리기만 하며 폴링하지 않는다. */
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class MNYS_API UYSCombatHUDComponent : public UActorComponent
 {

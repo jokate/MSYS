@@ -9,6 +9,7 @@
 #include "Abilities/GameplayAbilityTypes.h"
 #include "Character/Components/YSCombatTargetComponent.h"
 #include "Combat/YSSwitchWindowCloseCondition.h"
+#include "Subsystem/YSCombatEventSubsystem.h"
 #include "Data/YSAbilityDataAsset.h"
 #include "Data/YSDataStruct.h"
 #include "Engine/World.h"
@@ -24,19 +25,34 @@ void UYSSquadSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	Super::Initialize(Collection);
 
 	WorldCleanupHandle = FWorldDelegates::OnWorldCleanup.AddUObject(this, &ThisClass::HandleWorldCleanup);
+
+	if ( UYSCombatEventSubsystem* CombatEvents = Collection.InitializeDependency<UYSCombatEventSubsystem>() )
+	{
+		ManualTargetSwitchedHandle = CombatEvents->OnManualTargetSwitched.AddUObject(this, &ThisClass::HandleManualTargetSwitched);
+	}
 }
 
 void UYSSquadSubsystem::Deinitialize()
 {
 	FWorldDelegates::OnWorldCleanup.Remove(WorldCleanupHandle);
 
+	if ( UYSCombatEventSubsystem* CombatEvents = GetGameInstance()->GetSubsystem<UYSCombatEventSubsystem>() )
+	{
+		CombatEvents->OnManualTargetSwitched.Remove(ManualTargetSwitchedHandle);
+	}
+
 	Super::Deinitialize();
+}
+
+void UYSSquadSubsystem::HandleManualTargetSwitched(AActor* NewTarget)
+{
+	// 타겟 전환도 스위치 창을 열 수 있다. 열지 말지 · 남용 제어는 설정을 보고 정한다.
+	TryOpenSwitchWindow(EYSSwitchTrigger::TargetSwitch, NewTarget, 0.f);
 }
 
 void UYSSquadSubsystem::HandleWorldCleanup(UWorld* World, bool bSessionEnded, bool bCleanupResources)
 {
-	// 남용 기록의 시각은 월드 시계다. 새 월드는 시계가 0 부터라 남겨 두면 미래값이 된다.
-	// 태그 게이지는 런 자원이라 방 이동에서 그대로 둔다.
+	// 남용 기록의 시각은 월드 시계라 새 월드에선 미래값이 된다. 태그 게이지는 런 자원이라 방 이동에서 그대로 둔다.
 	if (IsValid(World) && World->GetGameInstance() == GetGameInstance())
 	{
 		ResetSwitchAbuseStates();
@@ -90,13 +106,11 @@ void UYSSquadSubsystem::InitializeSquad(const TArray<FYSCharacterInfo>& Definiti
 
 	ActiveSlot = 0;
 
-	// 0번만 활성, 나머지는 벤치
 	for (int32 Index = 0; Index < Slots.Num(); ++Index)
 	{
 		SetPawnActive(Slots[Index].Pawn, Index == ActiveSlot);
 	}
 
-	// 컨트롤러가 0번을 소유하게 한다
 	if (APlayerController* PC = Cast<APlayerController>(GetWorld()->GetFirstPlayerController()))
 	{
 		if (APawn* Target = Slots[ActiveSlot].Pawn)
@@ -127,9 +141,7 @@ bool UYSSquadSubsystem::RequestTag(int32 SlotIndex, bool bSwitchAttack)
 		return false;
 	}
 
-	// 스위치 어택은 게이지를 먼저 확보한다. 실패하면 일반 교대로 강등하지 않고 그냥 거절한다
-	// (플레이어가 진입기를 기대하고 눌렀는데 맨몸으로 들어가면 그대로 맞는다).
-	// 태그 교대가 스위치 창을 여는 설정이면 남용 제어도 같은 이유로 교대 전에 본다.
+	// 스위치 어택은 게이지를 먼저 확보하고, 실패하면 일반 교대로 강등하지 않고 거절한다 (진입기를 기대한 플레이어가 맨몸으로 맞는 것을 막는다). 태그 교대가 창을 여는 설정이면 남용 제어도 교대 전에 본다.
 	const UYSDeveloperSettings* Settings = GetDefault<UYSDeveloperSettings>();
 	const bool bOpenWindow = bSwitchAttack && Settings->ShouldOpenSwitchWindow(EYSSwitchTrigger::TagSwap);
 	float Cost = Settings->SwitchAttackCost;
@@ -432,7 +444,6 @@ bool UYSSquadSubsystem::ForceTagOnDown()
 			continue;
 		}
 
-		// 다운 강제 교대는 쿨다운을 무시한다
 		PerformTag(Index, false);
 		return true;
 	}
@@ -457,7 +468,6 @@ void UYSSquadSubsystem::PerformTag(int32 NewSlot, bool bSwitchAttack, bool bOpen
 		return;
 	}
 
-	// 새 캐릭터는 이전 캐릭터의 위치를 이어받는다
 	if (IsValid(OldPawn))
 	{
 		NewPawn->SetActorTransform(OldPawn->GetActorTransform(), false, nullptr, ETeleportType::TeleportPhysics);
@@ -473,12 +483,11 @@ void UYSSquadSubsystem::PerformTag(int32 NewSlot, bool bSwitchAttack, bool bOpen
 	{
 		PC->UnPossess();
 		PC->Possess(NewPawn);
-		PC->SetViewTargetWithBlend(NewPawn, 0.15f);
+		PC->SetViewTargetWithBlend(NewPawn, GetDefault<UYSDeveloperSettings>()->TagSwapCameraBlendTime);
 	}
 
 	RefreshBackupPassives();
 
-	// 교대 쿨다운
 	World->GetTimerManager().SetTimer(TagCooldownTimer, GetDefault<UYSDeveloperSettings>()->TagCooldown, /*bLoop=*/false);
 	
 	OnActiveSlotChanged.Broadcast(OldSlot, NewSlot);
@@ -489,7 +498,6 @@ void UYSSquadSubsystem::PerformTag(int32 NewSlot, bool bSwitchAttack, bool bOpen
 		OpenSwitchWindow(EYSSwitchTrigger::TagSwap, GetASC(NewSlot), GetCurrentCombatTarget());
 	}
 
-	// 스위치 어택 — 진입기 발동
 	if (bSwitchAttack)
 	{
 		FGameplayEventData EventData;
@@ -517,8 +525,7 @@ void UYSSquadSubsystem::RefreshBackupPassives()
 	{
 		FYSSquadSlot& Slot = Slots[Index];
 
-		// 이전에 붙여둔 백업 패시브는 대상이 바뀌었으므로 전부 제거한다.
-		// 핸들이 가리키는 ASC가 이미 교체됐을 수 있어 각 슬롯 ASC에서 개별 제거한다.
+		// 대상이 바뀌어 이전 백업 패시브는 전부 제거한다. 핸들이 가리키는 ASC 가 이미 교체됐을 수 있어 각 슬롯 ASC 에서 개별 제거한다.
 		if (Slot.BackupHandleOnField.IsValid())
 		{
 			for (int32 Inner = 0; Inner < Slots.Num(); ++Inner)
@@ -532,7 +539,6 @@ void UYSSquadSubsystem::RefreshBackupPassives()
 		}
 		
 
-		// 벤치인 슬롯만 백업 패시브를 필드에 제공한다
 		if (Index == ActiveSlot)
 		{
 			continue;

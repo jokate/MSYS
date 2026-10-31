@@ -3,12 +3,33 @@
 
 #include "Ability/AbilityComponent/YSPlaybackCondition.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
+#include "YSDeveloperSettings.h"
 #include "Ability/YSGameplayAbility.h"
 #include "Character/Components/YSCombatTargetComponent.h"
 #include "Input/StateMachine/YSInputStateMachineComponent.h"
 #include "General/YSDefine.h"
+
+namespace
+{
+	const AActor* GetConditionTarget(const FYSPlaybackContext& Context)
+	{
+		if ( IsValid(Context.Target) )
+		{
+			return Context.Target;
+		}
+
+		const UYSCombatTargetComponent* CombatTarget = UYSCombatTargetComponent::Get(Context.Instigator);
+		return IsValid(CombatTarget) ? CombatTarget->GetCurrentTarget() : nullptr;
+	}
+
+	bool MaskAccepts(int32 Mask, uint8 Value)
+	{
+		return Mask == 0 || ( Mask & ( 1 << Value ) ) != 0;
+	}
+}
 
 bool FYSPlaybackCondition_ContextTag::Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const
 {
@@ -50,7 +71,6 @@ bool FYSPlaybackCondition_HasGameplayEffect::Evaluate(const TSharedPtr<FYSPlayba
 		return false;
 	}
 	
-	// 만약 존재한다면 이게 있겄지야.
 	return ASC->GetGameplayEffectCount(GameplayEffect, nullptr) > 0;
 }
 
@@ -98,9 +118,67 @@ bool FYSPlaybackCondition_TargetDistanceBand::Evaluate(const TSharedPtr<FYSPlayb
 		return Band == EYSTargetDistanceBand::OutOfRange;
 	}
 
-	// 컨텍스트에 타겟이 없으면 전투 타겟을 본다. 둘 다 없으면 구간 밖이다(§8).
+	// 컨텍스트에 타겟이 없으면 전투 타겟을 본다. 둘 다 없으면 구간 밖이다.
 	const AActor* Target = IsValid(Context->Target) ? Context->Target.Get() : CombatTarget->GetCurrentTarget();
 	return CombatTarget->GetDistanceBand(Target) == Band;
+}
+
+bool FYSPlaybackCondition_TargetTag::Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const
+{
+	const AActor* Target = GetConditionTarget(*Context);
+	const UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(const_cast<AActor*>(Target));
+
+	if ( IsValid(TargetASC) == false )
+	{
+		return RequiredTags.IsEmpty();
+	}
+
+	FGameplayTagContainer OwnedTags;
+	TargetASC->GetOwnedGameplayTags(OwnedTags);
+
+	return OwnedTags.HasAll(RequiredTags) && OwnedTags.HasAny(ExcludedTags) == false;
+}
+
+bool FYSPlaybackCondition_TargetHeight::Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const
+{
+	const AActor* Target = GetConditionTarget(*Context);
+
+	if ( IsValid(Target) == false || IsValid(Context->Instigator) == false )
+	{
+		return false;
+	}
+
+	const float DeltaZ = Target->GetActorLocation().Z - Context->Instigator->GetActorLocation().Z;
+	const EYSTargetHeightBand Height = GetDefault<UYSDeveloperSettings>()->TargetBandRules.ResolveHeight(DeltaZ);
+
+	return MaskAccepts(HeightMask, static_cast<uint8>(Height));
+}
+
+bool FYSPlaybackCondition_TargetDirection::Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const
+{
+	const AActor* Target = GetConditionTarget(*Context);
+	const AActor* Instigator = Context->Instigator;
+
+	if ( IsValid(Target) == false || IsValid(Instigator) == false )
+	{
+		return false;
+	}
+
+	FVector Forward = Instigator->GetActorForwardVector();
+
+	// 수동 전환 직후 캐릭터가 이미 새 타겟 쪽으로 돌기 시작하므로 전환 때 남긴 정면을 쓴다.
+	if ( Reference == EYSForwardReference::PreSwitch )
+	{
+		if ( const UYSCombatTargetComponent* CombatTarget = UYSCombatTargetComponent::Get(Instigator) )
+		{
+			Forward = CombatTarget->GetManualSwitchSnapshot().PreSwitchForward;
+		}
+	}
+
+	const FVector ToTarget = Target->GetActorLocation() - Instigator->GetActorLocation();
+	const EYSTargetDirectionBand Direction = GetDefault<UYSDeveloperSettings>()->TargetBandRules.ResolveDirection(Forward, ToTarget);
+
+	return MaskAccepts(DirectionMask, static_cast<uint8>(Direction));
 }
 
 bool FYSPlaybackCondition_Input::Evaluate(const TSharedPtr<FYSPlaybackContext>& Context) const

@@ -13,9 +13,6 @@
 
 class UEnvQuery;
 struct FGameplayEventData;
-/**
- * Trigger Payload로 보내고자 하는 경우에 대해서 전제 처리.
- */
 UCLASS(BlueprintType, Blueprintable, DefaultToInstanced, EditInlineNew )
 class MNYS_API UYSAbilityTriggerPayload : public UObject
 {
@@ -60,7 +57,6 @@ public :
 	FName DamageRow;
 };
 
-// 사실상 AbiityTask에 필요한 파라미터 모두 세팅.
 UCLASS(BlueprintType, EditInlineNew, DisplayName = "속도 적용")
 class MNYS_API UYSAbilityTriggerPayload_Velocity : public UYSAbilityTriggerPayload
 {
@@ -96,7 +92,6 @@ public :
 };
 
 // 예를 들어서 역장 1개 폭탄 2개 뿅뿅 스폰하고 싶다면 이걸 활용하면 될 것으로 보임.
-// 근데 만약에 여러개 스폰 가능하다고 하면 어떻게 하지..?
 UCLASS(BlueprintType, EditInlineNew, DisplayName = "액터 스폰")
 class MNYS_API UYSAbilityTriggerPayload_SpawnActor : public UYSAbilityTriggerPayload
 {
@@ -116,19 +111,6 @@ public :
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "EQS")
 	TObjectPtr<UEnvQuery> TargetToRun;
 };
-
-UCLASS(BlueprintType, EditInlineNew, DisplayName = "카메라 이펙트")
-class MNYS_API UYSAbilityTriggerPayload_CameraEffect : public UYSAbilityTriggerPayload
-{
-	GENERATED_BODY()
-	
-public : 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "카메라 이펙트")
-	FYSCameraEffectParams CameraEffectParams;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, DisplayName = "카메라 이펙트 우선순위")
-	EYSCameraModePriority CameraEffectPriority = EYSCameraModePriority::Default;
-};	
 
 UCLASS(BlueprintType, EditInlineNew, DisplayName = "조준")
 class MNYS_API UYSAbilityTriggerPayload_AimTarget : public UYSAbilityTriggerPayload

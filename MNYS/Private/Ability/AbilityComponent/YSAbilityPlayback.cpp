@@ -187,7 +187,7 @@ bool UYSAbilityPlaybackBase::TryResolveRoutes(const TArray<FYSPlaybackRoute>& Ro
 
 	for ( const FYSPlaybackRoute& Route : Routes )
 	{
-		if ( AreConditionsSatisfied(Route.Conditions) == false )
+		if ( AreConditionsSatisfied(Route.Conditions, CapturedContext) == false )
 		{
 			continue;
 		}
@@ -226,7 +226,32 @@ bool UYSAbilityPlaybackBase::TryResolveRoutes(const TArray<FYSPlaybackRoute>& Ro
 	return false;
 }
 
-bool UYSAbilityPlaybackBase::AreConditionsSatisfied(const TArray<FInstancedStruct>& Conditions) const
+bool UYSAbilityPlaybackBase::CanStartWith(const TSharedPtr<FYSPlaybackContext>& Context) const
+{
+	const UYSPlaybackTask_Branch* Branch = Tasks.Num() > 0 ? Cast<UYSPlaybackTask_Branch>(Tasks[0]) : nullptr;
+
+	if ( Branch == nullptr )
+	{
+		return true;
+	}
+
+	if ( Context.IsValid() == false || Branch->OutputRoutes.IsValidIndex(0) == false )
+	{
+		return false;
+	}
+
+	for ( const FYSPlaybackRoute& Route : Branch->OutputRoutes[0].Routes )
+	{
+		if ( AreConditionsSatisfied(Route.Conditions, Context) )
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool UYSAbilityPlaybackBase::AreConditionsSatisfied(const TArray<FInstancedStruct>& Conditions, const TSharedPtr<FYSPlaybackContext>& Context)
 {
 	// 조건은 AND 결합이다. 하나라도 실패하면 나머지는 볼 필요가 없다.
 	for ( const FInstancedStruct& InstancedStruct : Conditions )
@@ -238,7 +263,7 @@ bool UYSAbilityPlaybackBase::AreConditionsSatisfied(const TArray<FInstancedStruc
 			continue;
 		}
 
-		if ( Condition->Evaluate(CapturedContext) == false )
+		if ( Condition->Evaluate(Context) == false )
 		{
 			return false;
 		}

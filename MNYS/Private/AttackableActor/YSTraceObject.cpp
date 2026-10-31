@@ -5,6 +5,7 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "Ability/YSGameplayAbility.h"
 #include "DrawDebugHelpers.h"
 #include "GenericTeamAgentInterface.h"
 #include "YSBattleActor.h"
@@ -14,28 +15,50 @@
 #include "General/YSGameplayTag.h"
 #include "Library/YSBlueprintFunctionLibrary.h"
 
-UYSTraceObject* UYSTraceObject::Create(UObject* InOuter, AActor* InOwnerActor, AActor* InInstigator, const FYSTraceConfig& InConfig)
+UYSTraceObject* UYSTraceObject::Create(UObject* InOuter, AActor* InOwnerActor, AActor* InInstigator, const FYSTraceConfig& InConfig,
+	float InEffectScale, const TSharedPtr<FYSAbilityHitContext>& InHitContext)
 {
 	UYSTraceObject* TraceObject = NewObject<UYSTraceObject>(InOuter);
 	TraceObject->OwnerActor  = InOwnerActor;
 	TraceObject->Instigator = InInstigator;
 	TraceObject->TraceConfig = InConfig;
+	TraceObject->EffectScale = InEffectScale;
+	TraceObject->HitContext = InHitContext;
 	TraceObject->RemainHitProcessCount = InConfig.LimitHitCount;
 	return TraceObject;
 }
 
-void UYSTraceObject::ExecuteOnce()
+void UYSTraceObject::Start()
 {
-	Tick(0.f);
+	if ( TraceConfig.bTraceOnce == false )
+		return;
+
+	_TraceByConfig();
+	_End();
 }
 
 void UYSTraceObject::Tick(float DeltaTime)
 {
-	// 트레이싱 비용 자체가 좀 있어서 히트카운트 Deplete 된 경우에는 처리 X
-	if ( IsHitCountDepleted() )
+	// 트레이싱 비용이 있어 히트카운트가 소진되면 처리하지 않는다.
+	if ( bEnded || IsHitCountDepleted() )
 		return; 
 	
 	_TraceByConfig();
+}
+
+void UYSTraceObject::Stop()
+{
+	bEnded = true;
+	OnTraceEnded.Clear();
+}
+
+void UYSTraceObject::_End()
+{
+	if ( bEnded )
+		return;
+
+	bEnded = true;
+	OnTraceEnded.Broadcast();
 }
 
 void UYSTraceObject::ResetHitState()
@@ -54,10 +77,8 @@ bool UYSTraceObject::DecreaseHitProcessCount()
 	return IsHitCountDepleted();
 }
 
-// 히트 카운트 자체가 나간 경우에는 별도 처리 하지 않음.
 bool UYSTraceObject::IsHitCountDepleted() const
 {
-	// 0 인 경우에는 히트에 대한 제한을 따로 두지는 않도록 해야 함.
 	if ( TraceConfig.LimitHitCount <= 0)
 	{
 		return false;
@@ -228,16 +249,11 @@ void UYSTraceObject::_ProcessValidHit(const TArray<FHitResult>& InProcessedHits)
 		if (!IsValid(HitActor))
 			continue;
 
-		// 아군 · 사망 · 저스트 회피 창 · 무적 검사는 DirectHit 과 같은 함수를 거친다.
-		// 연속 히트가 저스트 창 안에서 HitTimeCheck 마다 GE 를 다시 걸지 않도록 대상별 기록을 넘긴다.
-		if (!UYSBlueprintFunctionLibrary::AdmitHit(Instigator, HitActor, &JustAvoidGrantedActors))
+		// 연속 히트가 저스트 창 안에서 HitTimeCheck 마다 GE 를 다시 걸지 않게 대상별 기록을 넘긴다.
+		if (!UYSBlueprintFunctionLibrary::ApplyHitToTarget(OwnerActor, Instigator, HitActor, TraceConfig.DamageRow, EffectScale,
+			HitResult, EffectRotation, &JustAvoidGrantedActors))
 			continue;
 
-		// 데미지 이벤트 전송
-		UYSBlueprintFunctionLibrary::SendHitEventToTarget(Instigator, HitActor, TraceConfig.DamageRow);
-		UYSBlueprintFunctionLibrary::SpawnEffects(Instigator, TraceConfig.DamageRow, HitResult.ImpactPoint, EffectRotation);
-		UYSBlueprintFunctionLibrary::ApplyHitEffects(OwnerActor, Instigator, HitActor, TraceConfig.DamageRow, HitResult);
-		
 		ValidHits.Add(HitResult);
 		
 		if ( DecreaseHitProcessCount() )
@@ -260,14 +276,17 @@ void UYSTraceObject::_ProcessValidHit(const TArray<FHitResult>& InProcessedHits)
 		UYSBlueprintFunctionLibrary::PlayHitImpact(Instigator, HitActors, TraceConfig.DamageRow);
 	}
 
-	// 소진 방송은 OnTraceHit 뒤에. 먼저 하면 태스크가 EndTask(MarkAsGarbage)돼 마지막 타격이 OnHit 에 닿지 못한다.
+	// 끝 방송은 '맞혔다' 뒤에. 먼저 하면 태스크가 EndTask 돼 마지막 타격이 어빌리티에 닿지 못한다.
 	if ( ValidHits.Num() > 0 )
 	{
-		OnTraceHit.Broadcast(ValidHits, TraceConfig.DamageRow);
+		if ( const TSharedPtr<FYSAbilityHitContext> PinnedHitContext = HitContext.Pin() )
+		{
+			PinnedHitContext->ReportHit(this, ValidHits);
+		}
 	}
 
 	if ( bDepleted )
 	{
-		OnHitCountDepleted.Broadcast();
+		_End();
 	}
 }

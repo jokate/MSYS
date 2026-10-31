@@ -10,11 +10,7 @@ class UDecalComponent;
 class UMaterialInterface;
 class UMaterialInstanceDynamic;
 
-/**
- * 인디케이터가 그릴 도형입니다.
- * 실제 형태는 데칼 머티리얼이 ShapeType 파라미터를 보고 그립니다.
- * 머티리얼에 넘어가는 값이므로 순서를 바꾸면 머티리얼도 같이 고쳐야 합니다.
- */
+/** 인디케이터가 그릴 도형. 순서가 머티리얼의 ShapeType 파라미터로 넘어가므로 바꾸면 머티리얼도 같이 고친다. */
 UENUM(BlueprintType)
 enum class EYSIndicatorShapeType : uint8
 {
@@ -36,8 +32,7 @@ public:
 	/** 로컬 플레이어용 인스턴스를 하나 만든다. 숨겨진 상태로 생성된다. */
 	static AYSSkillIndicator* CreateIndicator(const UObject* WorldContextObject, TSubclassOf<AYSSkillIndicator> IndicatorClass);
 
-	// ── 도형 갱신 ────────────────────────────────────────────────────────
-	// 전부 매 프레임 호출을 전제로 한다. 도형이 그대로면 파라미터만 덮어쓴다.
+	// 도형 갱신 함수는 전부 매 프레임 호출을 전제로 한다. 도형이 그대로면 파라미터만 덮어쓴다.
 
 	/** 원형 장판. Center는 지면 위 지점. */
 	UFUNCTION(BlueprintCallable, Category = "YS | Indicator", meta = (DisplayName = "원형 표시"))

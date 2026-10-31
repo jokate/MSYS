@@ -6,10 +6,8 @@
 #include "Ability/GameplayCueActor/GameplayCueEvent/YSGameplayCueActionBase.h"
 
 
-// Sets default values
 AYSGameplayCueNotifyBase::AYSGameplayCueNotifyBase()
 {
-	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 }
 

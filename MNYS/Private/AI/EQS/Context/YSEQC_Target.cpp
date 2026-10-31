@@ -11,15 +11,7 @@
 
 void UYSEQC_Target::ProvideContext(FEnvQueryInstance& QueryInstance, FEnvQueryContextData& ContextData) const
 {
-	AYSAIController* QueryOwner = Cast<AYSAIController>(QueryInstance.Owner.Get());
-	
-	if ( IsValid(QueryOwner) == false )
-	{
-		return;
-	}
-	
-
-	AActor* BestTargetActor = QueryOwner->MainPerceptionComponent->GetBestTargetActor();
+	AActor* BestTargetActor = UYSAIPerceptionComponent::GetBestTarget(Cast<AYSAIController>(QueryInstance.Owner.Get()));
 	
 	if ( IsValid(BestTargetActor) == false )
 	{

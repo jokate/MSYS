@@ -9,11 +9,7 @@
 #include "YSComboData.generated.h"
 
 class UGameplayAbility;
-/**
- * 
- */
 
-// Purpose : 커맨드 시퀀스.
 USTRUCT(BlueprintType)
 struct FYSCommandSequence : public FTableRowBase
 {

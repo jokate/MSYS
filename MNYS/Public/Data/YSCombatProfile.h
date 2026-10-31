@@ -9,11 +9,7 @@
 #include "General/YSStruct.h"
 #include "YSCombatProfile.generated.h"
 
-/**
- * 캐릭터별 타게팅 수치. 규칙(후보 · 점수 · 순환 · 구간)은 UYSCombatTargetComponent 가 갖고,
- * 캐릭터마다 다른 값은 여기에만 둔다 — 캐릭터가 늘면 이 애셋이 하나 늘 뿐이다.
- * 모든 기본값은 임시값이다.
- */
+/** 캐릭터별 타게팅 수치. 규칙은 UYSCombatTargetComponent 가 갖고 캐릭터마다 다른 값은 여기에만 둔다. 모든 기본값은 임시값이다. */
 UCLASS(BlueprintType)
 class MNYS_API UYSCombatProfile : public UPrimaryDataAsset
 {
@@ -106,8 +102,8 @@ public :
 	FGameplayTagContainer TurnBlockedTags;
 
 	// 입력 상태 머신에 이 상태 요청이 하나라도 있으면 막는다. 태그와 둘 중 하나만 걸려도 막는다.
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | Turn", meta = (DisplayName = "회전을 막는 입력 상태"))
-	TArray<EYSInputStatesType> TurnBlockedInputStates = { EYSInputStatesType::Attack, EYSInputStatesType::Dodge };
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | Turn", meta = (DisplayName = "회전을 막는 입력 상태", GetOptions = "MNYS.YSDeveloperSettings.GetInputStateOptions"))
+	TArray<FName> TurnBlockedInputStates = { TEXT("Attack"), TEXT("Dodge") };
 
 	// 끄면 이동 중 요청은 턴 몽타주 없이 보간만 한다.
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "YS | Turn", meta = (DisplayName = "이동 중에도 턴 몽타주 사용"))

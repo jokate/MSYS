@@ -5,7 +5,7 @@
 
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
-#include "Character/Components/YSCameraManageComponent.h"
+#include "Character/Components/YSCombatTargetComponent.h"
 
 void UYSLockOnGEComponent::OnActiveGameplayEffectRemoved(const FGameplayEffectRemovalInfo& GameplayEffectRemovalInfo,
                                                          FActiveGameplayEffectsContainer* ActiveGEContainer) const
@@ -24,11 +24,9 @@ void UYSLockOnGEComponent::OnActiveGameplayEffectRemoved(const FGameplayEffectRe
 		return;
 	}
 
-	UYSCameraManageComponent* LockOnComponent = UYSCameraManageComponent::Get(ASC->GetOwner());
-	
-	if ( IsValid(LockOnComponent))
+	if ( UYSCombatTargetComponent* CombatTarget = UYSCombatTargetComponent::Get(ASC->GetOwner()) )
 	{
-		LockOnComponent->ReleaseLockOn();
+		CombatTarget->ReleaseForcedLockOn();
 	}
 }
 
@@ -42,11 +40,8 @@ void UYSLockOnGEComponent::OnGameplayEffectApplied(FActiveGameplayEffectsContain
 	if ( IsValid(ASC) == false )
 		return;
 	
-	UYSCameraManageComponent* LockOnComponent = UYSCameraManageComponent::Get(ASC->GetOwner());
-	
-	const FGameplayEffectContextHandle& EffectContext = GESpec.GetEffectContext();
-	if ( IsValid(LockOnComponent))
+	if ( UYSCombatTargetComponent* CombatTarget = UYSCombatTargetComponent::Get(ASC->GetOwner()) )
 	{
-		LockOnComponent->ForceSetLockOn(EffectContext.GetInstigator());
+		CombatTarget->ForceLockOn(GESpec.GetEffectContext().GetInstigator());
 	}
 }
